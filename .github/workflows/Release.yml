@@ -7,7 +7,7 @@ on:
       - '*' # Push events to matching everything, e. g. "v1" or "2021.2.2.1"
 
 jobs:
-  docker:
+  build-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
