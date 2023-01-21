@@ -30,10 +30,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
+      - name: Build and push Docker image for Raspberry Pi
         id: docker_build
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: mu88/shopandeat:latest
+          tags: |
+            mu88/shopandeat:latest
+            mu88/shopandeat:${{ github.ref_name }}
           file: ShopAndEat/Dockerfile

@@ -14,15 +14,16 @@ COPY ["DataLayer/DataLayer.csproj", "DataLayer/"]
 COPY ["ServiceLayer/ServiceLayer.csproj", "ServiceLayer/"]
 COPY ["DTO/DTO.csproj", "DTO/"]
 COPY ["BizLogic/BizLogic.csproj", "BizLogic/"]
+
 RUN dotnet restore "ShopAndEat/ShopAndEat.csproj"
 COPY . .
 WORKDIR "/src/ShopAndEat"
-RUN dotnet build "ShopAndEat.csproj" -c Release -o /app/build
+RUN dotnet build "ShopAndEat.csproj" -c Release
 
 FROM build AS publish
-RUN dotnet publish "ShopAndEat.csproj" -c Release -o /app/publish
+RUN dotnet publish "ShopAndEat.csproj" -c Release -o /app
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=publish /app .
 ENTRYPOINT ["dotnet", "ShopAndEat.dll"]
