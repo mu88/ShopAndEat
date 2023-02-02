@@ -6,7 +6,7 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0.101-bullseye-slim-arm64v8 AS build
+FROM mcr.microsoft.com/dotnet/sdk:7.0.101 AS build
 WORKDIR /src
 COPY ["ShopAndEat/ShopAndEat.csproj", "ShopAndEat/"]
 COPY ["BizDbAccess/BizDbAccess.csproj", "BizDbAccess/"]
@@ -14,15 +14,16 @@ COPY ["DataLayer/DataLayer.csproj", "DataLayer/"]
 COPY ["ServiceLayer/ServiceLayer.csproj", "ServiceLayer/"]
 COPY ["DTO/DTO.csproj", "DTO/"]
 COPY ["BizLogic/BizLogic.csproj", "BizLogic/"]
+
 RUN dotnet restore "ShopAndEat/ShopAndEat.csproj"
 COPY . .
 WORKDIR "/src/ShopAndEat"
-RUN dotnet build "ShopAndEat.csproj" -c Release -o /app/build
+RUN dotnet build "ShopAndEat.csproj" -c Release
 
 FROM build AS publish
-RUN dotnet publish "ShopAndEat.csproj" -c Release -o /app/publish
+RUN dotnet publish "ShopAndEat.csproj" -c Release -o /app
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=publish /app .
 ENTRYPOINT ["dotnet", "ShopAndEat.dll"]
