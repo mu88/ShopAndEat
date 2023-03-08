@@ -35,6 +35,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
+          provenance: false
           tags: |
             mu88/shopandeat:latest
             mu88/shopandeat:${{ github.ref_name }}
