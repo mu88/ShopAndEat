@@ -12,7 +12,7 @@ public class GeneratePurchaseItemsForRecipesAction : IGeneratePurchaseItemsForRe
         var purchaseItems = new List<PurchaseItem>();
         foreach (var (recipe, numberOfPerson) in recipesAndPersons)
         {
-            var personQuantifier = numberOfPerson / recipe.NumberOfPersons;
+            var personQuantifier = (double)numberOfPerson / recipe.NumberOfPersons;
             foreach (var ingredient in recipe.Ingredients)
             {
                 purchaseItems.Add(new PurchaseItem(ingredient.Article, ingredient.Quantity * personQuantifier, ingredient.Unit));
