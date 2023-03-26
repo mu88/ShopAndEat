@@ -5,32 +5,8 @@
 @using ShopAndEat.Models
 @inject IArticleService ArticleService
 @inject IArticleGroupService ArticleGroupService
+@inject IJSRuntime JS
 @* TODO mu88: Build translator *@
-
-<table class="table table-striped">
-    <caption>Articles</caption>
-    <thead>
-    <tr>
-        <th scope="col">Name</th>
-        <th scope="col">Article Group</th>
-        <th scope="col">Is Inventory</th>
-        <th scope="col" />
-        <th scope="col" />
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var article in Articles)
-    {
-        <tr>
-            <td>@article.Name</td>
-            <td>@article.ArticleGroup.Name</td>
-            <td>@article.IsInventory</td>
-            <td><button class="btn btn-primary" @onclick="@(e => DeleteArticle(article.ArticleId))">❌</button></td>
-            <td><button class="btn btn-primary" @onclick="@(e => EditArticle(article.ArticleId))">🖊</button></td>
-        </tr>
-    }
-    </tbody>
-</table>
 
 <EditForm Model="@_articleModel" OnSubmit="HandleSubmit">
     <DataAnnotationsValidator/>
@@ -64,6 +40,30 @@
     <button type="submit">Save</button>
 </EditForm>
 
+<table class="table table-striped">
+    <caption>Articles</caption>
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Article Group</th>
+        <th scope="col">Is Inventory</th>
+        <th scope="col" />
+        <th scope="col" />
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var article in Articles)
+    {
+        <tr>
+            <td>@article.Name</td>
+            <td>@article.ArticleGroup.Name</td>
+            <td>@article.IsInventory</td>
+            <td><button class="btn btn-primary" @onclick="@(e => DeleteArticle(article.ArticleId))">❌</button></td>
+            <td><button class="btn btn-primary" @onclick="@(e => EditArticleAsync(article.ArticleId))">🖊</button></td>
+        </tr>
+    }
+    </tbody>
+</table>
 
 @code {
 
@@ -113,13 +113,16 @@
         LoadArticles();
     }
 
-    private void EditArticle(int articleId)
+    private async Task EditArticleAsync(int articleId)
     {
         var article = Articles.Single(x => x.ArticleId == articleId);
         _articleModel.ArticleId = article.ArticleId;
         _articleModel.ArticleName = article.Name;
         _articleModel.ArticleGroupName = article.ArticleGroup.Name;
         _articleModel.IsInventory = article.IsInventory;
+        await ScrollToTopAsync();
     }
+    
+    private async Task ScrollToTopAsync() => await JS.InvokeVoidAsync("window.scrollTo", 0, 0);
 
 }

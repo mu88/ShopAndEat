@@ -8,27 +8,8 @@
 @inject IRecipeService RecipeService
 @inject IArticleService ArticleService
 @inject IUnitService UnitService
+@inject IJSRuntime JS
 @* TODO mu88: Build translator *@
-
-<table class="table table-striped">
-    <caption>Recipes</caption>
-    <thead>
-    <tr>
-        <th scope="col">Name</th>
-        <th scope="col" />
-    </tr>
-    </thead>
-    <tbody>
-        @foreach (var recipe in Recipes)
-        {
-            <tr>
-                <td>@recipe.Name</td>
-                <td><button class="btn btn-primary" @onclick="@(e => DeleteRecipe(recipe.RecipeId))">❌</button></td>
-                <td><button class="btn btn-primary" @onclick="@(e => EditRecipe(recipe.RecipeId))">🖊</button></td>
-            </tr>
-        }
-    </tbody>
-</table>
 
 <EditForm Model="@_recipeModel" OnSubmit="HandleSubmit">
     <DataAnnotationsValidator />
@@ -95,6 +76,26 @@
 
     <button type="submit">Save</button>
 </EditForm>
+
+<table class="table table-striped">
+    <caption>Recipes</caption>
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col" />
+    </tr>
+    </thead>
+    <tbody>
+        @foreach (var recipe in Recipes)
+        {
+            <tr>
+                <td>@recipe.Name</td>
+                <td><button class="btn btn-primary" @onclick="@(e => DeleteRecipe(recipe.RecipeId))">❌</button></td>
+                <td><button class="btn btn-primary" @onclick="@(e => EditRecipeAsync(recipe.RecipeId))">🖊</button></td>
+            </tr>
+        }
+    </tbody>
+</table>
 
 @code {
 
@@ -188,7 +189,7 @@
         LoadRecipes();
     }
 
-    private void EditRecipe(int recipeId)
+    private async Task EditRecipeAsync(int recipeId)
     {
         var recipe = Recipes.Single(x => x.RecipeId == recipeId);
         _recipeModel.Name = recipe.Name;
@@ -198,6 +199,9 @@
         SelectedQuantities = recipe.Ingredients.Select(x => x.Quantity).ToList();
         SelectedUnitIds = recipe.Ingredients.Select(x => x.Unit).Select(x => x.UnitId).ToList();
         _recipeModel.RecipeId = recipe.RecipeId;
+        await ScrollToTopAsync();
     }
+
+    private async Task ScrollToTopAsync() => await JS.InvokeVoidAsync("window.scrollTo", 0, 0);
 
 }
