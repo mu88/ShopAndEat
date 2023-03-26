@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using DataLayer.EF;
 using DataLayer.EfClasses;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -44,10 +45,13 @@ public class Program
         host.Run();
     }
 
-    public static IHostBuilder CreateHostBuilder(string[] args)
-    {
-        return Host.CreateDefaultBuilder(args).ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
-    }
+    private static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration((hostingContext, configuration) => configuration
+                                           .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                                           .AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json", true, true)
+                                           .AddEnvironmentVariables())
+            .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
 
     private static void CreateDbIfNotExists(IHost host)
     {

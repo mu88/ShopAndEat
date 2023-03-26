@@ -35,8 +35,7 @@ public class Startup
 
         ConfigureShopAndEatServices(services);
 
-        // TODO mu88: Move to config
-        services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies().UseSqlite("Data Source=/db/ShopAndEat.db"));
+        services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies().UseSqlite(Configuration.GetConnectionString("SQLite")));
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
