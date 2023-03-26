@@ -11,7 +11,7 @@
 @inject IJSRuntime JS
 @* TODO mu88: Build translator *@
 
-<EditForm Model="@_recipeModel" OnSubmit="HandleSubmit">
+<EditForm Model="@_recipeModel" OnSubmit="HandleSubmitAsync">
     <DataAnnotationsValidator />
     <ValidationSummary />
 
@@ -134,7 +134,7 @@
 
     private readonly RecipeModel _recipeModel = new RecipeModel();
 
-    private void HandleSubmit()
+    private async Task HandleSubmitAsync()
     {
         if (_recipeModel.RecipeId == default)
         {
@@ -165,7 +165,7 @@
             RecipeService.UpdateRecipe(updatedRecipe);
         }
 
-        ShowSaveConfirmationAsync();
+        await ShowSaveConfirmationAsync();
 
         LoadRecipes();
     }
