@@ -165,8 +165,12 @@
             RecipeService.UpdateRecipe(updatedRecipe);
         }
 
+        ShowSaveConfirmationAsync();
+
         LoadRecipes();
     }
+
+    private async Task ShowSaveConfirmationAsync() => await JS.InvokeVoidAsync("window.alert", "Saved!");
 
     private void AddIngredient()
     {

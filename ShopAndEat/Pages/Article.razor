@@ -104,8 +104,13 @@
             ArticleService.UpdateArticle(updatedArticle);
             _articleModel.ArticleId = default;
         }
+        
+        ShowSaveConfirmationAsync();
+        
         LoadArticles();
     }
+    
+    private async Task ShowSaveConfirmationAsync() => await JS.InvokeVoidAsync("window.alert", "Saved!");
 
     private void DeleteArticle(int articleId)
     {
