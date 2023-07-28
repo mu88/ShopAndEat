@@ -19,7 +19,7 @@ public class Program
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            System.IO.File.Copy("mu88_root_CA.crt", "/usr/local/share/ca-certificates/mu88_root_CA.crt");
+            System.IO.File.Copy("mu88_root_CA.crt", "/usr/local/share/ca-certificates/mu88_root_CA.crt", true);
                 
             var process = new Process
             {
