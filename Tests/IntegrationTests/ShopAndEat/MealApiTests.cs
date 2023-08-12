@@ -33,7 +33,7 @@ public class MealApiTests
         var client = webApplicationFactory.CreateClient();
 
         // Act
-        var results = await client.GetFromJsonAsync<IEnumerable<ExistingMealDto>>("api/meal/mealsForToday");
+        var results = await client.GetFromJsonAsync<IEnumerable<ExistingMealDto>>("shopAndEat/api/meals/mealsForToday");
 
         // Assert
         results.Should()

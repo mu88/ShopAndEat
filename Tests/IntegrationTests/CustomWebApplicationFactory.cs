@@ -6,11 +6,10 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using ShopAndEat;
 
 namespace Tests.IntegrationTests;
 
-public class CustomWebApplicationFactory : WebApplicationFactory<Program>
+internal class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     /// <inheritdoc />
     protected override void ConfigureWebHost(IWebHostBuilder builder)

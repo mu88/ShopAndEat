@@ -7,11 +7,11 @@ namespace ShopAndEat.Api;
 
 [Route("api/[controller]")]
 [ApiController]
-public class MealController : ControllerBase
+public class MealsController : ControllerBase
 {
     private readonly IMealService _mealService;
 
-    public MealController(IMealService mealService) => _mealService = mealService;
+    public MealsController(IMealService mealService) => _mealService = mealService;
 
     [HttpGet("mealsForToday")]
     public IEnumerable<ExistingMealDto> GetMealsForToday() => _mealService.GetMealsForToday();
