@@ -12,6 +12,7 @@ using Tests.Doubles;
 namespace Tests.IntegrationTests.ServiceLayer;
 
 [TestFixture]
+[Category("Integration")]
 public class ArticleServiceTests
 {
     [Test]

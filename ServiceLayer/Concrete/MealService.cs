@@ -8,7 +8,6 @@ using DataLayer.EF;
 using DataLayer.EfClasses;
 using DTO.Meal;
 using DTO.PurchaseItem;
-using DTO.Recipe;
 using DTO.Store;
 
 namespace ServiceLayer.Concrete;
@@ -61,23 +60,31 @@ public class MealService : IMealService
         var allMeals = SimpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>();
 
         var results = new Collection<ExistingMealDto>();
-        foreach (var meal in allMeals.Where(x => IsInFuture(x.Day)))
+        foreach (var meal in allMeals.Where(IsInFuture))
         {
             if (meal.Recipe.NumberOfDays > 1)
             {
                 for (var i = 0; i < meal.Recipe.NumberOfDays; i++)
                 {
-                    results.Add(new ExistingMealDto(meal.Day.AddDays(i), meal.MealType, meal.Recipe, meal.MealId, meal.HasBeenShopped, meal.NumberOfPersons));
+                    results.Add(new ExistingMealDto(meal.Day.AddDays(i),
+                                                    meal.MealType,
+                                                    meal.Recipe,
+                                                    meal.MealId,
+                                                    meal.HasBeenShopped,
+                                                    meal.NumberOfPersons));
                 }
             }
             else
-            {
                 results.Add(meal);
-            }
         }
 
         return results.OrderBy(x => x.Day).ThenBy(x => x.MealType.Order);
     }
+
+    /// <inheritdoc />
+    public IEnumerable<ExistingMealDto> GetMealsForToday() => SimpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>()
+        .Where(IsToday)
+        .OrderBy(meal => meal.MealType.Order);
 
     /// <inheritdoc />
     public IEnumerable<NewPurchaseItemDto> GetOrderedPurchaseItems(ExistingStoreDto existingStoreDto)
@@ -91,16 +98,13 @@ public class MealService : IMealService
                                                                       GeneratePurchaseItemsForRecipesAction
                                                                           .GeneratePurchaseItems(recipes));
 
-        foreach (var meal in meals)
-        {
-            meal.HasBeenShopped = true;
-        }
+        foreach (var meal in meals) { meal.HasBeenShopped = true; }
 
         var newPurchaseItemDtos = Mapper.Map<IEnumerable<NewPurchaseItemDto>>(orderedPurchaseItemsByStore);
 
         // TODO MUL: Investigate why conversion has to be done before calling SaveChanges()
         Context.SaveChanges();
-            
+
         return newPurchaseItemDtos;
     }
 
@@ -119,11 +123,7 @@ public class MealService : IMealService
         Context.SaveChanges();
     }
 
-    private bool IsInFuture(DateTime mealDate)
-    {
-        // only compare year, month and day - we don't need hours and minutes
-        var now = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
+    private static bool IsToday(ExistingMealDto meal) => DateOnly.FromDateTime(meal.Day) == DateOnly.FromDateTime(DateTime.Today);
 
-        return mealDate >= now;
-    }
+    private static bool IsInFuture(ExistingMealDto meal) => DateOnly.FromDateTime(meal.Day) > DateOnly.FromDateTime(DateTime.Today);
 }

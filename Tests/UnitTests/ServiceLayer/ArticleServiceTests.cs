@@ -10,6 +10,7 @@ using Tests.Doubles;
 namespace Tests.UnitTests.ServiceLayer;
 
 [TestFixture]
+[Category("Unit")]
 public class ArticleServiceTests
 {
     [Test]

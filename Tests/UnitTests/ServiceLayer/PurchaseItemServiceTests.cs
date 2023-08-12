@@ -10,6 +10,7 @@ using ServiceLayer.Concrete;
 namespace Tests.UnitTests.ServiceLayer;
 
 [TestFixture]
+[Category("Unit")]
 public class PurchaseItemServiceTests
 {
     [Test]

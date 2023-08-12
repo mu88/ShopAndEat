@@ -11,6 +11,8 @@ public interface IMealService
     ExistingMealDto CreateMeal(NewMealDto newMealDto);
 
     IEnumerable<ExistingMealDto> GetFutureMeals();
+
+    IEnumerable<ExistingMealDto> GetMealsForToday();
         
     IEnumerable<NewPurchaseItemDto> GetOrderedPurchaseItems(ExistingStoreDto store);
 

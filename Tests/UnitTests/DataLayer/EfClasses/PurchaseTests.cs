@@ -7,6 +7,7 @@ using NUnit.Framework;
 namespace Tests.UnitTests.DataLayer.EfClasses;
 
 [TestFixture]
+[Category("Unit")]
 public class PurchaseTests
 {
     [Test]

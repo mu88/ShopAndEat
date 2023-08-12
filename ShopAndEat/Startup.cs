@@ -35,6 +35,8 @@ public class Startup
 
         ConfigureShopAndEatServices(services);
 
+        services.AddControllers();
+    
         services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies().UseSqlite(Configuration.GetConnectionString("SQLite")));
     }
 
@@ -60,6 +62,7 @@ public class Startup
         {
             endpoints.MapBlazorHub();
             endpoints.MapFallbackToPage("/_Host");
+            endpoints.MapControllers();
         });
     }
 

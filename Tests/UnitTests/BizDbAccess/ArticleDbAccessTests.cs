@@ -6,6 +6,7 @@ using NUnit.Framework;
 namespace Tests.UnitTests.BizDbAccess;
 
 [TestFixture]
+[Category("Unit")]
 public class ArticleDbAccessTests
 {
     [Test]

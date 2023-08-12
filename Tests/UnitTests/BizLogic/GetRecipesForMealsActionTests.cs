@@ -7,6 +7,7 @@ using NUnit.Framework;
 namespace Tests.UnitTests.BizLogic;
 
 [TestFixture]
+[Category("Unit")]
 public class GetRecipesForMealsActionTests
 {
     [Test]

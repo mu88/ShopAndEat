@@ -10,6 +10,7 @@ using Tests.Doubles;
 namespace Tests.UnitTests.BizLogic;
 
 [TestFixture]
+[Category("Unit")]
 public class ArticleActionTests
 {
     [Test]
