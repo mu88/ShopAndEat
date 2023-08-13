@@ -125,5 +125,5 @@ public class MealService : IMealService
 
     private static bool IsToday(ExistingMealDto meal) => DateOnly.FromDateTime(meal.Day) == DateOnly.FromDateTime(DateTime.Today);
 
-    private static bool IsInFuture(ExistingMealDto meal) => DateOnly.FromDateTime(meal.Day) > DateOnly.FromDateTime(DateTime.Today);
+    private static bool IsInFuture(ExistingMealDto meal) => DateOnly.FromDateTime(meal.Day) >= DateOnly.FromDateTime(DateTime.Today);
 }
