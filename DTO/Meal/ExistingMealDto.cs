@@ -11,7 +11,8 @@ public class ExistingMealDto
                            ExistingRecipeDto recipe,
                            int mealId,
                            bool hasBeenShopped,
-                           int numberOfPersons)
+                           int numberOfPersons,
+                           int numberOfDays)
     {
         Day = day;
         MealType = mealType;
@@ -19,6 +20,7 @@ public class ExistingMealDto
         MealId = mealId;
         HasBeenShopped = hasBeenShopped;
         NumberOfPersons = numberOfPersons;
+        NumberOfDays = numberOfDays;
     }
 
     public DateTime Day { get; }
@@ -32,4 +34,5 @@ public class ExistingMealDto
     public bool HasBeenShopped { get; }
     
     public int NumberOfPersons { get; }
+    public int NumberOfDays { get; }
 }

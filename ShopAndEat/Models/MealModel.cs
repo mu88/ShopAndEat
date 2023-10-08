@@ -17,6 +17,7 @@ public class MealModel
     [Required] [FutureValidator] public DateTime Date { get; set; }
     
     [Required] public int NumberOfPersons { get; set; }
+    [Required] public int NumberOfDays { get; set; }
 }
 
 public class FutureValidatorAttribute : ValidationAttribute

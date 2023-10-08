@@ -22,10 +22,10 @@ public class MealServiceTests
         using var context = new InMemoryDbContext();
         var mealType1 = new MealType("Breakfast", 1);
         var mealType2 = new MealType("Lunch", 2);
-        context.Meals.AddRange(new Meal(DateTime.Today.AddDays(-1), mealType1, new Recipe("My breakfast", 2, 2, Enumerable.Empty<Ingredient>()), 1),
-                               new Meal(DateTime.Today, mealType1, new Recipe("My breakfast", 2, 2, Enumerable.Empty<Ingredient>()), 1),
-                               new Meal(DateTime.Today, mealType2, new Recipe("My lunch", 2, 2, Enumerable.Empty<Ingredient>()), 1),
-                               new Meal(DateTime.Today.AddDays(1), mealType2, new Recipe("My lunch", 2, 2, Enumerable.Empty<Ingredient>()), 1));
+        context.Meals.AddRange(new Meal(DateTime.Today.AddDays(-1), mealType1, new Recipe("My breakfast", 2, 2, Enumerable.Empty<Ingredient>()), 1, 1),
+                               new Meal(DateTime.Today, mealType1, new Recipe("My breakfast", 2, 2, Enumerable.Empty<Ingredient>()), 1, 1),
+                               new Meal(DateTime.Today, mealType2, new Recipe("My lunch", 2, 2, Enumerable.Empty<Ingredient>()), 1, 1),
+                               new Meal(DateTime.Today.AddDays(1), mealType2, new Recipe("My lunch", 2, 2, Enumerable.Empty<Ingredient>()), 1, 1));
         context.SaveChanges();
         var testee = CreateTestee(context);
 
@@ -46,9 +46,9 @@ public class MealServiceTests
         using var context = new InMemoryDbContext();
         var lunch = new MealType("Lunch", 1);
         var lunchRecipe = new Recipe("My lunch", 1, 1, Enumerable.Empty<Ingredient>());
-        context.Meals.AddRange(new Meal(DateTime.Today.AddDays(-1), lunch, lunchRecipe, 1),
-                               new Meal(DateTime.Today, lunch, lunchRecipe, 1),
-                               new Meal(DateTime.Today.AddDays(1), lunch, lunchRecipe, 1));
+        context.Meals.AddRange(new Meal(DateTime.Today.AddDays(-1), lunch, lunchRecipe, 1, 1),
+                               new Meal(DateTime.Today, lunch, lunchRecipe, 1, 1),
+                               new Meal(DateTime.Today.AddDays(1), lunch, lunchRecipe, 1, 1));
         context.SaveChanges();
         var testee = CreateTestee(context);
 

@@ -16,11 +16,12 @@ public class MealTests
         var mealType = new MealType("Lunch", 1);
         var recipe = new Recipe("Soup", 3, 2, new Ingredient[] { });
 
-        var testee = new Meal(day, mealType, recipe, 2);
+        var testee = new Meal(day, mealType, recipe, 2, 2);
 
         testee.Day.Should().Be(day);
         testee.MealType.Should().Be(mealType);
         testee.Recipe.Should().Be(recipe);
         testee.NumberOfPersons.Should().Be(2);
+        testee.NumberOfDays.Should().Be(2);
     }
 }

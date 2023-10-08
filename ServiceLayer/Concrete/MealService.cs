@@ -47,7 +47,7 @@ public class MealService : IMealService
         // TODO mu88: Try to avoid this manual mapping logic
         var recipe = SimpleCrudHelper.Find<Recipe>(newMealDto.Recipe.RecipeId);
         var mealType = SimpleCrudHelper.Find<MealType>(newMealDto.MealType.MealTypeId);
-        var newMeal = new Meal(newMealDto.Day, mealType, recipe, newMealDto.NumberOfPersons);
+        var newMeal = new Meal(newMealDto.Day, mealType, recipe, newMealDto.NumberOfPersons, newMealDto.NumberOfDays);
         var createdMeal = Context.Meals.Add(newMeal);
         Context.SaveChanges();
 
@@ -62,16 +62,17 @@ public class MealService : IMealService
         var results = new Collection<ExistingMealDto>();
         foreach (var meal in allMeals.Where(IsInFuture))
         {
-            if (meal.Recipe.NumberOfDays > 1)
+            if (meal.NumberOfDays > 1)
             {
-                for (var i = 0; i < meal.Recipe.NumberOfDays; i++)
+                for (var i = 0; i < meal.NumberOfDays; i++)
                 {
                     results.Add(new ExistingMealDto(meal.Day.AddDays(i),
                                                     meal.MealType,
                                                     meal.Recipe,
                                                     meal.MealId,
                                                     meal.HasBeenShopped,
-                                                    meal.NumberOfPersons));
+                                                    meal.NumberOfPersons,
+                                                    meal.NumberOfDays));
                 }
             }
             else

@@ -5,5 +5,5 @@ namespace BizLogic;
 
 public interface IGetRecipesForMealsAction
 {
-    IEnumerable<(Recipe recipe, int numberOfPersons)> GetRecipesForMeals(IEnumerable<Meal> meals);
+    IEnumerable<(Recipe recipe, int numberOfPersons, int numberOfDays)> GetRecipesForMeals(IEnumerable<Meal> meals);
 }

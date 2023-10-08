@@ -25,8 +25,8 @@ public class MealApiTests
         {
             var context = serviceScope.ServiceProvider.GetRequiredService<EfCoreContext>();
             await context.Database.EnsureCreatedAsync();
-            context.Meals.Add(new Meal(DateTime.Today, new MealType("Breakfast", 1), new Recipe("My breakfast", 2, 2, Enumerable.Empty<Ingredient>()), 1));
-            context.Meals.Add(new Meal(DateTime.Today, new MealType("Lunch", 2), new Recipe("My lunch", 2, 2, Enumerable.Empty<Ingredient>()), 1));
+            context.Meals.Add(new Meal(DateTime.Today, new MealType("Breakfast", 1), new Recipe("My breakfast", 2, 2, Enumerable.Empty<Ingredient>()), 1, 2));
+            context.Meals.Add(new Meal(DateTime.Today, new MealType("Lunch", 2), new Recipe("My lunch", 2, 2, Enumerable.Empty<Ingredient>()), 1, 2));
             await context.SaveChangesAsync();
         }
 

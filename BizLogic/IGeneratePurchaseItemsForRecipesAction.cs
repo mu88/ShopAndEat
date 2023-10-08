@@ -5,5 +5,5 @@ namespace BizLogic;
 
 public interface IGeneratePurchaseItemsForRecipesAction
 {
-    IEnumerable<PurchaseItem> GeneratePurchaseItems(IEnumerable<(Recipe recipe, int numberOfPersons)> recipesAndPersons);
+    IEnumerable<PurchaseItem> GeneratePurchaseItems(IEnumerable<(Recipe recipe, int numberOfPersons, int numberOfDays)> recipesAndPersons);
 }

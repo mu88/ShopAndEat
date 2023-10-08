@@ -124,6 +124,12 @@ else
             <InputNumber @bind-Value="_mealModel.NumberOfPersons" />
         </label>
     </p>
+    <p>
+        <label>
+            Number of Days:
+            <InputNumber @bind-Value="_mealModel.NumberOfDays" />
+        </label>
+    </p>
 
     <button type="submit">Save</button>
 </EditForm>
@@ -195,8 +201,7 @@ else
     {
         var newMeal = new NewMealDto(_mealModel.Date,
             MealTypes.Single(x => x.Name == _mealModel.MealTypeName),
-            Recipes.Single(x => x.Name == _mealModel.RecipeName),
-            _mealModel.NumberOfPersons);
+            Recipes.Single(x => x.Name == _mealModel.RecipeName), _mealModel.NumberOfPersons, _mealModel.NumberOfDays);
         MealService.CreateMeal(newMeal);
         LoadMeals();
     }
@@ -217,6 +222,7 @@ else
     {
         if (e.Value is string recipeName)
         {
+            _mealModel.NumberOfDays = Recipes.Single(recipe => recipe.Name == recipeName).NumberOfDays;
             _mealModel.NumberOfPersons = Recipes.Single(recipe => recipe.Name == recipeName).NumberOfPersons;
             _mealModel.RecipeName = recipeName;
             StateHasChanged();
