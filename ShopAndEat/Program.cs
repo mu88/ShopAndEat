@@ -64,6 +64,7 @@ void CreateDbIfNotExists(WebApplication webApp)
     {
         var context = services.GetRequiredService<EfCoreContext>();
         context.Database.EnsureCreated();
+        context.Database.Migrate();
     }
     catch (Exception ex)
     {
