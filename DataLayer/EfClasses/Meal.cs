@@ -5,13 +5,12 @@ namespace DataLayer.EfClasses;
 
 public class Meal
 {
-    public Meal(DateTime day, MealType mealType, Recipe recipe, int numberOfPersons, int numberOfDays)
+    public Meal(DateTime day, MealType mealType, Recipe recipe, int numberOfPersons)
     {
         Day = day;
         MealType = mealType;
         Recipe = recipe;
         NumberOfPersons = numberOfPersons;
-        NumberOfDays = numberOfDays;
     }
 
     public Meal(int numberOfPersons)
@@ -30,5 +29,4 @@ public class Meal
     public bool HasBeenShopped { get; set; }
     
     public int NumberOfPersons { get; set; }
-    public int NumberOfDays { get; set; }
 }

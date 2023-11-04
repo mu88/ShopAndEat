@@ -22,11 +22,11 @@ public class GenerateIngredientsForRecipesActionTests
         var ingredient2 = new Ingredient(salad, 3, bag);
         var ingredient3 = new Ingredient(tomato, 1, piece);
         var ingredient4 = new Ingredient(salad, 5, bag);
-        var recipe1 = new Recipe("Blub", 3, 2, new[] { ingredient1, ingredient2 });
-        var recipe2 = new Recipe("Blub", 3, 2, new[] { ingredient3, ingredient4 });
+        var recipe1 = new Recipe("Bla", 1, 2, new[] { ingredient1, ingredient2 });
+        var recipe2 = new Recipe("Blub", 1, 2, new[] { ingredient3, ingredient4 });
         var testee = new GeneratePurchaseItemsForRecipesAction();
 
-        var results = testee.GeneratePurchaseItems(new[] { (recipe1, 2, 3), (recipe2, 2, 3) }).ToList();
+        var results = testee.GeneratePurchaseItems(new[] { (recipe1, 2), (recipe2, 2) }).ToList();
 
         results.Should().HaveCount(3);
         results.Should().Contain(x => x.Article == tomato && x.Quantity == 2 && x.Unit == bag);
@@ -46,11 +46,11 @@ public class GenerateIngredientsForRecipesActionTests
         var ingredient2 = new Ingredient(salad, 3, bag);
         var ingredient3 = new Ingredient(tomato, 1, piece);
         var ingredient4 = new Ingredient(salad, 5, bag);
-        var recipe1 = new Recipe("Recipe1", 3, 2, new[] { ingredient1, ingredient2 });
-        var recipe2 = new Recipe("Recipe2", 3, 1, new[] { ingredient3, ingredient4 });
+        var recipe1 = new Recipe("Recipe1", 1, 2, new[] { ingredient1, ingredient2 });
+        var recipe2 = new Recipe("Recipe2", 1, 1, new[] { ingredient3, ingredient4 });
         var testee = new GeneratePurchaseItemsForRecipesAction();
 
-        var results = testee.GeneratePurchaseItems(new[] { (recipe1, 2, 3), (recipe2, 2, 3) }).ToList();
+        var results = testee.GeneratePurchaseItems(new[] { (recipe1, 2), (recipe2, 2) }).ToList();
 
         results.Should().HaveCount(3);
         results.Should().Contain(x => x.Article == tomato && x.Quantity == 2 && x.Unit == bag);
@@ -70,15 +70,15 @@ public class GenerateIngredientsForRecipesActionTests
         var ingredient2 = new Ingredient(salad, 3, bag);
         var ingredient3 = new Ingredient(tomato, 1, piece);
         var ingredient4 = new Ingredient(salad, 5, bag);
-        var recipe1 = new Recipe("Recipe1", 4, 4, new[] { ingredient1, ingredient2 });
-        var recipe2 = new Recipe("Recipe2", 3, 4, new[] { ingredient3, ingredient4 });
+        var recipe1 = new Recipe("Recipe1", 1, 2, new[] { ingredient1, ingredient2 });
+        var recipe2 = new Recipe("Recipe2", 2, 2, new[] { ingredient3, ingredient4 });
         var testee = new GeneratePurchaseItemsForRecipesAction();
 
-        var results = testee.GeneratePurchaseItems(new[] { (recipe1, 4, 8), (recipe2, 4, 6) }).ToList();
+        var results = testee.GeneratePurchaseItems(new[] { (recipe1, 2), (recipe2, 2) }).ToList();
 
         results.Should().HaveCount(3);
-        results.Should().Contain(x => x.Article == tomato && x.Quantity == 8 && x.Unit == bag);
-        results.Should().Contain(x => x.Article == tomato && x.Quantity == 2 && x.Unit == piece);
-        results.Should().Contain(x => x.Article == salad && x.Quantity == 16 && x.Unit == bag);
+        results.Should().Contain(x => x.Article == tomato && x.Quantity == 4 && x.Unit == bag);
+        results.Should().Contain(x => x.Article == tomato && x.Quantity == 0.5 && x.Unit == piece);
+        results.Should().Contain(x => x.Article == salad && x.Quantity == 5.5 && x.Unit == bag);
     }
 }

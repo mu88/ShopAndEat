@@ -8,7 +8,7 @@ namespace ServiceLayer;
 
 public interface IMealService
 {
-    ExistingMealDto CreateMeal(NewMealDto newMealDto);
+    void CreateMeal(NewMealDto newMealDto);
 
     IEnumerable<ExistingMealDto> GetFutureMeals();
 
