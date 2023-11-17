@@ -30,6 +30,11 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Write release version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          echo Version: $VERSION
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Build and push Docker image for Raspberry Pi
         id: docker_build
         uses: docker/build-push-action@v5
@@ -38,5 +43,5 @@ jobs:
           provenance: false
           tags: |
             mu88/shopandeat:latest
-            mu88/shopandeat:${{ github.ref_name }}
+            mu88/shopandeat:${{ env.VERSION }}
           file: ShopAndEat/Dockerfile
