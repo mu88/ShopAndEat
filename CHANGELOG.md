@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="3.0.0"></a>
+## [3.0.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v3.0.0) (2023-11-17)
+
+### Features
+
+* use .NET 8 ([6e2c80e](https://www.github.com/mu88/ShopAndEat/commit/6e2c80e14a04784468764a445e0b37796449b5c5))
+
+### Breaking Changes
+
+* use .NET 8 ([6e2c80e](https://www.github.com/mu88/ShopAndEat/commit/6e2c80e14a04784468764a445e0b37796449b5c5))
+
 <a name="2.14.0"></a>
 ## [2.14.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v2.14.0) (2023-11-17)
 
