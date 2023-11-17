@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="3.0.1"></a>
+## [3.0.1](https://www.github.com/mu88/ShopAndEat/releases/tag/v3.0.1) (2023-11-17)
+
 <a name="3.0.0"></a>
 ## [3.0.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v3.0.0) (2023-11-17)
 
