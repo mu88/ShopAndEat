@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using DTO.Article;
+﻿using DTO.Article;
 
 namespace BizLogic;
 

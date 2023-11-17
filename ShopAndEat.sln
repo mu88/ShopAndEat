@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29709.97
@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DTO", "DTO\DTO.csproj", "{9
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BizDbAccess", "BizDbAccess\BizDbAccess.csproj", "{1CD82C93-2914-4F6F-AAFD-0AF1508B7992}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopAndEat", "ShopAndEat\ShopAndEat.csproj", "{E3327A4D-F526-49A6-B121-5730C65EBB65}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShopAndEat", "ShopAndEat\ShopAndEat.csproj", "{E3327A4D-F526-49A6-B121-5730C65EBB65}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

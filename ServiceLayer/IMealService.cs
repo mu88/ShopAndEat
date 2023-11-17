@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using DTO.Meal;
+﻿using DTO.Meal;
 using DTO.PurchaseItem;
-using DTO.Recipe;
 using DTO.Store;
 
 namespace ServiceLayer;

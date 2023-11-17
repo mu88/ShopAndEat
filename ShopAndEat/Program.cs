@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using BizDbAccess;
 using BizDbAccess.Concrete;
@@ -7,12 +6,7 @@ using BizLogic;
 using BizLogic.Concrete;
 using DataLayer.EF;
 using DTO;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using ServiceLayer;
 using ServiceLayer.Concrete;
 
@@ -75,7 +69,7 @@ void InstallCertificate(WebApplication webApp)
 {
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && !webApp.Environment.IsDevelopment())
     {
-        System.IO.File.Copy("mu88_root_CA.crt", "/usr/local/share/ca-certificates/mu88_root_CA.crt", true);
+        File.Copy("mu88_root_CA.crt", "/usr/local/share/ca-certificates/mu88_root_CA.crt", true);
 
         var process = new Process
         {

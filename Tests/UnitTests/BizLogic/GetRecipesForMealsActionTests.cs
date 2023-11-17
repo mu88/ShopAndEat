@@ -1,5 +1,4 @@
-﻿using System;
-using BizLogic.Concrete;
+﻿using BizLogic.Concrete;
 using DataLayer.EfClasses;
 using FluentAssertions;
 using NUnit.Framework;

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using AutoMapper;
+﻿using AutoMapper;
 using BizDbAccess;
 using DataLayer.EfClasses;
 using DTO.Ingredient;

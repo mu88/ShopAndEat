@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using DTO.Meal;
+﻿using DTO.Meal;
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer;
 

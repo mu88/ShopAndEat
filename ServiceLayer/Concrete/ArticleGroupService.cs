@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using DataLayer.EfClasses;
+﻿using DataLayer.EfClasses;
 using DTO.ArticleGroup;
 
 namespace ServiceLayer.Concrete;

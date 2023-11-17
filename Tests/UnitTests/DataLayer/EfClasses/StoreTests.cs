@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using DataLayer.EfClasses;
 using FluentAssertions;
 using NUnit.Framework;

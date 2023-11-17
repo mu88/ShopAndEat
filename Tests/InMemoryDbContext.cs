@@ -1,5 +1,4 @@
-﻿using System;
-using DataLayer.EF;
+﻿using DataLayer.EF;
 using Microsoft.EntityFrameworkCore;
 
 namespace Tests;

@@ -1,5 +1,4 @@
 ﻿using System.Data.Common;
-using System.Linq;
 using DataLayer.EF;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using DTO.Store;
+﻿using DTO.Store;
 
 namespace ServiceLayer;
 

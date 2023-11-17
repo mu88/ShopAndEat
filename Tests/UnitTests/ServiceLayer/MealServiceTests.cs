@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using BizLogic;
+﻿using BizLogic;
 using DataLayer.EF;
 using DataLayer.EfClasses;
 using DTO.Ingredient;

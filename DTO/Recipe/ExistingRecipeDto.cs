@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using DTO.Ingredient;
+﻿using DTO.Ingredient;
 
 namespace DTO.Recipe;
 

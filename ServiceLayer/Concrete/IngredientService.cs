@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using BizLogic;
+﻿using BizLogic;
 using DataLayer.EF;
 using DTO.Ingredient;
 

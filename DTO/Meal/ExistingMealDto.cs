@@ -1,5 +1,4 @@
-﻿using System;
-using DTO.MealType;
+﻿using DTO.MealType;
 using DTO.Recipe;
 
 namespace DTO.Meal;

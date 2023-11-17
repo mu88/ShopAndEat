@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using DTO.ArticleGroup;
+﻿using DTO.ArticleGroup;
 
 namespace ServiceLayer;
 

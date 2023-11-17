@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using DataLayer.EF;
+﻿using DataLayer.EF;
 using DataLayer.EfClasses;
 
 namespace BizDbAccess.Concrete;

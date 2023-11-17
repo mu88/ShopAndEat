@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using DataLayer.EfClasses;
+﻿using DataLayer.EfClasses;
 
 namespace BizLogic.Concrete;
 
