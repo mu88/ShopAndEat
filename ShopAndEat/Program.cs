@@ -22,7 +22,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-InstallCertificate(app);
 CreateDbIfNotExists(app);
 
 app.UsePathBase("/shopAndEat");
@@ -62,24 +61,6 @@ void CreateDbIfNotExists(WebApplication webApp)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred creating the DB");
-    }
-}
-
-void InstallCertificate(WebApplication webApp)
-{
-    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && !webApp.Environment.IsDevelopment())
-    {
-        // File.Copy("mu88_root_CA.crt", "/usr/local/share/ca-certificates/mu88_root_CA.crt", true);
-        //
-        // var process = new Process
-        // {
-        //     StartInfo = new ProcessStartInfo { FileName = "update-ca-certificates", RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = false, }
-        // };
-        // process.Start();
-        // var standardOutput = process.StandardOutput.ReadToEnd();
-        // process.WaitForExit();
-        //
-        // Console.WriteLine(standardOutput);
     }
 }
 
