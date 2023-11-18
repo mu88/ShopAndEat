@@ -6,7 +6,7 @@ public interface IRecipeService
 {
     IEnumerable<ExistingRecipeDto> GetAllRecipes();
 
-    void CreateNewRecipe(NewRecipeDto newRecipe);
+    void CreateNewRecipe(NewRecipeDto newRecipeDto);
 
     void DeleteRecipe(DeleteRecipeDto recipeToDelete);
         

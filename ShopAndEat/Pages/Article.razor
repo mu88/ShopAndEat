@@ -5,7 +5,7 @@
 @using ShopAndEat.Models
 @inject IArticleService ArticleService
 @inject IArticleGroupService ArticleGroupService
-@inject IJSRuntime JS
+@inject IJSRuntime Js
 @* TODO mu88: Build translator *@
 
 <EditForm Model="@_articleModel" OnSubmit="HandleSubmitAsync">
@@ -58,8 +58,8 @@
             <td>@article.Name</td>
             <td>@article.ArticleGroup.Name</td>
             <td>@article.IsInventory</td>
-            <td><button class="btn btn-primary" @onclick="@(e => DeleteArticle(article.ArticleId))">❌</button></td>
-            <td><button class="btn btn-primary" @onclick="@(e => EditArticleAsync(article.ArticleId))">🖊</button></td>
+            <td><button class="btn btn-primary" @onclick="@(_ => DeleteArticle(article.ArticleId))">❌</button></td>
+            <td><button class="btn btn-primary" @onclick="@(_ => EditArticleAsync(article.ArticleId))">🖊</button></td>
         </tr>
     }
     </tbody>
@@ -89,7 +89,7 @@
 
     private IEnumerable<ExistingArticleGroupDto> ArticleGroups { get; set; }
 
-    private readonly ArticleModel _articleModel = new ArticleModel();
+    private readonly ArticleModel _articleModel = new();
 
     private async Task HandleSubmitAsync()
     {
@@ -110,7 +110,7 @@
         LoadArticles();
     }
     
-    private async Task ShowSaveConfirmationAsync() => await JS.InvokeVoidAsync("window.alert", "Saved!");
+    private async Task ShowSaveConfirmationAsync() => await Js.InvokeVoidAsync("window.alert", "Saved!");
 
     private void DeleteArticle(int articleId)
     {
@@ -128,6 +128,6 @@
         await ScrollToTopAsync();
     }
     
-    private async Task ScrollToTopAsync() => await JS.InvokeVoidAsync("window.scrollTo", 0, 0);
+    private async Task ScrollToTopAsync() => await Js.InvokeVoidAsync("window.scrollTo", 0, 0);
 
 }

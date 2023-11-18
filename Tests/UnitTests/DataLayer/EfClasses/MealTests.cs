@@ -13,7 +13,7 @@ public class MealTests
     {
         var day = new DateTime();
         var mealType = new MealType("Lunch", 1);
-        var recipe = new Recipe("Soup", 3, 2, new Ingredient[] { });
+        var recipe = new Recipe("Soup", 3, 2, Array.Empty<Ingredient>());
 
         var testee = new Meal(day, mealType, recipe, 2);
 

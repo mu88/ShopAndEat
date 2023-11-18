@@ -28,17 +28,9 @@ public class Store
         {
             throw new InvalidOperationException($"There is already a compartment with order '{compartment.Order}'");
         }
-        else
-        {
-            _compartments.Add(compartment);
-        }
+
+        _compartments.Add(compartment);
     }
 
-    public void DeleteCompartment(ShoppingOrder compartment)
-    {
-        if (_compartments.Contains(compartment))
-        {
-            _compartments.Remove(compartment);
-        }
-    }
+    public void DeleteCompartment(ShoppingOrder compartment) => _compartments.Remove(compartment);
 }

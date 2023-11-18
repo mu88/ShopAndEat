@@ -12,7 +12,7 @@ public interface IMealService
 
     IEnumerable<ExistingMealDto> GetMealsForToday();
         
-    IEnumerable<NewPurchaseItemDto> GetOrderedPurchaseItems(ExistingStoreDto store);
+    IEnumerable<NewPurchaseItemDto> GetOrderedPurchaseItems(ExistingStoreDto existingStoreDto);
 
     void DeleteMeal(DeleteMealDto mealToDelete);
 
