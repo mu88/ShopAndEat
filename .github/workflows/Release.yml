@@ -34,4 +34,4 @@ jobs:
       - name: Build Docker and Push
         run: |
           dotnet publish ShopAndEat/ShopAndEat.csproj --os linux --arch arm64 /t:PublishContainer '-p:ContainerImageTags="${{ env.VERSION }};latest"' -p:ContainerRegistry=registry.hub.docker.com
-          dotnet publish ShopAndEat/ShopAndEat.csproj --os linux --arch arm64 /t:PublishContainer '-p:ContainerImageTags="${{ env.VERSION }}-chiseled;latest-chiseled"' -p:ContainerRegistry=registry.hub.docker.com -p:ContainerBaseImage=mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled
+          dotnet publish ShopAndEat/ShopAndEat.csproj --os linux --arch arm64 /t:PublishContainer '-p:ContainerImageTags="${{ env.VERSION }}-chiseled;latest-chiseled"' -p:ContainerRegistry=registry.hub.docker.com -p:ContainerFamily=jammy-chiseled
