@@ -23,4 +23,10 @@
     <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
     <ProjectReference Include="..\ShopAndEat\ShopAndEat.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="NUnit.Framework.FixtureLifeCycle">
+      <_Parameter1>NUnit.Framework.LifeCycle.InstancePerTestCase</_Parameter1>
+      <_Parameter1_IsLiteral>true</_Parameter1_IsLiteral>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>
