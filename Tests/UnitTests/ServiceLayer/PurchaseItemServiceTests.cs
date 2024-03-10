@@ -3,7 +3,7 @@ using DTO.Article;
 using DTO.ArticleGroup;
 using DTO.PurchaseItem;
 using DTO.Unit;
-using Moq;
+using NSubstitute;
 using NUnit.Framework;
 using ServiceLayer.Concrete;
 
@@ -21,12 +21,12 @@ public class PurchaseItemServiceTests
             new NewPurchaseItemDto(new ExistingArticleDto(1, "Tomato", new ExistingArticleGroupDto(1, "Vegetables"), false),
                                    new ExistingUnitDto(1, "Piece"),
                                    2);
-        var purchaseItemActionMock = new Mock<IPurchaseItemAction>();
-        var testee = new PurchaseItemService(purchaseItemActionMock.Object, context);
+        var purchaseItemActionMock = Substitute.For<IPurchaseItemAction>();
+        var testee = new PurchaseItemService(purchaseItemActionMock, context);
 
         testee.CreatePurchaseItem(newPurchaseItemDto);
 
-        purchaseItemActionMock.Verify(x => x.CreatePurchaseItem(newPurchaseItemDto), Times.Once);
+        purchaseItemActionMock.Received(1).CreatePurchaseItem(newPurchaseItemDto);
     }
 
     [Test]
@@ -34,11 +34,11 @@ public class PurchaseItemServiceTests
     {
         using var context = new InMemoryDbContext();
         var deletePurchaseItemGroupDto = new DeletePurchaseItemDto(3);
-        var purchaseItemActionMock = new Mock<IPurchaseItemAction>();
-        var testee = new PurchaseItemService(purchaseItemActionMock.Object, context);
+        var purchaseItemActionMock = Substitute.For<IPurchaseItemAction>();
+        var testee = new PurchaseItemService(purchaseItemActionMock, context);
 
         testee.DeletePurchaseItem(deletePurchaseItemGroupDto);
 
-        purchaseItemActionMock.Verify(x => x.DeletePurchaseItem(deletePurchaseItemGroupDto), Times.Once);
+        purchaseItemActionMock.Received(1).DeletePurchaseItem(deletePurchaseItemGroupDto);
     }
 }

@@ -3,7 +3,7 @@ using DTO.Article;
 using DTO.ArticleGroup;
 using DTO.Ingredient;
 using DTO.Unit;
-using Moq;
+using NSubstitute;
 using NUnit.Framework;
 using ServiceLayer.Concrete;
 
@@ -21,12 +21,12 @@ public class IngredientServiceTests
             new NewIngredientDto(new ExistingArticleDto(1, "Tomato", new ExistingArticleGroupDto(1, "Vegetables"), false),
                                  2,
                                  new ExistingUnitDto(1, "Piece"));
-        var ingredientActionMock = new Mock<IIngredientAction>();
-        var testee = new IngredientService(ingredientActionMock.Object, context);
+        var ingredientActionMock = Substitute.For<IIngredientAction>();
+        var testee = new IngredientService(ingredientActionMock, context);
 
         testee.CreateIngredient(newIngredientDto);
 
-        ingredientActionMock.Verify(x => x.CreateIngredient(newIngredientDto), Times.Once);
+        ingredientActionMock.Received(1).CreateIngredient(newIngredientDto);
     }
 
     [Test]
@@ -34,23 +34,23 @@ public class IngredientServiceTests
     {
         using var context = new InMemoryDbContext();
         var deleteIngredientGroupDto = new DeleteIngredientDto(3);
-        var ingredientActionMock = new Mock<IIngredientAction>();
-        var testee = new IngredientService(ingredientActionMock.Object, context);
+        var ingredientActionMock = Substitute.For<IIngredientAction>();
+        var testee = new IngredientService(ingredientActionMock, context);
 
         testee.DeleteIngredient(deleteIngredientGroupDto);
 
-        ingredientActionMock.Verify(x => x.DeleteIngredient(deleteIngredientGroupDto), Times.Once);
+        ingredientActionMock.Received(1).DeleteIngredient(deleteIngredientGroupDto);
     }
 
     [Test]
     public void GetAllIngredients()
     {
         using var context = new InMemoryDbContext();
-        var ingredientActionMock = new Mock<IIngredientAction>();
-        var testee = new IngredientService(ingredientActionMock.Object, context);
+        var ingredientActionMock = Substitute.For<IIngredientAction>();
+        var testee = new IngredientService(ingredientActionMock, context);
 
         testee.GetAllIngredients();
 
-        ingredientActionMock.Verify(x => x.GetAllIngredients(), Times.Once);
+        ingredientActionMock.Received(1).GetAllIngredients();
     }
 }

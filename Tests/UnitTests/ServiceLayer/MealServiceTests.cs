@@ -7,7 +7,7 @@ using DTO.MealType;
 using DTO.Recipe;
 using FluentAssertions;
 using FluentAssertions.Extensions;
-using Moq;
+using NSubstitute;
 using NUnit.Framework;
 using ServiceLayer.Concrete;
 using Tests.Doubles;
@@ -101,9 +101,9 @@ public class MealServiceTests
     private static MealService CreateTestee(EfCoreContext context)
     {
         var mapper = TestMapper.Create();
-        var testee = new MealService(Mock.Of<IGeneratePurchaseItemsForRecipesAction>(),
-                                     Mock.Of<IOrderPurchaseItemsByStoreAction>(),
-                                     Mock.Of<IGetRecipesForMealsAction>(),
+        var testee = new MealService(Substitute.For<IGeneratePurchaseItemsForRecipesAction>(),
+                                     Substitute.For<IOrderPurchaseItemsByStoreAction>(),
+                                     Substitute.For<IGetRecipesForMealsAction>(),
                                      context,
                                      new SimpleCrudHelper(context, mapper),
                                      mapper);
