@@ -22,8 +22,5 @@ public class IngredientService(IIngredientAction ingredientAction, EfCoreContext
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingIngredientDto> GetAllIngredients()
-    {
-        return ingredientAction.GetAllIngredients();
-    }
+    public IEnumerable<ExistingIngredientDto> GetAllIngredients() => ingredientAction.GetAllIngredients();
 }

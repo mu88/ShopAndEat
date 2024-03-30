@@ -5,20 +5,12 @@ namespace ServiceLayer.Concrete;
 
 public class MealTypeService(SimpleCrudHelper simpleCrudHelper) : IMealTypeService
 {
-    public ExistingMealTypeDto CreateMealType(NewMealTypeDto newArticleGroupDto)
-    {
-        return simpleCrudHelper.Create<NewMealTypeDto, MealType, ExistingMealTypeDto>(newArticleGroupDto);
-    }
+    public ExistingMealTypeDto CreateMealType(NewMealTypeDto newArticleGroupDto) =>
+        simpleCrudHelper.Create<NewMealTypeDto, MealType, ExistingMealTypeDto>(newArticleGroupDto);
 
     /// <inheritdoc />
-    public void DeleteMealType(DeleteMealTypeDto deleteArticleGroupDto)
-    {
-        simpleCrudHelper.Delete<MealType>(deleteArticleGroupDto.MealTypeId);
-    }
+    public void DeleteMealType(DeleteMealTypeDto deleteArticleGroupDto) => simpleCrudHelper.Delete<MealType>(deleteArticleGroupDto.MealTypeId);
 
     /// <inheritdoc />
-    public IEnumerable<ExistingMealTypeDto> GetAllMealTypes()
-    {
-        return simpleCrudHelper.GetAllAsDto<MealType, ExistingMealTypeDto>();
-    }
+    public IEnumerable<ExistingMealTypeDto> GetAllMealTypes() => simpleCrudHelper.GetAllAsDto<MealType, ExistingMealTypeDto>();
 }

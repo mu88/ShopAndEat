@@ -17,7 +17,7 @@ public class ArticleService(
     {
         // TODO mu88: Try to avoid this manual mapping logic
         var articleGroup = simpleCrudHelper.Find<ArticleGroup>(newArticleDto.ArticleGroup.ArticleGroupId);
-        var newArticle = new Article{Name = newArticleDto.Name, ArticleGroup = articleGroup, IsInventory = newArticleDto.IsInventory};
+        var newArticle = new Article { Name = newArticleDto.Name, ArticleGroup = articleGroup, IsInventory = newArticleDto.IsInventory };
         var createdArticle = context.Articles.Add(newArticle);
         context.SaveChanges();
 
@@ -31,10 +31,7 @@ public class ArticleService(
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingArticleDto> GetAllArticles()
-    {
-        return articleAction.GetAllArticles().OrderBy(x=>x.Name);
-    }
+    public IEnumerable<ExistingArticleDto> GetAllArticles() => articleAction.GetAllArticles().OrderBy(x => x.Name);
 
     public void UpdateArticle(ExistingArticleDto existingArticleDto)
     {

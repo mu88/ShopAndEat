@@ -16,8 +16,6 @@ public class PurchaseItemAction(IPurchaseItemDbAccess purchaseItemDbAccess, IMap
     }
 
     /// <inheritdoc />
-    public void DeletePurchaseItem(DeletePurchaseItemDto deletePurchaseItemDto)
-    {
+    public void DeletePurchaseItem(DeletePurchaseItemDto deletePurchaseItemDto) =>
         purchaseItemDbAccess.DeletePurchaseItem(purchaseItemDbAccess.GetPurchaseItem(deletePurchaseItemDto.PurchaseItemId));
-    }
 }

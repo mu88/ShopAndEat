@@ -24,8 +24,5 @@ public class ArticleAction(IArticleDbAccess articleDbAccess, IMapper mapper) : I
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingArticleDto> GetAllArticles()
-    {
-        return mapper.Map<IEnumerable<ExistingArticleDto>>(articleDbAccess.GetArticles());
-    }
+    public IEnumerable<ExistingArticleDto> GetAllArticles() => mapper.Map<IEnumerable<ExistingArticleDto>>(articleDbAccess.GetArticles());
 }

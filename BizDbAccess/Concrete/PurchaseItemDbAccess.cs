@@ -5,20 +5,11 @@ namespace BizDbAccess.Concrete;
 
 public class PurchaseItemDbAccess(EfCoreContext context) : IPurchaseItemDbAccess
 {
-    public PurchaseItem AddPurchaseItem(PurchaseItem purchaseItem)
-    {
-        return context.PurchaseItems.Add(purchaseItem).Entity;
-    }
+    public PurchaseItem AddPurchaseItem(PurchaseItem purchaseItem) => context.PurchaseItems.Add(purchaseItem).Entity;
 
     /// <inheritdoc />
-    public void DeletePurchaseItem(PurchaseItem purchaseItem)
-    {
-        context.PurchaseItems.Remove(purchaseItem);
-    }
+    public void DeletePurchaseItem(PurchaseItem purchaseItem) => context.PurchaseItems.Remove(purchaseItem);
 
     /// <inheritdoc />
-    public PurchaseItem GetPurchaseItem(int purchaseItemId)
-    {
-        return context.PurchaseItems.Single(x => x.PurchaseItemId == purchaseItemId);
-    }
+    public PurchaseItem GetPurchaseItem(int purchaseItemId) => context.PurchaseItems.Single(x => x.PurchaseItemId == purchaseItemId);
 }

@@ -5,20 +5,12 @@ namespace ServiceLayer.Concrete;
 
 public class ArticleGroupService(SimpleCrudHelper simpleCrudHelper) : IArticleGroupService
 {
-    public ExistingArticleGroupDto CreateArticleGroup(NewArticleGroupDto newArticleGroupDto)
-    {
-        return simpleCrudHelper.Create<NewArticleGroupDto, ArticleGroup, ExistingArticleGroupDto>(newArticleGroupDto);
-    }
+    public ExistingArticleGroupDto CreateArticleGroup(NewArticleGroupDto newArticleGroupDto) =>
+        simpleCrudHelper.Create<NewArticleGroupDto, ArticleGroup, ExistingArticleGroupDto>(newArticleGroupDto);
 
     /// <inheritdoc />
-    public void DeleteArticleGroup(DeleteArticleGroupDto deleteArticleGroupDto)
-    {
-        simpleCrudHelper.Delete<ArticleGroup>(deleteArticleGroupDto.ArticleGroupId);
-    }
+    public void DeleteArticleGroup(DeleteArticleGroupDto deleteArticleGroupDto) => simpleCrudHelper.Delete<ArticleGroup>(deleteArticleGroupDto.ArticleGroupId);
 
     /// <inheritdoc />
-    public IEnumerable<ExistingArticleGroupDto> GetAllArticleGroups()
-    {
-        return simpleCrudHelper.GetAllAsDto<ArticleGroup, ExistingArticleGroupDto>();
-    }
+    public IEnumerable<ExistingArticleGroupDto> GetAllArticleGroups() => simpleCrudHelper.GetAllAsDto<ArticleGroup, ExistingArticleGroupDto>();
 }
