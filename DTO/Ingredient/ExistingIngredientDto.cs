@@ -3,24 +3,17 @@ using DTO.Unit;
 
 namespace DTO.Ingredient;
 
-public class ExistingIngredientDto
+public class ExistingIngredientDto(
+    ExistingArticleDto article,
+    double quantity,
+    ExistingUnitDto unit,
+    int ingredientId)
 {
-    public ExistingIngredientDto(ExistingArticleDto article,
-                                 double quantity,
-                                 ExistingUnitDto unit,
-                                 int ingredientId)
-    {
-        Article = article;
-        Quantity = quantity;
-        Unit = unit;
-        IngredientId = ingredientId;
-    }
+    public ExistingArticleDto Article { get; } = article;
 
-    public ExistingArticleDto Article { get; }
+    public double Quantity { get; } = quantity;
 
-    public double Quantity { get; }
+    public ExistingUnitDto Unit { get; } = unit;
 
-    public ExistingUnitDto Unit { get; }
-
-    public int IngredientId { get; }
+    public int IngredientId { get; } = ingredientId;
 }

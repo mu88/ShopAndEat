@@ -3,20 +3,13 @@ using DTO.Unit;
 
 namespace DTO.PurchaseItem;
 
-public class NewPurchaseItemDto
+public class NewPurchaseItemDto(ExistingArticleDto article, ExistingUnitDto unit, double quantity)
 {
-    public NewPurchaseItemDto(ExistingArticleDto article, ExistingUnitDto unit, double quantity)
-    {
-        Article = article;
-        Unit = unit;
-        Quantity = quantity;
-    }
+    public ExistingArticleDto Article { get; } = article;
 
-    public ExistingArticleDto Article { get; }
+    public ExistingUnitDto Unit { get; } = unit;
 
-    public ExistingUnitDto Unit { get; }
-
-    public double Quantity { get; }
+    public double Quantity { get; } = quantity;
 
     /// <inheritdoc />
     public override string ToString() => Unit.Name == "Stück" ? $"{Quantity} {Article.Name}" : $"{Quantity} {Unit.Name} {Article.Name}";

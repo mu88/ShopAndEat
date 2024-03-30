@@ -2,21 +2,13 @@
 
 namespace DTO.Recipe;
 
-public class NewRecipeDto
+public class NewRecipeDto(string name, in int numberOfDays, int numberOfPersons, IEnumerable<NewIngredientDto> ingredients)
 {
-    public NewRecipeDto(string name, in int numberOfDays, int numberOfPersons, IEnumerable<NewIngredientDto> ingredients)
-    {
-        Name = name;
-        NumberOfDays = numberOfDays;
-        Ingredients = ingredients;
-        NumberOfPersons = numberOfPersons;
-    }
+    public string Name { get; } = name;
 
-    public string Name { get; }
+    public int NumberOfDays { get; } = numberOfDays;
 
-    public int NumberOfDays { get; }
-    
-    public int NumberOfPersons { get; }
+    public int NumberOfPersons { get; } = numberOfPersons;
 
-    public IEnumerable<NewIngredientDto> Ingredients { get; }
+    public IEnumerable<NewIngredientDto> Ingredients { get; } = ingredients;
 }

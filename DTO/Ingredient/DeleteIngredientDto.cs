@@ -1,11 +1,6 @@
 ﻿namespace DTO.Ingredient;
 
-public class DeleteIngredientDto
+public class DeleteIngredientDto(int ingredientId)
 {
-    public DeleteIngredientDto(int ingredientId)
-    {
-        IngredientId = ingredientId;
-    }
-
-    public int IngredientId { get; }
+    public int IngredientId { get; } = ingredientId;
 }

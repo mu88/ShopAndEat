@@ -1,11 +1,6 @@
 ﻿namespace DTO.MealType;
 
-public class NewMealTypeDto
+public class NewMealTypeDto(string name)
 {
-    public NewMealTypeDto(string name)
-    {
-        Name = name;
-    }
-
-    public string Name { get; }
+    public string Name { get; } = name;
 }

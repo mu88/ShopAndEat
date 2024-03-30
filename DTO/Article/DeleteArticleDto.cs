@@ -1,11 +1,6 @@
 ﻿namespace DTO.Article;
 
-public class DeleteArticleDto
+public class DeleteArticleDto(in int articleId)
 {
-    public int ArticleId { get; }
-
-    public DeleteArticleDto(in int articleId)
-    {
-        ArticleId = articleId;
-    }
+    public int ArticleId { get; } = articleId;
 }

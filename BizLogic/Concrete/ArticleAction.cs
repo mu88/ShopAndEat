@@ -5,37 +5,27 @@ using DTO.Article;
 
 namespace BizLogic.Concrete;
 
-public class ArticleAction : IArticleAction
+public class ArticleAction(IArticleDbAccess articleDbAccess, IMapper mapper) : IArticleAction
 {
-    public ArticleAction(IArticleDbAccess articleDbAccess, IMapper mapper)
-    {
-        ArticleDbAccess = articleDbAccess;
-        Mapper = mapper;
-    }
-
-    private IArticleDbAccess ArticleDbAccess { get; }
-
-    private IMapper Mapper { get; }
-
     /// <inheritdoc />
     public ExistingArticleDto CreateArticle(NewArticleDto newArticleDto)
     {
-        var newArticle = Mapper.Map<Article>(newArticleDto);
-        var createdArticle = ArticleDbAccess.AddArticle(newArticle);
+        var newArticle = mapper.Map<Article>(newArticleDto);
+        var createdArticle = articleDbAccess.AddArticle(newArticle);
 
-        return Mapper.Map<ExistingArticleDto>(createdArticle);
+        return mapper.Map<ExistingArticleDto>(createdArticle);
     }
 
     /// <inheritdoc />
     public void DeleteArticle(DeleteArticleDto deleteArticleDto)
     {
-        var article = ArticleDbAccess.GetArticle(deleteArticleDto.ArticleId);
-        ArticleDbAccess.DeleteArticle(article);
+        var article = articleDbAccess.GetArticle(deleteArticleDto.ArticleId);
+        articleDbAccess.DeleteArticle(article);
     }
 
     /// <inheritdoc />
     public IEnumerable<ExistingArticleDto> GetAllArticles()
     {
-        return Mapper.Map<IEnumerable<ExistingArticleDto>>(ArticleDbAccess.GetArticles());
+        return mapper.Map<IEnumerable<ExistingArticleDto>>(articleDbAccess.GetArticles());
     }
 }

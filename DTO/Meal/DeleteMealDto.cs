@@ -1,11 +1,6 @@
 ﻿namespace DTO.Meal;
 
-public class DeleteMealDto
+public class DeleteMealDto(int mealId)
 {
-    public DeleteMealDto(int mealId)
-    {
-        MealId = mealId;
-    }
-
-    public int MealId { get;  }
+    public int MealId { get;  } = mealId;
 }

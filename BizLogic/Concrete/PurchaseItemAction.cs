@@ -5,30 +5,19 @@ using DTO.PurchaseItem;
 
 namespace BizLogic.Concrete;
 
-public class PurchaseItemAction : IPurchaseItemAction
+public class PurchaseItemAction(IPurchaseItemDbAccess purchaseItemDbAccess, IMapper mapper) : IPurchaseItemAction
 {
-    public PurchaseItemAction(IPurchaseItemDbAccess ingredientDbAccess, IMapper mapper)
-    {
-        PurchaseItemDbAccess = ingredientDbAccess;
-        Mapper = mapper;
-    }
-
-    private IPurchaseItemDbAccess PurchaseItemDbAccess { get; }
-
-    private IMapper Mapper { get; }
-
-    /// <inheritdoc />
     public ExistingPurchaseItemDto CreatePurchaseItem(NewPurchaseItemDto newPurchaseItemDto)
     {
-        var newPurchaseItem = Mapper.Map<PurchaseItem>(newPurchaseItemDto);
-        var createdPurchaseItem = PurchaseItemDbAccess.AddPurchaseItem(newPurchaseItem);
+        var newPurchaseItem = mapper.Map<PurchaseItem>(newPurchaseItemDto);
+        var createdPurchaseItem = purchaseItemDbAccess.AddPurchaseItem(newPurchaseItem);
 
-        return Mapper.Map<ExistingPurchaseItemDto>(createdPurchaseItem);
+        return mapper.Map<ExistingPurchaseItemDto>(createdPurchaseItem);
     }
 
     /// <inheritdoc />
     public void DeletePurchaseItem(DeletePurchaseItemDto deletePurchaseItemDto)
     {
-        PurchaseItemDbAccess.DeletePurchaseItem(PurchaseItemDbAccess.GetPurchaseItem(deletePurchaseItemDto.PurchaseItemId));
+        purchaseItemDbAccess.DeletePurchaseItem(purchaseItemDbAccess.GetPurchaseItem(deletePurchaseItemDto.PurchaseItemId));
     }
 }

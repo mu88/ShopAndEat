@@ -2,28 +2,20 @@
 
 namespace DTO.Recipe;
 
-public class ExistingRecipeDto
+public class ExistingRecipeDto(
+    string name,
+    int numberOfDays,
+    int numberOfPersons,
+    IEnumerable<ExistingIngredientDto> ingredients,
+    int recipeId)
 {
-    public ExistingRecipeDto(string name,
-                             int numberOfDays,
-                             int numberOfPersons,
-                             IEnumerable<ExistingIngredientDto> ingredients,
-                             int recipeId)
-    {
-        Name = name;
-        NumberOfDays = numberOfDays;
-        Ingredients = ingredients;
-        RecipeId = recipeId;
-        NumberOfPersons = numberOfPersons;
-    }
+    public string Name { get; } = name;
 
-    public string Name { get; }
+    public int NumberOfDays { get; } = numberOfDays;
 
-    public int NumberOfDays { get; }
-    
-    public int NumberOfPersons { get;  }
+    public int NumberOfPersons { get;  } = numberOfPersons;
 
-    public IEnumerable<ExistingIngredientDto> Ingredients { get; }
+    public IEnumerable<ExistingIngredientDto> Ingredients { get; } = ingredients;
 
-    public int RecipeId { get; }
+    public int RecipeId { get; } = recipeId;
 }

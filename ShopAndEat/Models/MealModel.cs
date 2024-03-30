@@ -4,17 +4,12 @@ namespace ShopAndEat.Models;
 
 public class MealModel
 {
-    public MealModel()
-    {
-        Date = DateTime.Now;
-    }
-
     [Required] public string RecipeName { get; set; }
 
     [Required] public string MealTypeName { get; set; }
 
-    [Required] [FutureValidator] public DateTime Date { get; set; }
-    
+    [Required] [FutureValidator] public DateTime Date { get; set; } = DateTime.Now;
+
     [Required] public int NumberOfPersons { get; set; }
     [Required] public int NumberOfDays { get; set; }
 }

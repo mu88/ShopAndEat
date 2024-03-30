@@ -3,36 +3,29 @@ using DataLayer.EfClasses;
 
 namespace BizDbAccess.Concrete;
 
-public class IngredientDbAccess : IIngredientDbAccess
+public class IngredientDbAccess(EfCoreContext context) : IIngredientDbAccess
 {
-    public IngredientDbAccess(EfCoreContext context)
-    {
-        Context = context;
-    }
-
-    private EfCoreContext Context { get; }
-
     /// <inheritdoc />
     public Ingredient AddIngredient(Ingredient ingredient)
     {
-        return Context.Ingredients.Add(ingredient).Entity;
+        return context.Ingredients.Add(ingredient).Entity;
     }
 
     /// <inheritdoc />
     public void DeleteIngredient(Ingredient ingredient)
     {
-        Context.Ingredients.Remove(ingredient);
+        context.Ingredients.Remove(ingredient);
     }
 
     /// <inheritdoc />
     public Ingredient GetIngredient(int ingredientId)
     {
-        return Context.Ingredients.Single(x => x.IngredientId == ingredientId);
+        return context.Ingredients.Single(x => x.IngredientId == ingredientId);
     }
 
     /// <inheritdoc />
     public IEnumerable<Ingredient> GetIngredients()
     {
-        return Context.Ingredients;
+        return context.Ingredients;
     }
 }

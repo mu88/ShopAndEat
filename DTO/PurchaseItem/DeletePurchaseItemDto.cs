@@ -1,11 +1,6 @@
 ﻿namespace DTO.PurchaseItem;
 
-public class DeletePurchaseItemDto
+public class DeletePurchaseItemDto(int purchaseItemId)
 {
-    public DeletePurchaseItemDto(int purchaseItemId)
-    {
-        PurchaseItemId = purchaseItemId;
-    }
-
-    public int PurchaseItemId { get; }
+    public int PurchaseItemId { get; } = purchaseItemId;
 }

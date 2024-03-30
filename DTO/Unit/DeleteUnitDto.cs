@@ -1,11 +1,6 @@
 ﻿namespace DTO.Unit;
 
-public class DeleteUnitDto
+public class DeleteUnitDto(int unitId)
 {
-    public DeleteUnitDto(int unitId)
-    {
-        UnitId = unitId;
-    }
-
-    public int UnitId { get; }
+    public int UnitId { get; } = unitId;
 }

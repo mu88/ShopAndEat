@@ -2,18 +2,11 @@
 
 namespace DTO.Article;
 
-public class NewArticleDto
+public class NewArticleDto(string name, ExistingArticleGroupDto articleGroup, bool isInventory)
 {
-    public NewArticleDto(string name, ExistingArticleGroupDto articleGroup, bool isInventory)
-    {
-        Name = name;
-        ArticleGroup = articleGroup;
-        IsInventory = isInventory;
-    }
+    public string Name { get; } = name;
 
-    public string Name { get; }
+    public ExistingArticleGroupDto ArticleGroup { get; } = articleGroup;
 
-    public ExistingArticleGroupDto ArticleGroup { get; }
-
-    public bool IsInventory { get; }
+    public bool IsInventory { get; } = isInventory;
 }

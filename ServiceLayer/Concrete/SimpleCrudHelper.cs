@@ -3,52 +3,42 @@ using DataLayer.EF;
 
 namespace ServiceLayer.Concrete;
 
-public class SimpleCrudHelper
+public class SimpleCrudHelper(EfCoreContext dbContext, IMapper mapper)
 {
-    public SimpleCrudHelper(EfCoreContext dbContext, IMapper mapper)
-    {
-        DbContext = dbContext;
-        Mapper = mapper;
-    }
-
-    private EfCoreContext DbContext { get; }
-
-    private IMapper Mapper { get; }
-
     public TDtoOut Create<TDtoIn, TIn, TDtoOut>(TDtoIn newDto)
     {
-        var mappedObject = Mapper.Map<TDtoIn, TIn>(newDto);
-        var addedEntity = DbContext.Add(mappedObject);
-        DbContext.SaveChanges();
+        var mappedObject = mapper.Map<TDtoIn, TIn>(newDto);
+        var addedEntity = dbContext.Add(mappedObject);
+        dbContext.SaveChanges();
 
-        return Mapper.Map<TDtoOut>(addedEntity.Entity);
+        return mapper.Map<TDtoOut>(addedEntity.Entity);
     }
 
     public void Delete<TIn>(int idToDelete)
         where TIn : class
     {
-        var entityToDelete = DbContext.Find<TIn>(idToDelete);
-        DbContext.Remove(entityToDelete);
-        DbContext.SaveChanges();
+        var entityToDelete = dbContext.Find<TIn>(idToDelete);
+        dbContext.Remove(entityToDelete);
+        dbContext.SaveChanges();
     }
 
     public IEnumerable<TDtoOut> GetAllAsDto<TIn, TDtoOut>()
         where TIn : class
     {
-        var allEntities = DbContext.Set<TIn>();
+        var allEntities = dbContext.Set<TIn>();
 
-        return Mapper.Map<IEnumerable<TDtoOut>>(allEntities);
+        return mapper.Map<IEnumerable<TDtoOut>>(allEntities);
     }
 
     public IEnumerable<TOut> FindMany<TOut>(IEnumerable<int> ids)
         where TOut : class
     {
-        return ids.Select(id => DbContext.Set<TOut>().Find(id));
+        return ids.Select(id => dbContext.Set<TOut>().Find(id));
     }
 
     public TOut Find<TOut>(int id)
         where TOut : class
     {
-        return DbContext.Set<TOut>().Find(id);
+        return dbContext.Set<TOut>().Find(id);
     }
 }

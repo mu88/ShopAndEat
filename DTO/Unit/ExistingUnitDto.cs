@@ -1,14 +1,8 @@
 ﻿namespace DTO.Unit;
 
-public class ExistingUnitDto
+public class ExistingUnitDto(int unitId, string name)
 {
-    public ExistingUnitDto(int unitId, string name)
-    {
-        UnitId = unitId;
-        Name = name;
-    }
+    public int UnitId { get; } = unitId;
 
-    public int UnitId { get; }
-
-    public string Name { get; }
+    public string Name { get; } = name;
 }

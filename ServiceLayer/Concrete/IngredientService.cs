@@ -4,23 +4,12 @@ using DTO.Ingredient;
 
 namespace ServiceLayer.Concrete;
 
-public class IngredientService : IIngredientService
+public class IngredientService(IIngredientAction ingredientAction, EfCoreContext context) : IIngredientService
 {
-    public IngredientService(IIngredientAction ingredientAction, EfCoreContext context)
-    {
-        IngredientAction = ingredientAction;
-        Context = context;
-    }
-
-    private IIngredientAction IngredientAction { get; }
-
-    private EfCoreContext Context { get; }
-
-    /// <inheritdoc />
     public ExistingIngredientDto CreateIngredient(NewIngredientDto newIngredientDto)
     {
-        var createdIngredientDto = IngredientAction.CreateIngredient(newIngredientDto);
-        Context.SaveChanges();
+        var createdIngredientDto = ingredientAction.CreateIngredient(newIngredientDto);
+        context.SaveChanges();
 
         return createdIngredientDto;
     }
@@ -28,13 +17,13 @@ public class IngredientService : IIngredientService
     /// <inheritdoc />
     public void DeleteIngredient(DeleteIngredientDto deleteIngredientDto)
     {
-        IngredientAction.DeleteIngredient(deleteIngredientDto);
-        Context.SaveChanges();
+        ingredientAction.DeleteIngredient(deleteIngredientDto);
+        context.SaveChanges();
     }
 
     /// <inheritdoc />
     public IEnumerable<ExistingIngredientDto> GetAllIngredients()
     {
-        return IngredientAction.GetAllIngredients();
+        return ingredientAction.GetAllIngredients();
     }
 }

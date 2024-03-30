@@ -1,11 +1,6 @@
 ﻿namespace DTO.ArticleGroup;
 
-public class NewArticleGroupDto
+public class NewArticleGroupDto(string name)
 {
-    public NewArticleGroupDto(string name)
-    {
-        Name = name;
-    }
-
-    public string Name { get; }
+    public string Name { get; } = name;
 }

@@ -4,23 +4,12 @@ using DTO.PurchaseItem;
 
 namespace ServiceLayer.Concrete;
 
-public class PurchaseItemService : IPurchaseItemService
+public class PurchaseItemService(IPurchaseItemAction purchaseItemAction, EfCoreContext context) : IPurchaseItemService
 {
-    public PurchaseItemService(IPurchaseItemAction purchaseItemAction, EfCoreContext context)
-    {
-        PurchaseItemAction = purchaseItemAction;
-        Context = context;
-    }
-
-    private IPurchaseItemAction PurchaseItemAction { get; }
-
-    private EfCoreContext Context { get; }
-
-    /// <inheritdoc />
     public ExistingPurchaseItemDto CreatePurchaseItem(NewPurchaseItemDto newPurchaseItemDto)
     {
-        var createdPurchaseItemDto = PurchaseItemAction.CreatePurchaseItem(newPurchaseItemDto);
-        Context.SaveChanges();
+        var createdPurchaseItemDto = purchaseItemAction.CreatePurchaseItem(newPurchaseItemDto);
+        context.SaveChanges();
 
         return createdPurchaseItemDto;
     }
@@ -28,7 +17,7 @@ public class PurchaseItemService : IPurchaseItemService
     /// <inheritdoc />
     public void DeletePurchaseItem(DeletePurchaseItemDto deletePurchaseItemDto)
     {
-        PurchaseItemAction.DeletePurchaseItem(deletePurchaseItemDto);
-        Context.SaveChanges();
+        purchaseItemAction.DeletePurchaseItem(deletePurchaseItemDto);
+        context.SaveChanges();
     }
 }

@@ -1,11 +1,6 @@
 ﻿namespace DTO.Unit;
 
-public class NewUnitDto
+public class NewUnitDto(string name)
 {
-    public NewUnitDto(string name)
-    {
-        Name = name;
-    }
-
-    public string Name { get; }
+    public string Name { get; } = name;
 }

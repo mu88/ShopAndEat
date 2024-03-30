@@ -1,14 +1,8 @@
 ﻿namespace DTO.ArticleGroup;
 
-public class ExistingArticleGroupDto
+public class ExistingArticleGroupDto(int articleGroupId, string name)
 {
-    public ExistingArticleGroupDto(int articleGroupId, string name)
-    {
-        ArticleGroupId = articleGroupId;
-        Name = name;
-    }
+    public int ArticleGroupId { get; } = articleGroupId;
 
-    public int ArticleGroupId { get; }
-
-    public string Name { get; }
+    public string Name { get; } = name;
 }

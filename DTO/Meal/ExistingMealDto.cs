@@ -3,32 +3,23 @@ using DTO.Recipe;
 
 namespace DTO.Meal;
 
-public class ExistingMealDto
+public class ExistingMealDto(
+    DateTime day,
+    ExistingMealTypeDto mealType,
+    ExistingRecipeDto recipe,
+    int mealId,
+    bool hasBeenShopped,
+    int numberOfPersons)
 {
-    public ExistingMealDto(DateTime day,
-                           ExistingMealTypeDto mealType,
-                           ExistingRecipeDto recipe,
-                           int mealId,
-                           bool hasBeenShopped,
-                           int numberOfPersons)
-    {
-        Day = day;
-        MealType = mealType;
-        Recipe = recipe;
-        MealId = mealId;
-        HasBeenShopped = hasBeenShopped;
-        NumberOfPersons = numberOfPersons;
-    }
+    public DateTime Day { get; } = day;
 
-    public DateTime Day { get; }
+    public ExistingMealTypeDto MealType { get; } = mealType;
 
-    public ExistingMealTypeDto MealType { get; }
+    public ExistingRecipeDto Recipe { get; } = recipe;
 
-    public ExistingRecipeDto Recipe { get; }
+    public int MealId { get; } = mealId;
 
-    public int MealId { get; }
+    public bool HasBeenShopped { get; } = hasBeenShopped;
 
-    public bool HasBeenShopped { get; }
-    
-    public int NumberOfPersons { get; }
+    public int NumberOfPersons { get; } = numberOfPersons;
 }

@@ -5,22 +5,11 @@ using DTO.Recipe;
 
 namespace ServiceLayer.Concrete;
 
-public class RecipeService : IRecipeService
+public class RecipeService(SimpleCrudHelper simpleCrudHelper, EfCoreContext context) : IRecipeService
 {
-    public RecipeService(SimpleCrudHelper simpleCrudHelper, EfCoreContext context)
-    {
-        SimpleCrudHelper = simpleCrudHelper;
-        Context = context;
-    }
-
-    private SimpleCrudHelper SimpleCrudHelper { get; }
-
-    private EfCoreContext Context { get; }
-
-    /// <inheritdoc />
     public IEnumerable<ExistingRecipeDto> GetAllRecipes()
     {
-        return SimpleCrudHelper.GetAllAsDto<Recipe, ExistingRecipeDto>().OrderBy(recipe => recipe.Name);
+        return simpleCrudHelper.GetAllAsDto<Recipe, ExistingRecipeDto>().OrderBy(recipe => recipe.Name);
     }
 
     /// <inheritdoc />
@@ -29,44 +18,44 @@ public class RecipeService : IRecipeService
         var newIngredients = new List<Ingredient>();
         foreach (var newIngredientDto in newRecipeDto.Ingredients)
         {
-            var unit = SimpleCrudHelper.Find<Unit>(newIngredientDto.Unit.UnitId);
-            var article = SimpleCrudHelper.Find<Article>(newIngredientDto.Article.ArticleId);
-            newIngredients.Add(Context.Ingredients.Add(new Ingredient(article, newIngredientDto.Quantity, unit)).Entity);
+            var unit = simpleCrudHelper.Find<Unit>(newIngredientDto.Unit.UnitId);
+            var article = simpleCrudHelper.Find<Article>(newIngredientDto.Article.ArticleId);
+            newIngredients.Add(context.Ingredients.Add(new Ingredient(article, newIngredientDto.Quantity, unit)).Entity);
         }
 
         var newRecipe = new Recipe(newRecipeDto.Name, newRecipeDto.NumberOfDays, newRecipeDto.NumberOfPersons, newIngredients);
-        Context.Recipes.Add(newRecipe);
-        Context.SaveChanges();
+        context.Recipes.Add(newRecipe);
+        context.SaveChanges();
     }
 
     /// <inheritdoc />
     public void DeleteRecipe(DeleteRecipeDto recipeToDelete)
     {
-        var existingMeals = SimpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>();
+        var existingMeals = simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>();
         existingMeals.Where(x => x.Recipe.RecipeId == recipeToDelete.RecipeId)
             .ToList()
-            .ForEach(x => SimpleCrudHelper.Delete<Meal>(x.MealId));
-        var existingRecipe = SimpleCrudHelper.Find<Recipe>(recipeToDelete.RecipeId);
-        existingRecipe.Ingredients.Select(x => x.IngredientId).ToList().ForEach(x => SimpleCrudHelper.Delete<Ingredient>(x));
-        SimpleCrudHelper.Delete<Recipe>(recipeToDelete.RecipeId);
-        Context.SaveChanges();
+            .ForEach(x => simpleCrudHelper.Delete<Meal>(x.MealId));
+        var existingRecipe = simpleCrudHelper.Find<Recipe>(recipeToDelete.RecipeId);
+        existingRecipe.Ingredients.Select(x => x.IngredientId).ToList().ForEach(x => simpleCrudHelper.Delete<Ingredient>(x));
+        simpleCrudHelper.Delete<Recipe>(recipeToDelete.RecipeId);
+        context.SaveChanges();
     }
 
     public void UpdateRecipe(UpdateRecipeDto existingRecipeDto)
     {
-        var recipe = SimpleCrudHelper.Find<Recipe>(existingRecipeDto.RecipeId);
+        var recipe = simpleCrudHelper.Find<Recipe>(existingRecipeDto.RecipeId);
 
         foreach (var ingredientId in recipe.Ingredients.Select(x=>x.IngredientId).ToList())
         {
-            SimpleCrudHelper.Delete<Ingredient>(ingredientId);
+            simpleCrudHelper.Delete<Ingredient>(ingredientId);
         }
 
         var newIngredients = new List<Ingredient>();
         foreach (var newIngredientDto in existingRecipeDto.Ingredients)
         {
-            var unit = SimpleCrudHelper.Find<Unit>(newIngredientDto.Unit.UnitId);
-            var article = SimpleCrudHelper.Find<Article>(newIngredientDto.Article.ArticleId);
-            newIngredients.Add(Context.Ingredients.Add(new Ingredient(article, newIngredientDto.Quantity, unit)).Entity);
+            var unit = simpleCrudHelper.Find<Unit>(newIngredientDto.Unit.UnitId);
+            var article = simpleCrudHelper.Find<Article>(newIngredientDto.Article.ArticleId);
+            newIngredients.Add(context.Ingredients.Add(new Ingredient(article, newIngredientDto.Quantity, unit)).Entity);
         }
 
         recipe.Name = existingRecipeDto.Name;
@@ -74,6 +63,6 @@ public class RecipeService : IRecipeService
         recipe.NumberOfPersons = existingRecipeDto.NumberOfPersons;
         recipe.Ingredients = newIngredients;
 
-        Context.SaveChanges();
+        context.SaveChanges();
     }
 }
