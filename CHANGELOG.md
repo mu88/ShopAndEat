@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="3.1.0"></a>
+## [3.1.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v3.1.0) (2024-06-16)
+
+### Features
+
+* add OpenTelemetry ([9d9cd1e](https://www.github.com/mu88/ShopAndEat/commit/9d9cd1e9f3eb533879d24477b629581008e33eda))
+
 <a name="3.0.4"></a>
 ## [3.0.4](https://www.github.com/mu88/ShopAndEat/releases/tag/v3.0.4) (2023-12-01)
 
