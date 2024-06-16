@@ -4,14 +4,18 @@
     <ContainerRepository>mu88/shopandeat</ContainerRepository>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.6.2" />
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.6.2" />
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.6.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.6" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.2" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.1"/>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.1"/>
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.8.1"/>
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.8.1"/>
+    <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.6.2"/>
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.6.2"/>
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.6.2"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BizDbAccess\BizDbAccess.csproj" />

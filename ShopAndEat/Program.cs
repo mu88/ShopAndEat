@@ -1,16 +1,20 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
-using BizDbAccess;
+﻿using BizDbAccess;
 using BizDbAccess.Concrete;
 using BizLogic;
 using BizLogic.Concrete;
 using DataLayer.EF;
 using DTO;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using ServiceLayer;
 using ServiceLayer.Concrete;
 
 var builder = WebApplication.CreateBuilder(args);
+
+ConfigureOpenTelemetry(builder);
 
 ConfigureShopAndEatServices(builder.Services, builder.Configuration);
 
@@ -53,10 +57,7 @@ void CreateDbIfNotExists(WebApplication webApp)
     using var scope = webApp.Services.CreateScope();
     var services = scope.ServiceProvider;
 
-    try
-    {
-        services.GetRequiredService<EfCoreContext>().Database.Migrate();
-    }
+    try { services.GetRequiredService<EfCoreContext>().Database.Migrate(); }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
@@ -80,6 +81,29 @@ void ConfigureShopAndEatServices(IServiceCollection services, IConfiguration con
     services.AddTransient<IOrderPurchaseItemsByStoreAction, OrderPurchaseItemsByStoreAction>();
     services.AddTransient<IGetRecipesForMealsAction, GetRecipesForMealsAction>();
     services.AddAutoMapper(typeof(AutoMapperProfile));
-    
+
     services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies().UseSqlite(configuration.GetConnectionString("SQLite")));
+}
+
+static void ConfigureOpenTelemetry(IHostApplicationBuilder builder)
+{
+    builder.Logging.AddOpenTelemetry(logging =>
+    {
+        logging.IncludeFormattedMessage = true;
+        logging.IncludeScopes = true;
+    });
+
+    builder.Services
+        .AddOpenTelemetry()
+        .ConfigureResource(c => c.AddService("ShopAndEat"))
+        .WithMetrics(metrics =>
+        {
+            metrics
+                .AddAspNetCoreInstrumentation()
+                .AddRuntimeInstrumentation();
+        })
+        .WithTracing(tracing => { tracing.AddAspNetCoreInstrumentation(); });
+
+    var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+    if (useOtlpExporter) builder.Services.AddOpenTelemetry().UseOtlpExporter();
 }
