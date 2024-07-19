@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="AutoMapper" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BizDbAccess\BizDbAccess.csproj" />
