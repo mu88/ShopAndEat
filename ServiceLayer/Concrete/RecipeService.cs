@@ -7,7 +7,8 @@ namespace ServiceLayer.Concrete;
 
 public class RecipeService(SimpleCrudHelper simpleCrudHelper, EfCoreContext context) : IRecipeService
 {
-    public IEnumerable<ExistingRecipeDto> GetAllRecipes() => simpleCrudHelper.GetAllAsDto<Recipe, ExistingRecipeDto>().OrderBy(recipe => recipe.Name);
+    public IEnumerable<ExistingRecipeDto> GetAllRecipes() =>
+        simpleCrudHelper.GetAllAsDto<Recipe, ExistingRecipeDto>().OrderBy(recipe => recipe.Name, StringComparer.Ordinal);
 
     /// <inheritdoc />
     public void CreateNewRecipe(NewRecipeDto newRecipeDto)
@@ -42,7 +43,10 @@ public class RecipeService(SimpleCrudHelper simpleCrudHelper, EfCoreContext cont
     {
         var recipe = simpleCrudHelper.Find<Recipe>(existingRecipeDto.RecipeId);
 
-        foreach (var ingredientId in recipe.Ingredients.Select(x => x.IngredientId).ToList()) { simpleCrudHelper.Delete<Ingredient>(ingredientId); }
+        foreach (var ingredientId in recipe.Ingredients.Select(x => x.IngredientId).ToList())
+        {
+            simpleCrudHelper.Delete<Ingredient>(ingredientId);
+        }
 
         var newIngredients = new List<Ingredient>();
         foreach (var newIngredientDto in existingRecipeDto.Ingredients)

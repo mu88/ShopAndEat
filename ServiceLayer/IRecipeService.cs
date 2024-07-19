@@ -9,6 +9,6 @@ public interface IRecipeService
     void CreateNewRecipe(NewRecipeDto newRecipeDto);
 
     void DeleteRecipe(DeleteRecipeDto recipeToDelete);
-        
+
     void UpdateRecipe(UpdateRecipeDto existingRecipeDto);
 }

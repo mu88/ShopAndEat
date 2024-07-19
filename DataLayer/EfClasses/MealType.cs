@@ -18,5 +18,10 @@ public class MealType
 
     public int Order { get; set; }
 
-    public int MealTypeId { get; [UsedImplicitly] private set; }
+    public int MealTypeId
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 }

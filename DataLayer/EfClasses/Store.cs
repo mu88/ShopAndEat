@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 
 namespace DataLayer.EfClasses;
 
@@ -18,13 +19,24 @@ public class Store
 
     public virtual IEnumerable<ShoppingOrder> Compartments => _compartments;
 
-    public string Name { get; [UsedImplicitly] private set; }
+    public string Name
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 
-    public int StoreId { get; [UsedImplicitly] private set; }
+    public int StoreId
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 
+    [SuppressMessage("Design", "MA0076:Do not use implicit culture-sensitive ToString in interpolated strings", Justification = "Okay for me here, I'm happy")]
     public void AddCompartment(ShoppingOrder compartment)
     {
-        if (_compartments.Any(x => x.Order == compartment.Order))
+        if (_compartments.Exists(x => x.Order == compartment.Order))
         {
             throw new InvalidOperationException($"There is already a compartment with order '{compartment.Order}'");
         }

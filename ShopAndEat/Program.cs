@@ -50,14 +50,17 @@ app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
-app.Run();
+await app.RunAsync();
 
 void CreateDbIfNotExists(WebApplication webApp)
 {
     using var scope = webApp.Services.CreateScope();
     var services = scope.ServiceProvider;
 
-    try { services.GetRequiredService<EfCoreContext>().Database.Migrate(); }
+    try
+    {
+        services.GetRequiredService<EfCoreContext>().Database.Migrate();
+    }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
@@ -102,8 +105,14 @@ static void ConfigureOpenTelemetry(IHostApplicationBuilder builder)
                 .AddAspNetCoreInstrumentation()
                 .AddRuntimeInstrumentation();
         })
-        .WithTracing(tracing => { tracing.AddAspNetCoreInstrumentation(); });
+        .WithTracing(tracing =>
+        {
+            tracing.AddAspNetCoreInstrumentation();
+        });
 
     var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
-    if (useOtlpExporter) builder.Services.AddOpenTelemetry().UseOtlpExporter();
+    if (useOtlpExporter)
+    {
+        builder.Services.AddOpenTelemetry().UseOtlpExporter();
+    }
 }

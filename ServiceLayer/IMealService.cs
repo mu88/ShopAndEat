@@ -11,7 +11,7 @@ public interface IMealService
     IEnumerable<ExistingMealDto> GetFutureMeals();
 
     IEnumerable<ExistingMealDto> GetMealsForToday();
-        
+
     IEnumerable<NewPurchaseItemDto> GetOrderedPurchaseItems(ExistingStoreDto existingStoreDto);
 
     void DeleteMeal(DeleteMealDto mealToDelete);

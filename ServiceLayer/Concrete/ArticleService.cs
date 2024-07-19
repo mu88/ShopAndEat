@@ -31,7 +31,7 @@ public class ArticleService(
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingArticleDto> GetAllArticles() => articleAction.GetAllArticles().OrderBy(x => x.Name);
+    public IEnumerable<ExistingArticleDto> GetAllArticles() => articleAction.GetAllArticles().OrderBy(x => x.Name, StringComparer.Ordinal);
 
     public void UpdateArticle(ExistingArticleDto existingArticleDto)
     {

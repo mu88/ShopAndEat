@@ -17,7 +17,7 @@ public class GeneratePurchaseItemsForRecipesAction : IGeneratePurchaseItemsForRe
                 purchaseItems.Add(new PurchaseItem(ingredient.Article, ingredient.Quantity * personQuantifier * dayQuantifier, ingredient.Unit));
             }
         }
-        
+
         return purchaseItems.GroupBy(item => new { item.Article, item.Unit })
             .Select(y => new PurchaseItem(y.Key.Article, y.Sum(z => z.Quantity), y.Key.Unit));
     }

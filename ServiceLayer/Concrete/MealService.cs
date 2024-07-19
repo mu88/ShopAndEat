@@ -18,7 +18,6 @@ public class MealService(
     IMapper mapper)
     : IMealService
 {
-
     /// <inheritdoc />
     public void CreateMeal(NewMealDto newMealDto)
     {
@@ -30,6 +29,7 @@ public class MealService(
             var newMeal = new Meal(newMealDto.Day.AddDays(i), mealType, recipe, newMealDto.NumberOfPersons);
             context.Meals.Add(newMeal);
         }
+
         context.SaveChanges();
     }
 
@@ -64,7 +64,10 @@ public class MealService(
                                                                       generatePurchaseItemsForRecipesAction
                                                                           .GeneratePurchaseItems(recipes));
 
-        foreach (var meal in meals) { meal.HasBeenShopped = true; }
+        foreach (var meal in meals)
+        {
+            meal.HasBeenShopped = true;
+        }
 
         var newPurchaseItemDtos = mapper.Map<IEnumerable<NewPurchaseItemDto>>(orderedPurchaseItemsByStore);
 

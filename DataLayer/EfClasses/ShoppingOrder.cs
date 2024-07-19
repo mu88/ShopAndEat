@@ -14,9 +14,24 @@ public class ShoppingOrder
     {
     }
 
-    public virtual ArticleGroup ArticleGroup { get; [UsedImplicitly] private set; }
+    public virtual ArticleGroup ArticleGroup
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 
-    public int Order { get; [UsedImplicitly] private set; }
+    public int Order
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 
-    public int ShoppingOrderId { get; [UsedImplicitly] private set; }
+    public int ShoppingOrderId
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 }

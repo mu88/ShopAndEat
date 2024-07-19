@@ -20,9 +20,24 @@ public class Purchase
 
     public virtual IEnumerable<PurchaseItem> PurchaseItems => _purchaseItems;
 
-    public DateTime From { get; [UsedImplicitly] private set; }
+    public DateTime From
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 
-    public DateTime To { get; [UsedImplicitly] private set; }
+    public DateTime To
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 
-    public int PurchaseId { get; [UsedImplicitly] private set; }
+    public int PurchaseId
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 }
