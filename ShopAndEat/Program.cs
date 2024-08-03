@@ -5,16 +5,13 @@ using BizLogic.Concrete;
 using DataLayer.EF;
 using DTO;
 using Microsoft.EntityFrameworkCore;
-using OpenTelemetry;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
+using mu88.Shared.OpenTelemetry;
 using ServiceLayer;
 using ServiceLayer.Concrete;
 
 var builder = WebApplication.CreateBuilder(args);
 
-ConfigureOpenTelemetry(builder);
+builder.ConfigureOpenTelemetry("ShopAndEat");
 
 ConfigureShopAndEatServices(builder.Services, builder.Configuration);
 
@@ -86,33 +83,4 @@ void ConfigureShopAndEatServices(IServiceCollection services, IConfiguration con
     services.AddAutoMapper(typeof(AutoMapperProfile));
 
     services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies().UseSqlite(configuration.GetConnectionString("SQLite")));
-}
-
-static void ConfigureOpenTelemetry(IHostApplicationBuilder builder)
-{
-    builder.Logging.AddOpenTelemetry(logging =>
-    {
-        logging.IncludeFormattedMessage = true;
-        logging.IncludeScopes = true;
-    });
-
-    builder.Services
-        .AddOpenTelemetry()
-        .ConfigureResource(c => c.AddService("ShopAndEat"))
-        .WithMetrics(metrics =>
-        {
-            metrics
-                .AddAspNetCoreInstrumentation()
-                .AddRuntimeInstrumentation();
-        })
-        .WithTracing(tracing =>
-        {
-            tracing.AddAspNetCoreInstrumentation();
-        });
-
-    var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
-    if (useOtlpExporter)
-    {
-        builder.Services.AddOpenTelemetry().UseOtlpExporter();
-    }
 }
