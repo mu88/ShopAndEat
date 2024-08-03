@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="3.2.0"></a>
+## [3.2.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v3.2.0) (2024-08-03)
+
+### Features
+
+* replace OpenTelemetry and multi-manifest Docker image logic with NuGet package mu88.Shared ([e834aa9](https://www.github.com/mu88/ShopAndEat/commit/e834aa9da92db88dff639f1518e6630d26226e4b))
+
 <a name="3.1.1"></a>
 ## [3.1.1](https://www.github.com/mu88/ShopAndEat/releases/tag/v3.1.1) (2024-06-29)
 
