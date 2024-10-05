@@ -11,7 +11,7 @@ public class MealModel
     public string MealTypeName { get; set; }
 
     [Required]
-    [FutureValidator]
+    [TodayOrFutureValidator]
     public DateTime Date { get; set; } = DateTime.Now;
 
     [Required]
@@ -22,15 +22,15 @@ public class MealModel
 }
 
 [AttributeUsage(AttributeTargets.Property)]
-public class FutureValidatorAttribute : ValidationAttribute
+public class TodayOrFutureValidatorAttribute : ValidationAttribute
 {
     protected override ValidationResult IsValid(object value, ValidationContext validationContext)
     {
-        if (value is DateTime timeStamp && timeStamp >= DateTime.Now)
+        if (value is DateTime timeStamp && timeStamp >= DateTime.Now.Date)
         {
             return ValidationResult.Success;
         }
 
-        return new ValidationResult("Must be in future", new[] { validationContext.MemberName });
+        return new ValidationResult("Must be today or in future", new[] { validationContext.MemberName });
     }
 }
