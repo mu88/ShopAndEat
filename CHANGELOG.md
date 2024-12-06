@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="4.0.0"></a>
+## [4.0.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v4.0.0) (2024-12-06)
+
+### Features
+
+* **deps:** upgrade to .NET 9 ([485c61d](https://www.github.com/mu88/ShopAndEat/commit/485c61d83ff197aa080d237788111597c082fa2b))
+
+### Breaking Changes
+
+* **deps:** upgrade to .NET 9 ([485c61d](https://www.github.com/mu88/ShopAndEat/commit/485c61d83ff197aa080d237788111597c082fa2b))
+
 <a name="3.2.1"></a>
 ## [3.2.1](https://www.github.com/mu88/ShopAndEat/releases/tag/v3.2.1) (2024-10-05)
 
