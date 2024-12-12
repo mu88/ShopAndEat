@@ -32,6 +32,7 @@
     <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="7.1.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="7.1.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.1.0" />
+    <PackageVersion Include="Testcontainers" Version="4.1.0" />
   </ItemGroup>
   <ItemGroup>
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-8g4q-xg66-9fp4"/>

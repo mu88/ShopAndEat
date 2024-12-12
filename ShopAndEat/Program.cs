@@ -59,7 +59,19 @@ void CreateDbIfNotExists(WebApplication webApp)
 
     try
     {
-        services.GetRequiredService<EfCoreContext>().Database.Migrate();
+        DatabaseFacade database = services.GetRequiredService<EfCoreContext>().Database;
+        var connectionString = database.GetConnectionString();
+        var databasePath = connectionString?.Replace("Data Source=", string.Empty);
+        DirectoryInfo parentDirectoryOfDatabase = Directory.GetParent(databasePath);
+        if (!parentDirectoryOfDatabase.Exists)
+        {
+            Directory.CreateDirectory(parentDirectoryOfDatabase.FullName);
+        }
+
+        if (!File.Exists(databasePath))
+        {
+            database.EnsureCreated();
+        }
     }
     catch (Exception ex)
     {
