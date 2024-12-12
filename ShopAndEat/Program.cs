@@ -5,6 +5,7 @@ using BizLogic.Concrete;
 using DataLayer.EF;
 using DTO;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using mu88.Shared.OpenTelemetry;
 using ServiceLayer;
 using ServiceLayer.Concrete;
@@ -15,6 +16,7 @@ builder.ConfigureOpenTelemetry("ShopAndEat");
 
 ConfigureShopAndEatServices(builder.Services, builder.Configuration);
 
+builder.Services.AddHealthChecks();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddControllers();
@@ -44,6 +46,7 @@ app.UseAuthorization();
 
 app.UseRouting();
 app.MapControllers();
+app.MapHealthChecks("/healthz");
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
@@ -83,4 +86,6 @@ void ConfigureShopAndEatServices(IServiceCollection services, IConfiguration con
     services.AddAutoMapper(typeof(AutoMapperProfile));
 
     services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies().UseSqlite(configuration.GetConnectionString("SQLite")));
+
+    services.AddHealthChecks().AddDbContextCheck<EfCoreContext>();
 }
