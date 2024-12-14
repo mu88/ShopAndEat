@@ -24,6 +24,7 @@ public class SystemTests
         (string Stdout, string Stderr) logValues = await container.GetLogsAsync();
         Console.WriteLine($"Stderr:{Environment.NewLine}{logValues.Stderr}");
         Console.WriteLine($"Stdout:{Environment.NewLine}{logValues.Stdout}");
+        logValues.Stdout.Should().NotContain("warn:");
         healthCheckResponse.Should().BeSuccessful();
         (await healthCheckResponse.Content.ReadAsStringAsync()).Should().Be("Healthy");
         appResponse.Should().BeSuccessful();
