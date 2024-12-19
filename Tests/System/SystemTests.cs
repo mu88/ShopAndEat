@@ -5,7 +5,7 @@ using DotNet.Testcontainers.Networks;
 using FluentAssertions;
 using NUnit.Framework;
 
-namespace Tests.System;
+namespace Tests.SystemTests;
 
 [Category("System")]
 public class SystemTests
@@ -14,24 +14,32 @@ public class SystemTests
     public async Task AppRunningInDocker_ShouldBeHealthy()
     {
         // Arrange
-        await BuildDockerImageOfAppAsync();
-        IContainer container = await StartAppInContainersAsync();
+        CancellationToken cancellationToken = CreateCancellationToken(TimeSpan.FromMinutes(1));
+        await BuildDockerImageOfAppAsync(cancellationToken);
+        var container = await StartAppInContainersAsync(cancellationToken);
         var httpClient = new HttpClient { BaseAddress = GetAppBaseAddress(container) };
+
         // Act
-        HttpResponseMessage healthCheckResponse = await httpClient.GetAsync("healthz");
-        HttpResponseMessage appResponse = await httpClient.GetAsync("/");
+        var healthCheckResponse = await httpClient.GetAsync("healthz", cancellationToken);
+        var appResponse = await httpClient.GetAsync("/", cancellationToken);
+        ExecResult healthCheckToolResult = await container.ExecAsync(["dotnet", "/app/mu88.HealthCheck.dll", "http://localhost:8080/shopAndEat/healthz"], cancellationToken);
+
         // Assert
-        (string Stdout, string Stderr) logValues = await container.GetLogsAsync();
-        Console.WriteLine($"Stderr:{Environment.NewLine}{logValues.Stderr}");
-        Console.WriteLine($"Stdout:{Environment.NewLine}{logValues.Stdout}");
-        logValues.Stdout.Should().NotContain("warn:");
-        healthCheckResponse.Should().BeSuccessful();
-        (await healthCheckResponse.Content.ReadAsStringAsync()).Should().Be("Healthy");
-        appResponse.Should().BeSuccessful();
-        (await appResponse.Content.ReadAsStringAsync()).Should().Contain("<title>ShopAndEat</title>");
+        await LogsShouldNotContainWarningsAsync(container, cancellationToken);
+        await HealthCheckShouldBeHealthyAsync(healthCheckResponse, cancellationToken);
+        await AppShouldRunAsync(appResponse, cancellationToken);
+        healthCheckToolResult.ExitCode.Should().Be(0);
+    }
+    
+    private static CancellationToken CreateCancellationToken(TimeSpan timeout)
+    {
+        var timeoutCts = new CancellationTokenSource();
+        timeoutCts.CancelAfter(timeout);
+        CancellationToken cancellationToken = timeoutCts.Token;
+        return cancellationToken;
     }
 
-    private static async Task BuildDockerImageOfAppAsync()
+    private static async Task BuildDockerImageOfAppAsync(CancellationToken cancellationToken)
     {
         DirectoryInfo rootDirectory = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.Parent ?? throw new NullReferenceException();
         var projectFile = Path.Join(rootDirectory.FullName, "ShopAndEat", "ShopAndEat.csproj");
@@ -40,39 +48,67 @@ public class SystemTests
             StartInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"publish {projectFile} --os linux --arch amd64 /t:PublishContainer -p:ContainerImageTags=local-system-test",
+                Arguments = $"publish {projectFile} --os linux --arch amd64 /t:PublishContainer -p:ContainerFamily=noble-chiseled -p:ContainerImageTags=local-system-test-chiseled",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true
             }
         };
         process.Start();
-        while (!process.StandardOutput.EndOfStream) Console.WriteLine(await process.StandardOutput.ReadLineAsync());
-        await process.WaitForExitAsync();
+        while (!process.StandardOutput.EndOfStream)
+        {
+            Console.WriteLine(await process.StandardOutput.ReadLineAsync(cancellationToken));
+        }
+
+        await process.WaitForExitAsync(cancellationToken);
         process.ExitCode.Should().Be(0);
     }
 
-    private static async Task<IContainer> StartAppInContainersAsync()
+    private static async Task<IContainer> StartAppInContainersAsync(CancellationToken cancellationToken)
     {
         Console.WriteLine("Building and starting network");
         INetwork network = new NetworkBuilder().Build();
-        await network.CreateAsync();
+        await network.CreateAsync(cancellationToken);
         Console.WriteLine("Network started");
+
         Console.WriteLine("Building and starting app container");
         IContainer container = BuildAppContainer(network);
-        await container.StartAsync();
+        await container.StartAsync(cancellationToken);
         Console.WriteLine("App container started");
+
         return container;
     }
 
     private static IContainer BuildAppContainer(INetwork network) =>
         new ContainerBuilder()
-            .WithImage("mu88/shopandeat:local-system-test")
+            .WithImage("mu88/shopandeat:local-system-test-chiseled")
             .WithNetwork(network)
             .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development") // this changes the connection string to a path which writeable in the container
             .WithPortBinding(8080, true)
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(8080))
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged(
+                "Content root path: /app",
+                strategy => strategy.WithTimeout(TimeSpan.FromSeconds(30)))) // as it's a chiseled container, waiting for the port does not work
             .Build();
 
-    private static Uri GetAppBaseAddress(IContainer container) => new($"http://{container.Hostname}:{container.GetMappedPublicPort(8080)}/cool");
+    private static Uri GetAppBaseAddress(IContainer container) => new($"http://{container.Hostname}:{container.GetMappedPublicPort(8080)}/shopAndEat");
+    
+    private static async Task AppShouldRunAsync(HttpResponseMessage appResponse, CancellationToken cancellationToken)
+    {
+        appResponse.Should().BeSuccessful();
+        (await appResponse.Content.ReadAsStringAsync(cancellationToken)).Should().Contain("<title>ShopAndEat</title>");
+    }
+
+    private static async Task HealthCheckShouldBeHealthyAsync(HttpResponseMessage healthCheckResponse, CancellationToken cancellationToken)
+    {
+        healthCheckResponse.Should().BeSuccessful();
+        (await healthCheckResponse.Content.ReadAsStringAsync(cancellationToken)).Should().Be("Healthy");
+    }
+
+    private static async Task LogsShouldNotContainWarningsAsync(IContainer container, CancellationToken cancellationToken)
+    {
+        (string Stdout, string Stderr) logValues = await container.GetLogsAsync(ct: cancellationToken);
+        Console.WriteLine($"Stderr:{Environment.NewLine}{logValues.Stderr}");
+        Console.WriteLine($"Stdout:{Environment.NewLine}{logValues.Stdout}");
+        logValues.Stdout.Should().NotContain("warn:");
+    }
 }
