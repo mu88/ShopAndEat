@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="4.1.0"></a>
+## [4.1.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v4.1.0) (2024-12-20)
+
+### Features
+
+* add health check ([6cf53ff](https://www.github.com/mu88/ShopAndEat/commit/6cf53ff127b940e2ed90346f92bbb321dd4ee2d7))
+* add reusable workflow ([ab03201](https://www.github.com/mu88/ShopAndEat/commit/ab032017ccabee03aa091bd85b5077ac0f8d32de))
+* embed health check tool ([16b5eca](https://www.github.com/mu88/ShopAndEat/commit/16b5ecadc1fdcf9ee38e1e95bf155b895906dce8))
+
 <a name="4.0.0"></a>
 ## [4.0.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v4.0.0) (2024-12-06)
 
