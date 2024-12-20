@@ -9,18 +9,15 @@ on:
       - '**'
 
 jobs:
-  ci_cd:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: CI/CD
-        id: mu88-ci-cd
-        uses: mu88/github-actions/ci-cd@1.1
-        with:
-          github-ref-name: ${{ github.ref }}
-          sonar-key: 'mu88_ShopAndEat'
-          sonar-token: ${{ secrets.SONAR_TOKEN }}
-          docker-publish-mode: regular_and_chiseled
-          docker-publish-project: 'ShopAndEat/ShopAndEat.csproj'
-          docker-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          docker-token: ${{ secrets.DOCKERHUB_TOKEN }}
+  shared_ci_cd:
+    uses: mu88/github-actions/.github/workflows/ci-cd.yml@main
+    with:
+      github-ref-name: ${{ github.ref }}
+      sonar-key: 'mu88_ShopAndEat'
+      docker-publish-mode: regular_and_chiseled
+      docker-publish-project: 'ShopAndEat/ShopAndEat.csproj'
+      requires-docker-login: true
+    secrets:
+      sonar-token: ${{ secrets.SONAR_TOKEN }}
+      docker-username: ${{ secrets.DOCKERHUB_USERNAME }}
+      docker-token: ${{ secrets.DOCKERHUB_TOKEN }}
