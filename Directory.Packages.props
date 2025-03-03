@@ -30,10 +30,10 @@
     <PackageVersion Include="nunit" Version="4.3.2" />
     <PackageVersion Include="NUnit3TestAdapter" Version="5.0.0" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.1.118" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="7.2.0" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="7.2.0" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.2.0" />
-    <PackageVersion Include="Testcontainers" Version="4.2.0" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="7.3.1" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="7.3.1" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.3.1" />
+    <PackageVersion Include="Testcontainers" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-8g4q-xg66-9fp4"/>
