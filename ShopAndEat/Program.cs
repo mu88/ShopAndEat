@@ -5,6 +5,7 @@ using BizLogic.Concrete;
 using DataLayer.EF;
 using DTO;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using mu88.Shared.OpenTelemetry;
 using ServiceLayer;
 using ServiceLayer.Concrete;
@@ -57,10 +58,10 @@ void CreateDbIfNotExists(WebApplication webApp)
 
     try
     {
-        var database = services.GetRequiredService<EfCoreContext>().Database;
-        var connectionString = Environment.ExpandEnvironmentVariables(database.GetConnectionString() ?? string.Empty);
-        var databasePath = connectionString.Replace("Data Source=", string.Empty);
-        var parentDirectoryOfDatabase = Directory.GetParent(databasePath);
+        DatabaseFacade database = services.GetRequiredService<EfCoreContext>().Database;
+        var connectionString = database.GetConnectionString();
+        var databasePath = connectionString?.Replace("Data Source=", string.Empty);
+        DirectoryInfo parentDirectoryOfDatabase = Directory.GetParent(databasePath);
         if (!parentDirectoryOfDatabase.Exists)
         {
             Directory.CreateDirectory(parentDirectoryOfDatabase.FullName);
@@ -95,8 +96,7 @@ void ConfigureShopAndEatServices(IServiceCollection services, IConfiguration con
     services.AddTransient<IGetRecipesForMealsAction, GetRecipesForMealsAction>();
     services.AddAutoMapper(typeof(AutoMapperProfile));
 
-    services.AddDbContext<EfCoreContext>(options =>
-        options.UseLazyLoadingProxies().UseSqlite(Environment.ExpandEnvironmentVariables(configuration.GetConnectionString("SQLite") ?? string.Empty)));
+    services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies().UseSqlite(configuration.GetConnectionString("SQLite")));
 
     services.AddHealthChecks().AddDbContextCheck<EfCoreContext>();
 }
