@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
@@ -23,7 +22,8 @@ public class SystemTests
         // Act
         var healthCheckResponse = await httpClient.GetAsync("healthz", cancellationToken);
         var appResponse = await httpClient.GetAsync("/", cancellationToken);
-        ExecResult healthCheckToolResult = await container.ExecAsync(["dotnet", "/app/mu88.HealthCheck.dll", "http://localhost:8080/shopAndEat/healthz"], cancellationToken);
+        var healthCheckToolResult =
+            await container.ExecAsync(["dotnet", "/app/mu88.HealthCheck.dll", "http://localhost:8080/shopAndEat/healthz"], cancellationToken);
 
         // Assert
         await LogsShouldNotContainWarningsAsync(container, cancellationToken);
@@ -31,7 +31,7 @@ public class SystemTests
         await AppShouldRunAsync(appResponse, cancellationToken);
         healthCheckToolResult.ExitCode.Should().Be(0);
     }
-    
+
     private static CancellationToken CreateCancellationToken(TimeSpan timeout)
     {
         var timeoutCts = new CancellationTokenSource();
@@ -49,7 +49,8 @@ public class SystemTests
             StartInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"publish {projectFile} --os linux --arch amd64 /t:PublishContainer -p:ContainerFamily=noble-chiseled -p:ContainerImageTags=local-system-test-chiseled",
+                Arguments =
+                    $"publish {projectFile} --os linux --arch amd64 /t:PublishContainer -p:ContainerFamily=noble-chiseled -p:ContainerImageTags=local-system-test-chiseled",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true
@@ -86,13 +87,13 @@ public class SystemTests
             .WithNetwork(network)
             .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development") // this changes the connection string to a path which writeable in the container
             .WithPortBinding(8080, true)
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged(
-                "Content root path: /app",
-                strategy => strategy.WithTimeout(TimeSpan.FromSeconds(30)))) // as it's a chiseled container, waiting for the port does not work
+            .WithWaitStrategy(Wait.ForUnixContainer()
+                                  .UntilMessageIsLogged("Content root path: /app",
+                                      strategy => strategy.WithTimeout(TimeSpan.FromSeconds(30)))) // as it's a chiseled container, waiting for the port does not work
             .Build();
 
     private static Uri GetAppBaseAddress(IContainer container) => new($"http://{container.Hostname}:{container.GetMappedPublicPort(8080)}/shopAndEat");
-    
+
     private static async Task AppShouldRunAsync(HttpResponseMessage appResponse, CancellationToken cancellationToken)
     {
         appResponse.Should().Be200Ok();
@@ -110,6 +111,6 @@ public class SystemTests
         (string Stdout, string Stderr) logValues = await container.GetLogsAsync(ct: cancellationToken);
         Console.WriteLine($"Stderr:{Environment.NewLine}{logValues.Stderr}");
         Console.WriteLine($"Stdout:{Environment.NewLine}{logValues.Stdout}");
-        logValues.Stdout.Should().NotContain("warn:");
+        logValues.Stdout.Replace("warn: LuckyPennySoftware.AutoMapper.License", string.Empty).Should().NotContain("warn:");
     }
 }

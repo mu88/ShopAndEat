@@ -1,6 +1,6 @@
 {
   "name": "C# (.NET)",
-  "image": "registry.hub.docker.com/mu88/devcontainers-dotnet:sdk-9.0.301",
+  "image": "registry.hub.docker.com/mu88/devcontainers-dotnet:sdk-9.0.302",
   "containerEnv": {
     "CUSTOMCONNSTR_SQLite": "Data Source=/home/vscode/ShopAndEat.db"
   }

@@ -3,7 +3,7 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <ContainerRepository>mu88/shopandeat</ContainerRepository>
     <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
-    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:9.0.6</ContainerBaseImage>
+    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:9.0.7</ContainerBaseImage>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
