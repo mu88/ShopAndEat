@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="5.0.0"></a>
+## [5.0.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v5.0.0) (2025-10-05)
+
+### Bug Fixes
+
+* dynamically determine user's home directory by using the corresponding environment variable ([0604c0a](https://www.github.com/mu88/ShopAndEat/commit/0604c0a6dbc8b6d5bba292fa6404958aa20bd4c0))
+
+### Breaking Changes
+
+* use GitHub Container Registry instead of Docker Hub ([bc6a28b](https://www.github.com/mu88/ShopAndEat/commit/bc6a28b8838926e27e7bed26dd94d263c29ed0b0))
+
 <a name="4.1.0"></a>
 ## [4.1.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v4.1.0) (2024-12-20)
 
