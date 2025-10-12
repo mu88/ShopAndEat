@@ -12,8 +12,8 @@ public class PurchaseTests
     [Test]
     public void CreatePurchase()
     {
-        var from = new DateTime();
-        var to = new DateTime();
+        var from = DateTime.MinValue;
+        var to = DateTime.MinValue;
         var purchaseItems = new Collection<PurchaseItem>
         {
             new(new Article { Name = "Tomato", ArticleGroup = new ArticleGroup("Vegetables"), IsInventory = false },

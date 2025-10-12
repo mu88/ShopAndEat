@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Nullable>disable</Nullable>
     <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);IDISP001;IDISP004;MA0012</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.msbuild">
@@ -9,12 +11,13 @@
     </PackageReference>
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="FluentAssertions.Web.v8"/>
-    <PackageReference Include="NSubstitute" />
-    <PackageReference Include="nunit" />
-    <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+    <PackageReference Include="mu88.Shared"/>
+    <PackageReference Include="NSubstitute"/>
+    <PackageReference Include="nunit"/>
+    <PackageReference Include="NUnit3TestAdapter"/>
     <PackageReference Include="Testcontainers" />
   </ItemGroup>
   <ItemGroup>

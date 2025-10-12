@@ -3,8 +3,6 @@ name: Combined CI / Release
 on:
   workflow_dispatch:
   push:
-    tags:
-      - '*'
     branches:
       - '**'
 
@@ -16,12 +14,11 @@ jobs:
       attestations: write
       id-token: write
 
-    uses: mu88/github-actions/.github/workflows/ci-cd.yml@26dd40f4b32f300fc5d95ed070d45fe847808a84
+    uses: mu88/github-actions/.github/workflows/ci-cd.yml@f252e7d1c94652b5e51996174f6e2977ef88f1a5
     with:
-      github-ref-name: ${{ github.ref }}
-      sonar-key: 'mu88_ShopAndEat'
       docker-publish-mode: regular_and_chiseled
-      docker-publish-project: 'ShopAndEat/ShopAndEat.csproj'
+      docker-publish-project: ShopAndEat/ShopAndEat.csproj
       requires-docker-login: true
+      sonar-key: mu88_ShopAndEat
     secrets:
       sonar-token: ${{ secrets.SONAR_TOKEN }}

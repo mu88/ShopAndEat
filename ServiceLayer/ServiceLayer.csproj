@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="AutoMapper" />
+    <PackageReference Include="mu88.Shared"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BizLogic\BizLogic.csproj" />

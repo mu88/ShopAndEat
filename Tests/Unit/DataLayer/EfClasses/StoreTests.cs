@@ -32,7 +32,7 @@ public class StoreTests
 
         testee.AddCompartment(compartmentToAdd);
 
-        testee.Compartments.Should().BeEquivalentTo(new[] { existingCompartment, compartmentToAdd });
+        testee.Compartments.Should().BeEquivalentTo([existingCompartment, compartmentToAdd]);
     }
 
     [Test]

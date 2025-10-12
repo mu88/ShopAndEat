@@ -11,7 +11,7 @@ public class MealTests
     [Test]
     public void CreateMeal()
     {
-        var day = new DateTime();
+        var day = DateTime.MinValue;
         var mealType = new MealType("Lunch", 1);
         var recipe = new Recipe("Soup", 3, 2, Array.Empty<Ingredient>());
 

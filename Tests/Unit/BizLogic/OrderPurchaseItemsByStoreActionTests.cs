@@ -29,6 +29,6 @@ public class OrderPurchaseItemsByStoreActionTests
         var results = testee.OrderPurchaseItemsByStore(store, purchaseItems).ToList();
 
         results.Should().HaveCount(2);
-        results.Should().BeEquivalentTo(new[] { purchaseItem2, purchaseItem1 });
+        results.Should().BeEquivalentTo([purchaseItem2, purchaseItem1]);
     }
 }

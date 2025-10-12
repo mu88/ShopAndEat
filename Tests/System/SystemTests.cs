@@ -5,7 +5,7 @@ using DotNet.Testcontainers.Networks;
 using FluentAssertions;
 using NUnit.Framework;
 
-namespace Tests.SystemTests;
+namespace Tests.System;
 
 [Category("System")]
 public class SystemTests
