@@ -5,8 +5,10 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <ContainerRepository>mu88/shopandeat</ContainerRepository>
     <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:9.0.9</ContainerBaseImage>
+    <IncludeOpenAPIAnalyzers>true</IncludeOpenAPIAnalyzers>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
@@ -14,9 +16,7 @@
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" />
     <PackageReference Include="mu88.Shared"/>
-    <PackageReference Include="Swashbuckle.AspNetCore.Swagger" />
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" />
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
+    <PackageReference Include="Scalar.AspNetCore"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BizDbAccess\BizDbAccess.csproj" />

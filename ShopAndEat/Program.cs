@@ -7,6 +7,7 @@ using DTO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using mu88.Shared.OpenTelemetry;
+using Scalar.AspNetCore;
 using ServiceLayer;
 using ServiceLayer.Concrete;
 
@@ -20,8 +21,7 @@ builder.Services.AddHealthChecks();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
@@ -31,8 +31,8 @@ app.UsePathBase("/shopAndEat");
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference();
     app.UseDeveloperExceptionPage();
 }
 else
