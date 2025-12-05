@@ -4,8 +4,7 @@
     <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <ContainerRepository>mu88/shopandeat</ContainerRepository>
-    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:9.0.10</ContainerBaseImage>
-    <IncludeOpenAPIAnalyzers>true</IncludeOpenAPIAnalyzers>
+    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0.0</ContainerBaseImage>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
@@ -14,7 +13,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" />
     <PackageReference Include="mu88.Shared"/>
     <PackageReference Include="Scalar.AspNetCore"/>
   </ItemGroup>
