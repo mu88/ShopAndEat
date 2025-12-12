@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="6.0.0"></a>
+## [6.0.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v6.0.0) (2025-12-12)
+
+### ✨ Features
+
+* upgrade to .NET 10 ([4414a62](https://www.github.com/mu88/ShopAndEat/commit/4414a62bbe0055c5b0866d76c4e3fa2587888a42))
+
+### ♻️ Refactors
+
+* replace Swashbuckle with Microsoft's OpenAPI package and use Scalar for UI ([42a8a63](https://www.github.com/mu88/ShopAndEat/commit/42a8a639d57ea0339804c8cf043970137525047e))
+
+### 🔧 Chores
+
+* switch to new SLNX format ([bd11cc3](https://www.github.com/mu88/ShopAndEat/commit/bd11cc33d2d9c8bb3c376defc7ebe7ad1be3db17))
+* **deps:** update all dependencies ([19350da](https://www.github.com/mu88/ShopAndEat/commit/19350dae14cc4d4027c17c4c559bec9ef2526cc7))
+* **deps:** update all dependencies ([edeedd9](https://www.github.com/mu88/ShopAndEat/commit/edeedd9fa38c0b952c375c7139c53715d134971c))
+* **deps:** update all dependencies ([e75f446](https://www.github.com/mu88/ShopAndEat/commit/e75f44663c45561d3dc8e583eae20e247f069f1d))
+
+### Breaking Changes
+
+* upgrade to .NET 10 ([4414a62](https://www.github.com/mu88/ShopAndEat/commit/4414a62bbe0055c5b0866d76c4e3fa2587888a42))
+
 <a name="5.0.0"></a>
 ## [5.0.0](https://www.github.com/mu88/ShopAndEat/releases/tag/v5.0.0) (2025-10-05)
 
