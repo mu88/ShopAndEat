@@ -54,10 +54,9 @@ public class SystemTests
                 Arguments =
                     $"publish {projectFile} --os linux --arch amd64 " +
                     $"/t:PublishContainersForMultipleFamilies " +
-                    $"-p:ReleaseVersion={containerImageTag} " +
-                    "-p:IsRelease=false " +
-                    "-p:ContainerRegistry=\"\" " + // image shall not be pushed
-                    "-p:ContainerRepository=\"me/shopandeat\" ",
+                    $"/p:ReleaseVersion={containerImageTag} " +
+                    "/p:IsRelease=false " +
+                    "/p:DoNotApplyGitHubScope=true", // ensures same behavior when run locally or in GitHub Actions
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true
@@ -90,7 +89,7 @@ public class SystemTests
 
     private static IContainer BuildAppContainer(INetwork network, string containerImageTag) =>
         new ContainerBuilder()
-            .WithImage($"me/shopandeat:{containerImageTag}-chiseled")
+            .WithImage($"shopandeat:{containerImageTag}-chiseled")
             .WithNetwork(network)
             .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development") // this changes the connection string to a path which writeable in the container
             .WithPortBinding(8080, true)

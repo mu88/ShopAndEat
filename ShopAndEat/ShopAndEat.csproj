@@ -3,7 +3,7 @@
     <Nullable>disable</Nullable>
     <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0.0</ContainerBaseImage>
+    <CustomContainerBaseImageVersion>10.0.0</CustomContainerBaseImageVersion>
     <PublishRegularContainer>true</PublishRegularContainer>
     <PublishChiseledContainer>true</PublishChiseledContainer>
   </PropertyGroup>
