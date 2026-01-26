@@ -15,9 +15,9 @@
       },
       "mu88.Shared": {
         "type": "Direct",
-        "requested": "[4.3.0, )",
-        "resolved": "4.3.0",
-        "contentHash": "2EBDoign1Y7fnqUXHYMgMVJx+o8VPMSe/rFk1g8dtT7EYM8TJpC0Lyw17SpFOdumxan0r4Galufjo0FAHNKftA==",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "HUDM+l17WVaFymkZ4vciETWiGdaIg1CgBuIs9XKTY7sJe+P8gSxdftLnzuEJv3UFzKYTIPQTZywOvVD7X0J34w==",
         "dependencies": {
           "IDisposableAnalyzers": "4.0.8",
           "Meziantou.Analyzer": "2.0.257",
@@ -311,7 +311,7 @@
         "type": "Project",
         "dependencies": {
           "DataLayer": "[6.0.0, )",
-          "mu88.Shared": "[4.3.0-alpha-301-1.0, )"
+          "mu88.Shared": "[5.0.0, )"
         }
       },
       "datalayer": {
@@ -320,7 +320,7 @@
           "JetBrains.Annotations": "[2025.2.2, )",
           "Microsoft.EntityFrameworkCore": "[10.0.0, )",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.0, )",
-          "mu88.Shared": "[4.3.0-alpha-301-1.0, )"
+          "mu88.Shared": "[5.0.0, )"
         }
       },
       "dto": {
@@ -328,7 +328,7 @@
         "dependencies": {
           "AutoMapper": "[16.0.0, )",
           "DataLayer": "[6.0.0, )",
-          "mu88.Shared": "[4.3.0-alpha-301-1.0, )"
+          "mu88.Shared": "[5.0.0, )"
         }
       },
       "JetBrains.Annotations": {

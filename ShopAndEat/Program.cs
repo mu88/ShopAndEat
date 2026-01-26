@@ -20,7 +20,7 @@ using ServiceLayer.Concrete;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.ConfigureOpenTelemetry("ShopAndEat");
+builder.ConfigureOpenTelemetryMetrics("shopandeat");
 
 ConfigureShopAndEatServices(builder.Services, builder.Configuration);
 
