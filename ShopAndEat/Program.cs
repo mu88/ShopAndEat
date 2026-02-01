@@ -1,18 +1,11 @@
-﻿using System;
-using System.IO;
-using BizDbAccess;
+﻿using BizDbAccess;
 using BizDbAccess.Concrete;
 using BizLogic;
 using BizLogic.Concrete;
 using DataLayer.EF;
 using DTO;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using mu88.Shared.OpenTelemetry;
 using Scalar.AspNetCore;
 using ServiceLayer;
@@ -20,7 +13,7 @@ using ServiceLayer.Concrete;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.ConfigureOpenTelemetryMetrics("shopandeat");
+builder.ConfigureOpenTelemetry("shopandeat");
 
 ConfigureShopAndEatServices(builder.Services, builder.Configuration);
 

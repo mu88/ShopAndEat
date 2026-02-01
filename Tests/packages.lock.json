@@ -59,13 +59,13 @@
       },
       "mu88.Shared": {
         "type": "Direct",
-        "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "HUDM+l17WVaFymkZ4vciETWiGdaIg1CgBuIs9XKTY7sJe+P8gSxdftLnzuEJv3UFzKYTIPQTZywOvVD7X0J34w==",
+        "requested": "[6.0.0, )",
+        "resolved": "6.0.0",
+        "contentHash": "xvb+32IUuUPCBlNCyPON6sa9FkCoiRRaEX9psEbg+OMJBJ4dsVNNJnpqHS3MYYOjrm//xLY70dkaRQzT+Qs29g==",
         "dependencies": {
           "IDisposableAnalyzers": "4.0.8",
-          "Meziantou.Analyzer": "2.0.257",
-          "Microsoft.Extensions.Hosting.Abstractions": "10.0.0",
+          "Meziantou.Analyzer": "2.0.277",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.2",
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "1.14.0",
           "OpenTelemetry.Extensions.Hosting": "1.14.0",
           "OpenTelemetry.Instrumentation.AspNetCore": "1.14.0",
@@ -154,8 +154,8 @@
       },
       "Meziantou.Analyzer": {
         "type": "Transitive",
-        "resolved": "2.0.257",
-        "contentHash": "HADbzZ4rto3boQpWyXIFFc9bxDPviscCXiSQWOTICKD1OJ4gwa9aMfANoQngOk/2en3I9YAHwQ0WXxVMzCTJ+A=="
+        "resolved": "2.0.277",
+        "contentHash": "aqSJLLRr68eHxTLBYkWSC2Gr8KcJ/LaiC2Q7tdi8HnQhUp++dQ6ceJ5/jAmB7P6DAifPs7K7wenNQRQx1n+1ZQ=="
       },
       "Microsoft.ApplicationInsights": {
         "type": "Transitive",
@@ -926,7 +926,7 @@
         "type": "Project",
         "dependencies": {
           "DataLayer": "[6.0.0, )",
-          "mu88.Shared": "[5.0.0, )"
+          "mu88.Shared": "[6.0.0, )"
         }
       },
       "bizlogic": {
@@ -936,7 +936,7 @@
           "BizDbAccess": "[6.0.0, )",
           "DTO": "[6.0.0, )",
           "DataLayer": "[6.0.0, )",
-          "mu88.Shared": "[5.0.0, )"
+          "mu88.Shared": "[6.0.0, )"
         }
       },
       "datalayer": {
@@ -945,7 +945,7 @@
           "JetBrains.Annotations": "[2025.2.4, )",
           "Microsoft.EntityFrameworkCore": "[10.0.2, )",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.2, )",
-          "mu88.Shared": "[5.0.0, )"
+          "mu88.Shared": "[6.0.0, )"
         }
       },
       "dto": {
@@ -953,7 +953,7 @@
         "dependencies": {
           "AutoMapper": "[16.0.0, )",
           "DataLayer": "[6.0.0, )",
-          "mu88.Shared": "[5.0.0, )"
+          "mu88.Shared": "[6.0.0, )"
         }
       },
       "servicelayer": {
@@ -963,7 +963,7 @@
           "BizLogic": "[6.0.0, )",
           "DTO": "[6.0.0, )",
           "DataLayer": "[6.0.0, )",
-          "mu88.Shared": "[5.0.0, )"
+          "mu88.Shared": "[6.0.0, )"
         }
       },
       "shopandeat": {
@@ -980,7 +980,7 @@
           "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "[10.0.2, )",
           "Scalar.AspNetCore": "[2.12.6, )",
           "ServiceLayer": "[6.0.0, )",
-          "mu88.Shared": "[5.0.0, )"
+          "mu88.Shared": "[6.0.0, )"
         }
       },
       "AutoMapper": {
