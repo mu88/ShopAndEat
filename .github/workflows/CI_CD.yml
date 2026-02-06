@@ -14,7 +14,7 @@ jobs:
       id-token: write
       packages: write
 
-    uses: mu88/github-actions/.github/workflows/ci-cd.yml@7ed8a75c08f8e8518a225766dc2c59383c776c47
+    uses: mu88/github-actions/.github/workflows/ci-cd.yml@0213ed5565c48d2c19f9d2588dc49a79c4339a33
     with:
       docker-attest-provenance-and-sbom: true
       docker-publish-project: ShopAndEat/ShopAndEat.csproj
