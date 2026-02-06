@@ -13,7 +13,7 @@ using ServiceLayer.Concrete;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.ConfigureOpenTelemetry("shopandeat");
+builder.Services.ConfigureOpenTelemetry("shopandeat", builder.Configuration);
 
 ConfigureShopAndEatServices(builder.Services, builder.Configuration);
 
