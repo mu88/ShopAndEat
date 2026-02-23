@@ -1,6 +1,6 @@
 {
   "name": "C# (.NET)",
-  "image": "ghcr.io/mu88/devcontainers-dotnet:sdk-10.0.100",
+  "image": "ghcr.io/mu88/devcontainers-dotnet:sdk-10.0.102",
   "containerEnv": {
     "CUSTOMCONNSTR_SQLite": "Data Source=/home/vscode/ShopAndEat.db"
   }
