@@ -1,5 +1,6 @@
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using CliWrap;
+using CliWrap.Buffered;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using DotNet.Testcontainers.Builders;
@@ -73,30 +74,22 @@ public class SystemTests
     {
         var rootDirectory = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.Parent ?? throw new NullReferenceException();
         var projectFile = Path.Join(rootDirectory.FullName, "ShopAndEat", "ShopAndEat.csproj");
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "dotnet",
-                Arguments =
-                    $"publish {projectFile} --os linux --arch amd64 " +
-                    $"/t:PublishContainersForMultipleFamilies " +
-                    $"/p:ReleaseVersion={containerImageTag} " +
-                    "/p:IsRelease=false " +
-                    "/p:DoNotApplyGitHubScope=true", // ensures same behavior when run locally or in GitHub Actions
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true
-            }
-        };
-        process.Start();
-        while (await process.StandardOutput.ReadLineAsync(cancellationToken) is { } line)
-        {
-            Console.WriteLine(line);
-        }
-
-        await process.WaitForExitAsync(cancellationToken);
-        process.ExitCode.Should().Be(0);
+        var buildResult = await Cli.Wrap("dotnet")
+            .WithArguments([
+                "publish",
+                $"{projectFile}",
+                "--os",
+                "linux",
+                "--arch",
+                "amd64",
+                "/t:PublishContainersForMultipleFamilies",
+                $"/p:ReleaseVersion={containerImageTag}",
+                "/p:IsRelease=false",
+                "/p:DoNotApplyGitHubScope=true"
+            ])
+            .ExecuteBufferedAsync(cancellationToken);
+        buildResult.IsSuccess.Should().BeTrue();
+        Console.WriteLine(buildResult.StandardOutput);
     }
 
     private static async Task<IContainer> StartAppInContainersAsync(string containerImageTag, CancellationToken cancellationToken)
