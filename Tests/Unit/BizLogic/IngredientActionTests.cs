@@ -36,9 +36,9 @@ public class IngredientActionTests
         var deleteIngredientGroupDto = new DeleteIngredientDto(3);
         var ingredientDbAccessMock = Substitute.For<IIngredientDbAccess>();
         ingredientDbAccessMock.GetIngredient(3)
-                              .Returns(new Ingredient(new Article { Name = "Tomato", ArticleGroup = new ArticleGroup("Vegetables"), IsInventory = false },
-                                  2,
-                                  new global::DataLayer.EfClasses.Unit("Piece")));
+            .Returns(new Ingredient(new Article { Name = "Tomato", ArticleGroup = new ArticleGroup("Vegetables"), IsInventory = false },
+                2,
+                new global::DataLayer.EfClasses.Unit("Piece")));
         var testee = new IngredientAction(ingredientDbAccessMock, TestMapper.Create());
 
         testee.DeleteIngredient(deleteIngredientGroupDto);

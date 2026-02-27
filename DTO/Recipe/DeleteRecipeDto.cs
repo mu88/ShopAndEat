@@ -2,5 +2,5 @@
 
 public class DeleteRecipeDto(int recipeId)
 {
-    public int RecipeId { get;  } = recipeId;
+    public int RecipeId { get; } = recipeId;
 }

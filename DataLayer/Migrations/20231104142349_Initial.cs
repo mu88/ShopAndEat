@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -9,6 +10,7 @@ namespace DataLayer.Migrations
     public partial class Initial : Migration
     {
         /// <inheritdoc />
+        [SuppressMessage("Design", "MA0051:Method is too long", Justification = "EF Core migration code")]
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(

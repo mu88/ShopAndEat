@@ -31,10 +31,10 @@ public class SimpleCrudHelper(EfCoreContext dbContext, IMapper mapper)
     }
 
     public IEnumerable<TOut> FindMany<TOut>(IEnumerable<int> ids)
-        where TOut : class =>
-        ids.Select(id => dbContext.Set<TOut>().Find(id));
+        where TOut : class
+        => ids.Select(id => dbContext.Set<TOut>().Find(id));
 
     public TOut Find<TOut>(int id)
-        where TOut : class =>
-        dbContext.Set<TOut>().Find(id);
+        where TOut : class
+        => dbContext.Set<TOut>().Find(id);
 }

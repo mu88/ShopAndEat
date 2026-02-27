@@ -12,6 +12,5 @@ public class NewPurchaseItemDto(ExistingArticleDto article, ExistingUnitDto unit
     public double Quantity { get; } = quantity;
 
     /// <inheritdoc />
-    public override string ToString() =>
-        string.Equals(Unit.Name, "Stück", StringComparison.Ordinal) ? $"{Quantity} {Article.Name}" : $"{Quantity} {Unit.Name} {Article.Name}";
+    public override string ToString() => string.Equals(Unit.Name, "Stück", StringComparison.Ordinal) ? $"{Quantity} {Article.Name}" : $"{Quantity} {Unit.Name} {Article.Name}";
 }

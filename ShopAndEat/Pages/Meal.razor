@@ -1,11 +1,11 @@
 ﻿@page "/"
 @page "/meal"
-@using ServiceLayer
 @using DTO.Meal
 @using DTO.MealType
 @using DTO.PurchaseItem
 @using DTO.Recipe
 @using DTO.Store
+@using ServiceLayer
 @using ShopAndEat.Models
 @inject IMealService MealService
 @inject IStoreService StoreService
@@ -35,52 +35,52 @@ else
 <table class="table table-striped">
     <caption>Meal plan</caption>
     <thead>
-    <tr>
-        <th scope="col">Day</th>
-        <th scope="col">Time</th>
-        <th scope="col">Recipe</th>
-        <th scope="col">Has been shopped</th>
-        <th scope="col">Number of persons</th>
-        <th scope="col"/>
-        <th scope="col"/>
-    </tr>
+        <tr>
+            <th scope="col">Day</th>
+            <th scope="col">Time</th>
+            <th scope="col">Recipe</th>
+            <th scope="col">Has been shopped</th>
+            <th scope="col">Number of persons</th>
+            <th scope="col"/>
+            <th scope="col"/>
+        </tr>
     </thead>
     <tbody>
-    @foreach (var meal in Meals)
-    {
-        @if (meal.Day.Date == DateTime.Today)
+        @foreach (var meal in Meals)
         {
-            <tr style="background-color:#00FF00">
-                <td>@meal.Day.ToShortDateString() (@meal.Day.ToString("dddd"))</td>
-                <td>@meal.MealType.Name</td>
-                <td>@meal.Recipe.Name</td>
-                <td>@meal.HasBeenShopped</td>
-                <td>@meal.NumberOfPersons</td>
-                <td>
-                    <button class="btn btn-primary" @onclick="@(_ => DeleteMeal(meal.MealId))">❌</button>
-                </td>
-                <td>
-                    <button class="btn btn-primary" @onclick="@(_ => Toggle(meal.MealId))">🔃</button>
-                </td>
-            </tr>
+            @if (meal.Day.Date == DateTime.Today)
+            {
+                <tr style="background-color:#00FF00">
+                    <td>@meal.Day.ToShortDateString() (@meal.Day.ToString("dddd"))</td>
+                    <td>@meal.MealType.Name</td>
+                    <td>@meal.Recipe.Name</td>
+                    <td>@meal.HasBeenShopped</td>
+                    <td>@meal.NumberOfPersons</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="@(_ => DeleteMeal(meal.MealId))">❌</button>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="@(_ => Toggle(meal.MealId))">🔃</button>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <tr>
+                    <td>@meal.Day.ToShortDateString() (@meal.Day.ToString("dddd"))</td>
+                    <td>@meal.MealType.Name</td>
+                    <td>@meal.Recipe.Name</td>
+                    <td>@meal.HasBeenShopped</td>
+                    <td>@meal.NumberOfPersons</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="@(_ => DeleteMeal(meal.MealId))">❌</button>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="@(_ => Toggle(meal.MealId))">🔃</button>
+                    </td>
+                </tr>
+            }
         }
-        else
-        {
-            <tr>
-                <td>@meal.Day.ToShortDateString() (@meal.Day.ToString("dddd"))</td>
-                <td>@meal.MealType.Name</td>
-                <td>@meal.Recipe.Name</td>
-                <td>@meal.HasBeenShopped</td>
-                <td>@meal.NumberOfPersons</td>
-                <td>
-                    <button class="btn btn-primary" @onclick="@(_ => DeleteMeal(meal.MealId))">❌</button>
-                </td>
-                <td>
-                    <button class="btn btn-primary" @onclick="@(_ => Toggle(meal.MealId))">🔃</button>
-                </td>
-            </tr>
-        }
-    }
     </tbody>
 </table>
 
@@ -121,13 +121,13 @@ else
     <p>
         <label>
             Number of Persons:
-            <InputNumber @bind-Value="_mealModel.NumberOfPersons" />
+            <InputNumber @bind-Value="_mealModel.NumberOfPersons"/>
         </label>
     </p>
     <p>
         <label>
             Number of Days:
-            <InputNumber @bind-Value="_mealModel.NumberOfDays" />
+            <InputNumber @bind-Value="_mealModel.NumberOfDays"/>
         </label>
     </p>
 
@@ -185,7 +185,10 @@ else
 
     private async Task CopyToClipboardAsync()
     {
-        if (!PurchaseItems.Any()) { return; }
+        if (!PurchaseItems.Any())
+        {
+            return;
+        }
 
         await Js.InvokeVoidAsync("navigator.clipboard.writeText", string.Join(Environment.NewLine, PurchaseItems));
     }
@@ -201,7 +204,9 @@ else
     {
         var newMeal = new NewMealDto(_mealModel.Date,
             MealTypes.Single(x => x.Name == _mealModel.MealTypeName),
-            Recipes.Single(x => x.Name == _mealModel.RecipeName), _mealModel.NumberOfPersons, _mealModel.NumberOfDays);
+            Recipes.Single(x => x.Name == _mealModel.RecipeName),
+            _mealModel.NumberOfPersons,
+            _mealModel.NumberOfDays);
         MealService.CreateMeal(newMeal);
         LoadMeals();
     }
@@ -211,7 +216,7 @@ else
         MealService.DeleteMeal(new DeleteMealDto(mealId));
         LoadMeals();
     }
-    
+
     private void Toggle(int mealId)
     {
         MealService.ToggleMeal(mealId);

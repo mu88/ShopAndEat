@@ -48,9 +48,10 @@ public class MealService(
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingMealDto> GetMealsForToday() => simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>()
-        .Where(IsToday)
-        .OrderBy(meal => meal.MealType.Order);
+    public IEnumerable<ExistingMealDto> GetMealsForToday()
+        => simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>()
+            .Where(IsToday)
+            .OrderBy(meal => meal.MealType.Order);
 
     /// <inheritdoc />
     public IEnumerable<NewPurchaseItemDto> GetOrderedPurchaseItems(ExistingStoreDto existingStoreDto)
@@ -61,8 +62,8 @@ public class MealService(
 
         var orderedPurchaseItemsByStore =
             orderPurchaseItemsByStoreAction.OrderPurchaseItemsByStore(store,
-                                                                      generatePurchaseItemsForRecipesAction
-                                                                          .GeneratePurchaseItems(recipes));
+                generatePurchaseItemsForRecipesAction
+                    .GeneratePurchaseItems(recipes));
 
         foreach (var meal in meals)
         {

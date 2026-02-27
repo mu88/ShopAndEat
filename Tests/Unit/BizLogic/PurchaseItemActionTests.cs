@@ -36,9 +36,9 @@ public class PurchaseItemActionTests
         var deletePurchaseItemGroupDto = new DeletePurchaseItemDto(3);
         var purchaseItemDbAccessMock = Substitute.For<IPurchaseItemDbAccess>();
         purchaseItemDbAccessMock.GetPurchaseItem(3)
-                                .Returns(new PurchaseItem(new Article { Name = "Tomato", ArticleGroup = new ArticleGroup("Vegetables"), IsInventory = false },
-                                    2,
-                                    new global::DataLayer.EfClasses.Unit("Piece")));
+            .Returns(new PurchaseItem(new Article { Name = "Tomato", ArticleGroup = new ArticleGroup("Vegetables"), IsInventory = false },
+                2,
+                new global::DataLayer.EfClasses.Unit("Piece")));
         var testee = new PurchaseItemAction(purchaseItemDbAccessMock, TestMapper.Create());
 
         testee.DeletePurchaseItem(deletePurchaseItemGroupDto);

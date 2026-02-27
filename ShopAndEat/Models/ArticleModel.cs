@@ -8,11 +8,15 @@ public class ArticleModel
     {
     }
 
-    [Required] public int ArticleId { get; set; }
+    [Required]
+    public int ArticleId { get; set; }
 
-    [Required] public string ArticleName { get; set; }
+    [Required]
+    public string ArticleName { get; set; }
 
-    [Required] public string ArticleGroupName { get; set; }
+    [Required]
+    public string ArticleGroupName { get; set; }
 
-    [Required] public bool IsInventory { get; set; }
+    [Required]
+    public bool IsInventory { get; set; }
 }

@@ -32,9 +32,9 @@ public class MealApiTests
 
         // Assert
         results.Should()
-               .HaveCount(2)
-               .And.Subject.Should()
-               .SatisfyRespectively(first => first.MealType.Name.Should().Be("Breakfast"),
-                   second => second.MealType.Name.Should().Be("Lunch"));
+            .HaveCount(2)
+            .And.Subject.Should()
+            .SatisfyRespectively(first => first.MealType.Name.Should().Be("Breakfast"),
+                second => second.MealType.Name.Should().Be("Lunch"));
     }
 }

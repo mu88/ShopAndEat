@@ -7,8 +7,7 @@ namespace ServiceLayer.Concrete;
 
 public class RecipeService(SimpleCrudHelper simpleCrudHelper, EfCoreContext context) : IRecipeService
 {
-    public IEnumerable<ExistingRecipeDto> GetAllRecipes() =>
-        simpleCrudHelper.GetAllAsDto<Recipe, ExistingRecipeDto>().OrderBy(recipe => recipe.Name, StringComparer.Ordinal);
+    public IEnumerable<ExistingRecipeDto> GetAllRecipes() => simpleCrudHelper.GetAllAsDto<Recipe, ExistingRecipeDto>().OrderBy(recipe => recipe.Name, StringComparer.Ordinal);
 
     /// <inheritdoc />
     public void CreateNewRecipe(NewRecipeDto newRecipeDto)

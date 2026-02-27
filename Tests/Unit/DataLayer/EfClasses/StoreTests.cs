@@ -13,7 +13,7 @@ public class StoreTests
     public void CreateStore()
     {
         var name = "London";
-        var compartments = new Collection<ShoppingOrder> { new ShoppingOrder(new ArticleGroup("Vegetables"), 30) };
+        var compartments = new Collection<ShoppingOrder> { new(new ArticleGroup("Vegetables"), 30) };
 
         var testee = new Store(name, compartments);
 

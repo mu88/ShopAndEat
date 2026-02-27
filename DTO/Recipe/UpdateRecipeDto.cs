@@ -13,7 +13,7 @@ public class UpdateRecipeDto(
 
     public int NumberOfDays { get; } = numberOfDays;
 
-    public int NumberOfPersons { get;  } = numberOfPersons;
+    public int NumberOfPersons { get; } = numberOfPersons;
 
     public IEnumerable<NewIngredientDto> Ingredients { get; } = ingredients;
 

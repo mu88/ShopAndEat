@@ -12,66 +12,66 @@
 @* TODO mu88: Build translator *@
 
 <EditForm Model="@_recipeModel" OnSubmit="HandleSubmitAsync">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
 
     <p>
         <label>
             Name:
-            <InputText @bind-Value="_recipeModel.Name" />
+            <InputText @bind-Value="_recipeModel.Name"/>
         </label>
     </p>
     <p>
         <label>
             Number of Days:
-            <InputNumber @bind-Value="_recipeModel.NumberOfDays" />
+            <InputNumber @bind-Value="_recipeModel.NumberOfDays"/>
         </label>
     </p>
     <p>
         <label>
             Number of Persons:
-            <InputNumber @bind-Value="_recipeModel.NumberOfPersons" />
+            <InputNumber @bind-Value="_recipeModel.NumberOfPersons"/>
         </label>
     </p>
     <p>
         Ingredients:
-        <table>
-            <tr>
-                <th>Quantity</th>
-                <th>Unit</th>
-                <th>Article</th>
-            </tr>
-            @for (var i = 0; i < NumberOfIngredients; i++)
-            {
-                var ingredientNumber = i;
+    <table>
+        <tr>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Article</th>
+        </tr>
+        @for (var i = 0; i < NumberOfIngredients; i++)
+        {
+            var ingredientNumber = i;
 
-                <tr>
-                    <td>
-                        <input type="number" step=0.1 min=0 @bind="@SelectedQuantities[ingredientNumber]" />
-                    </td>
-                    <td>
-                        <select @bind="@SelectedUnitIds[ingredientNumber]">
-                            <option>Choose Unit...</option>
-                            @foreach (var unit in Units.OrderBy(x => x.Name))
-                            {
-                                <option value="@unit.UnitId">@unit.Name</option>
-                            }
-                        </select>
-                    </td>
-                    <td>
-                        <select @bind="@SelectedArticleIds[ingredientNumber]">
-                            <option>Choose Article...</option>
-                            @foreach (var article in Articles.OrderBy(x => x.Name))
-                            {
-                                <option value="@article.ArticleId">@article.Name</option>
-                            }
-                        </select>
-                    </td>
-                </tr>
-            }
-        </table>
-        <label @onclick="AddIngredient">Add another ingredient</label>
-        <label @onclick="DeleteLastIngredient">Delete last ingredient</label>
+            <tr>
+                <td>
+                    <input type="number" step=0.1 min=0 @bind="@SelectedQuantities[ingredientNumber]"/>
+                </td>
+                <td>
+                    <select @bind="@SelectedUnitIds[ingredientNumber]">
+                        <option>Choose Unit...</option>
+                        @foreach (var unit in Units.OrderBy(x => x.Name))
+                        {
+                            <option value="@unit.UnitId">@unit.Name</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <select @bind="@SelectedArticleIds[ingredientNumber]">
+                        <option>Choose Article...</option>
+                        @foreach (var article in Articles.OrderBy(x => x.Name))
+                        {
+                            <option value="@article.ArticleId">@article.Name</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+        }
+    </table>
+    <label @onclick="AddIngredient">Add another ingredient</label>
+    <label @onclick="DeleteLastIngredient">Delete last ingredient</label>
     </p>
 
     <button type="submit">Save</button>
@@ -80,18 +80,22 @@
 <table class="table table-striped">
     <caption>Recipes</caption>
     <thead>
-    <tr>
-        <th scope="col">Name</th>
-        <th scope="col" />
-    </tr>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col"/>
+        </tr>
     </thead>
     <tbody>
         @foreach (var recipe in Recipes)
         {
             <tr>
                 <td>@recipe.Name</td>
-                <td><button class="btn btn-primary" @onclick="@(e => DeleteRecipe(recipe.RecipeId))">❌</button></td>
-                <td><button class="btn btn-primary" @onclick="@(e => EditRecipeAsync(recipe.RecipeId))">🖊</button></td>
+                <td>
+                    <button class="btn btn-primary" @onclick="@(e => DeleteRecipe(recipe.RecipeId))">❌</button>
+                </td>
+                <td>
+                    <button class="btn btn-primary" @onclick="@(e => EditRecipeAsync(recipe.RecipeId))">🖊</button>
+                </td>
             </tr>
         }
     </tbody>
@@ -132,7 +136,7 @@
 
     private int NumberOfIngredients => SelectedArticleIds.Count;
 
-    private readonly RecipeModel _recipeModel = new RecipeModel();
+    private readonly RecipeModel _recipeModel = new();
 
     private async Task HandleSubmitAsync()
     {
@@ -141,8 +145,7 @@
             var ingredients = new List<NewIngredientDto>();
             for (var i = 0; i < NumberOfIngredients; i++)
             {
-                ingredients.Add(new NewIngredientDto(
-                    Articles.Single(x => x.ArticleId == SelectedArticleIds[i]),
+                ingredients.Add(new NewIngredientDto(Articles.Single(x => x.ArticleId == SelectedArticleIds[i]),
                     SelectedQuantities[i],
                     Units.Single(x => x.UnitId == SelectedUnitIds[i])));
             }
@@ -155,8 +158,7 @@
             var ingredients = new List<NewIngredientDto>();
             for (var i = 0; i < NumberOfIngredients; i++)
             {
-                ingredients.Add(new NewIngredientDto(
-                    Articles.Single(x => x.ArticleId == SelectedArticleIds[i]),
+                ingredients.Add(new NewIngredientDto(Articles.Single(x => x.ArticleId == SelectedArticleIds[i]),
                     SelectedQuantities[i],
                     Units.Single(x => x.UnitId == SelectedUnitIds[i])));
             }

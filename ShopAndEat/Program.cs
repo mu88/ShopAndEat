@@ -5,7 +5,6 @@ using BizLogic.Concrete;
 using DataLayer.EF;
 using DTO;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using mu88.Shared.OpenTelemetry;
 using Scalar.AspNetCore;
 using ServiceLayer;
@@ -58,10 +57,10 @@ void CreateDbIfNotExists(WebApplication webApp)
 
     try
     {
-        DatabaseFacade database = services.GetRequiredService<EfCoreContext>().Database;
+        var database = services.GetRequiredService<EfCoreContext>().Database;
         var connectionString = database.GetConnectionString();
         var databasePath = connectionString?.Replace("Data Source=", string.Empty);
-        DirectoryInfo parentDirectoryOfDatabase = Directory.GetParent(databasePath);
+        var parentDirectoryOfDatabase = Directory.GetParent(databasePath);
         if (!parentDirectoryOfDatabase.Exists)
         {
             Directory.CreateDirectory(parentDirectoryOfDatabase.FullName);

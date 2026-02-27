@@ -2,5 +2,6 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Version>6.0.0</Version>
+    <NoWarn>$(NoWarn);MA0026;MA0056</NoWarn> <!-- It's old code, I can live with it-->
   </PropertyGroup>
 </Project>

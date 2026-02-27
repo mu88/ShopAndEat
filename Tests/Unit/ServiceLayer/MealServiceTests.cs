@@ -37,12 +37,12 @@ public class MealServiceTests
 
         // Assert
         results.Should()
-               .HaveCount(2)
-               .And.Subject.Should()
-               .AllSatisfy(meal => meal.Day.Should().BeSameDateAs(DateTime.Today))
-               .And.Subject.Should()
-               .SatisfyRespectively(first => first.MealType.Name.Should().Be("Breakfast"),
-                   second => second.MealType.Name.Should().Be("Lunch"));
+            .HaveCount(2)
+            .And.Subject.Should()
+            .AllSatisfy(meal => meal.Day.Should().BeSameDateAs(DateTime.Today))
+            .And.Subject.Should()
+            .SatisfyRespectively(first => first.MealType.Name.Should().Be("Breakfast"),
+                second => second.MealType.Name.Should().Be("Lunch"));
     }
 
     [Test]
@@ -63,10 +63,10 @@ public class MealServiceTests
 
         // Assert
         results.Should()
-               .HaveCount(2)
-               .And.Subject.Should()
-               .SatisfyRespectively(first => first.Day.Should().BeSameDateAs(DateTime.Today),
-                   second => second.Day.Should().BeSameDateAs(DateTime.Today.AddDays(1)));
+            .HaveCount(2)
+            .And.Subject.Should()
+            .SatisfyRespectively(first => first.Day.Should().BeSameDateAs(DateTime.Today),
+                second => second.Day.Should().BeSameDateAs(DateTime.Today.AddDays(1)));
     }
 
     [Test]
@@ -95,10 +95,10 @@ public class MealServiceTests
 
         // Assert
         context.Meals.Should()
-               .HaveCount(2)
-               .And.Subject.Select(meal => meal.Day)
-               .Should()
-               .BeEquivalentTo(new[] { 4.November(2023), 5.November(2023) });
+            .HaveCount(2)
+            .And.Subject.Select(meal => meal.Day)
+            .Should()
+            .BeEquivalentTo(new[] { 4.November(2023), 5.November(2023) });
     }
 
     private static MealService CreateTestee(EfCoreContext context)

@@ -10,14 +10,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="FluentAssertions.Web.v8"/>
+    <PackageReference Include="FluentAssertions.Web.v8" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
-    <PackageReference Include="mu88.Shared"/>
-    <PackageReference Include="NSubstitute"/>
-    <PackageReference Include="nunit"/>
-    <PackageReference Include="NUnit3TestAdapter"/>
+    <PackageReference Include="mu88.Shared" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="nunit" />
+    <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="Testcontainers" />
   </ItemGroup>
   <ItemGroup>

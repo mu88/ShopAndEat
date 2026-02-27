@@ -43,25 +43,29 @@
 <table class="table table-striped">
     <caption>Articles</caption>
     <thead>
-    <tr>
-        <th scope="col">Name</th>
-        <th scope="col">Article Group</th>
-        <th scope="col">Is Inventory</th>
-        <th scope="col" />
-        <th scope="col" />
-    </tr>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Article Group</th>
+            <th scope="col">Is Inventory</th>
+            <th scope="col"/>
+            <th scope="col"/>
+        </tr>
     </thead>
     <tbody>
-    @foreach (var article in Articles)
-    {
-        <tr>
-            <td>@article.Name</td>
-            <td>@article.ArticleGroup.Name</td>
-            <td>@article.IsInventory</td>
-            <td><button class="btn btn-primary" @onclick="@(_ => DeleteArticle(article.ArticleId))">❌</button></td>
-            <td><button class="btn btn-primary" @onclick="@(_ => EditArticleAsync(article.ArticleId))">🖊</button></td>
-        </tr>
-    }
+        @foreach (var article in Articles)
+        {
+            <tr>
+                <td>@article.Name</td>
+                <td>@article.ArticleGroup.Name</td>
+                <td>@article.IsInventory</td>
+                <td>
+                    <button class="btn btn-primary" @onclick="@(_ => DeleteArticle(article.ArticleId))">❌</button>
+                </td>
+                <td>
+                    <button class="btn btn-primary" @onclick="@(_ => EditArticleAsync(article.ArticleId))">🖊</button>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
 
@@ -104,12 +108,12 @@
             ArticleService.UpdateArticle(updatedArticle);
             _articleModel.ArticleId = default;
         }
-        
+
         await ShowSaveConfirmationAsync();
-        
+
         LoadArticles();
     }
-    
+
     private async Task ShowSaveConfirmationAsync() => await Js.InvokeVoidAsync("window.alert", "Saved!");
 
     private void DeleteArticle(int articleId)
@@ -127,7 +131,7 @@
         _articleModel.IsInventory = article.IsInventory;
         await ScrollToTopAsync();
     }
-    
+
     private async Task ScrollToTopAsync() => await Js.InvokeVoidAsync("window.scrollTo", 0, 0);
 
 }
