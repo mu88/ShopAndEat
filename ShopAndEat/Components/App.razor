@@ -3,15 +3,14 @@
     <head>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <base href="~/"/>
+        <base href="/shopAndEat/" />
         <title>ShopAndEat</title>
         <link rel="stylesheet" href="@Assets["css/bootstrap/bootstrap.min.css"]"/>
         <link href="@Assets["css/site.css"]" rel="stylesheet"/>
-        <link href="@Assets["ShopAndEat.styles.css"]" rel="stylesheet"/>
-        <HeadOutlet/>
+        <HeadOutlet @rendermode="InteractiveServer"/>
     </head>
     <body>
-        <Routes/>
+        <Routes @rendermode="InteractiveServer"/>
         <script src="@Assets["_framework/blazor.web.js"]"></script>
     </body>
 </html>

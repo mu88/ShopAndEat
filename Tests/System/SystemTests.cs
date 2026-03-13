@@ -110,7 +110,6 @@ public class SystemTests
     private static IContainer BuildAppContainer(INetwork network, string containerImageTag)
         => new ContainerBuilder($"shopandeat:{containerImageTag}-chiseled")
             .WithNetwork(network)
-            .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development") // this changes the connection string to a path which writeable in the container
             .WithPortBinding(8080, true)
             .WithWaitStrategy(Wait.ForUnixContainer()
                 .UntilMessageIsLogged("Content root path: /app",

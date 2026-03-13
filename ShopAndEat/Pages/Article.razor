@@ -8,7 +8,7 @@
 @inject IJSRuntime Js
 @* TODO mu88: Build translator *@
 
-<EditForm Model="@_articleModel" OnSubmit="HandleSubmitAsync">
+<EditForm Model="@_articleModel" OnSubmit="HandleSubmitAsync" FormName="ArticleForm">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
 

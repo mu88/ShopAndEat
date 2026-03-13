@@ -94,11 +94,7 @@ void ConfigureShopAndEatServices(IServiceCollection services, IConfiguration con
     services.AddTransient<IGeneratePurchaseItemsForRecipesAction, GeneratePurchaseItemsForRecipesAction>();
     services.AddTransient<IOrderPurchaseItemsByStoreAction, OrderPurchaseItemsByStoreAction>();
     services.AddTransient<IGetRecipesForMealsAction, GetRecipesForMealsAction>();
-    services.AddAutoMapper(config =>
-    {
-        config.AddProfile<AutoMapperProfile>();
-        config.LicenseKey = "SomeInvalidLicenseKey"; // Replace with a valid license key if needed
-    });
+    services.AddAutoMapper(config => config.AddProfile<AutoMapperProfile>());
 
     services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies().UseSqlite(configuration.GetConnectionString("SQLite")));
 
