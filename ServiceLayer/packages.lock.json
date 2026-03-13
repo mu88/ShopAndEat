@@ -371,6 +371,7 @@
           "Microsoft.Extensions.Logging": "10.0.3"
         }
       }
-    }
+    },
+    "net10.0/linux-x64": {}
   }
 }

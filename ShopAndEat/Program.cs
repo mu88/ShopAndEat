@@ -9,6 +9,7 @@ using mu88.Shared.OpenTelemetry;
 using Scalar.AspNetCore;
 using ServiceLayer;
 using ServiceLayer.Concrete;
+using ShopAndEat.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,8 +18,8 @@ builder.Services.ConfigureOpenTelemetry("shopandeat", builder.Configuration);
 ConfigureShopAndEatServices(builder.Services, builder.Configuration);
 
 builder.Services.AddHealthChecks();
-builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
@@ -32,21 +33,21 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
-    app.UseDeveloperExceptionPage();
 }
 else
 {
-    app.UseExceptionHandler("/Error");
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
 
-app.UseStaticFiles();
-app.UseAuthorization();
+app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseAntiforgery();
 
 app.UseRouting();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
+app.MapStaticAssets();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
 
 await app.RunAsync();
 
