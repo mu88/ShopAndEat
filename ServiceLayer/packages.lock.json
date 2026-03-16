@@ -317,7 +317,7 @@
       "bizlogic": {
         "type": "Project",
         "dependencies": {
-          "AutoMapper": "[16.0.0, )",
+          "AutoMapper": "[16.1.1, )",
           "BizDbAccess": "[6.0.0, )",
           "DTO": "[6.0.0, )",
           "DataLayer": "[6.0.0, )",
@@ -336,7 +336,7 @@
       "dto": {
         "type": "Project",
         "dependencies": {
-          "AutoMapper": "[16.0.0, )",
+          "AutoMapper": "[16.1.1, )",
           "DataLayer": "[6.0.0, )",
           "mu88.Shared": "[8.0.0, )"
         }
