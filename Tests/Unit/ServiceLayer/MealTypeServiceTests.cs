@@ -3,7 +3,6 @@ using DTO.MealType;
 using FluentAssertions;
 using NUnit.Framework;
 using ServiceLayer.Concrete;
-using Tests.Doubles;
 
 namespace Tests.Unit.ServiceLayer;
 
@@ -15,12 +14,12 @@ public class MealTypeServiceTests
     public void CreateMealType()
     {
         using var context = new InMemoryDbContext();
-        var testee = new MealTypeService(new SimpleCrudHelper(context, TestMapper.Create()));
+        var testee = new MealTypeService(new SimpleCrudHelper(context));
         var newMealTypeDto = new NewMealTypeDto("Lunch");
 
         testee.CreateMealType(newMealTypeDto);
 
-        context.MealTypes.Should().Contain(x => x.Name == "Lunch");
+        context.MealTypes.Should().Contain(mealType => mealType.Name == "Lunch");
     }
 
     [Test]
@@ -29,12 +28,12 @@ public class MealTypeServiceTests
         using var context = new InMemoryDbContext();
         var existingMealType = context.MealTypes.Add(new MealType("Lunch", 1));
         context.SaveChanges();
-        var testee = new MealTypeService(new SimpleCrudHelper(context, TestMapper.Create()));
+        var testee = new MealTypeService(new SimpleCrudHelper(context));
         var deleteMealTypeDto = new DeleteMealTypeDto(existingMealType.Entity.MealTypeId);
 
         testee.DeleteMealType(deleteMealTypeDto);
 
-        context.MealTypes.Should().NotContain(x => x.Name == "Lunch");
+        context.MealTypes.Should().NotContain(mealType => mealType.Name == "Lunch");
     }
 
     [Test]
@@ -44,10 +43,10 @@ public class MealTypeServiceTests
         context.MealTypes.Add(new MealType("Lunch", 1));
         context.MealTypes.Add(new MealType("Breakfast", 2));
         context.SaveChanges();
-        var testee = new MealTypeService(new SimpleCrudHelper(context, TestMapper.Create()));
+        var testee = new MealTypeService(new SimpleCrudHelper(context));
 
         var results = testee.GetAllMealTypes();
 
-        results.Should().Contain(x => x.Name == "Lunch").And.Contain(x => x.Name == "Breakfast");
+        results.Should().Contain(mealType => mealType.Name == "Lunch").And.Contain(mealType => mealType.Name == "Breakfast");
     }
 }

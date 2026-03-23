@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="AutoMapper" />
     <PackageReference Include="mu88.Shared" />
   </ItemGroup>
   <ItemGroup>

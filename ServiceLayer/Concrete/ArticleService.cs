@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using BizLogic;
+﻿using BizLogic;
 using DataLayer.EF;
 using DataLayer.EfClasses;
 using DTO.Article;
@@ -9,7 +8,6 @@ namespace ServiceLayer.Concrete;
 public class ArticleService(
     IArticleAction articleAction,
     EfCoreContext context,
-    IMapper mapper,
     SimpleCrudHelper simpleCrudHelper)
     : IArticleService
 {
@@ -21,7 +19,7 @@ public class ArticleService(
         var createdArticle = context.Articles.Add(newArticle);
         context.SaveChanges();
 
-        return mapper.Map<ExistingArticleDto>(createdArticle.Entity);
+        return createdArticle.Entity.ToDto();
     }
 
     public void DeleteArticle(DeleteArticleDto deleteArticleDto)
@@ -31,7 +29,7 @@ public class ArticleService(
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingArticleDto> GetAllArticles() => articleAction.GetAllArticles().OrderBy(x => x.Name, StringComparer.Ordinal);
+    public IEnumerable<ExistingArticleDto> GetAllArticles() => articleAction.GetAllArticles().OrderBy(article => article.Name, StringComparer.Ordinal);
 
     public void UpdateArticle(ExistingArticleDto existingArticleDto)
     {

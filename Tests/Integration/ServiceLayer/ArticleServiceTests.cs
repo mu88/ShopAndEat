@@ -7,7 +7,6 @@ using DTO.ArticleGroup;
 using FluentAssertions;
 using NUnit.Framework;
 using ServiceLayer.Concrete;
-using Tests.Doubles;
 
 namespace Tests.Integration.ServiceLayer;
 
@@ -27,13 +26,9 @@ public class ArticleServiceTests
             new ExistingArticleGroupDto(vegetables.Entity.ArticleGroupId, "Vegetables"),
             false));
 
-        context.Articles.Should().Contain(x => x.Name == "Tomato");
+        context.Articles.Should().Contain(article => article.Name == "Tomato");
     }
 
     private static ArticleService CreateTestee(EfCoreContext context)
-    {
-        var mapper = TestMapper.Create();
-        var testee = new ArticleService(new ArticleAction(new ArticleDbAccess(context), mapper), context, mapper, new SimpleCrudHelper(context, mapper));
-        return testee;
-    }
+        => new(new ArticleAction(new ArticleDbAccess(context)), context, new SimpleCrudHelper(context));
 }

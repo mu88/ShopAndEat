@@ -1,17 +1,16 @@
-﻿using AutoMapper;
-using DataLayer.EF;
+﻿using DataLayer.EF;
 
 namespace ServiceLayer.Concrete;
 
-public class SimpleCrudHelper(EfCoreContext dbContext, IMapper mapper)
+public class SimpleCrudHelper(EfCoreContext dbContext)
 {
-    public TDtoOut Create<TDtoIn, TIn, TDtoOut>(TDtoIn newDto)
+    public TDtoOut Create<TDtoIn, TIn, TDtoOut>(TDtoIn newDto, Func<TDtoIn, TIn> toEntity, Func<TIn, TDtoOut> toDto)
+        where TIn : class
     {
-        var mappedObject = mapper.Map<TDtoIn, TIn>(newDto);
-        var addedEntity = dbContext.Add(mappedObject);
+        var addedEntity = dbContext.Add(toEntity(newDto));
         dbContext.SaveChanges();
 
-        return mapper.Map<TDtoOut>(addedEntity.Entity);
+        return toDto(addedEntity.Entity);
     }
 
     public void Delete<TIn>(int idToDelete)
@@ -22,13 +21,9 @@ public class SimpleCrudHelper(EfCoreContext dbContext, IMapper mapper)
         dbContext.SaveChanges();
     }
 
-    public IEnumerable<TDtoOut> GetAllAsDto<TIn, TDtoOut>()
+    public IEnumerable<TDtoOut> GetAllAsDto<TIn, TDtoOut>(Func<TIn, TDtoOut> toDto)
         where TIn : class
-    {
-        var allEntities = dbContext.Set<TIn>();
-
-        return mapper.Map<IEnumerable<TDtoOut>>(allEntities);
-    }
+        => dbContext.Set<TIn>().AsEnumerable().Select(toDto);
 
     public IEnumerable<TOut> FindMany<TOut>(IEnumerable<int> ids)
         where TOut : class

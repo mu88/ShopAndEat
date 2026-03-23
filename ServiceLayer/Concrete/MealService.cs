@@ -1,6 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using AutoMapper;
-using BizLogic;
+﻿using BizLogic;
 using DataLayer.EF;
 using DataLayer.EfClasses;
 using DTO.Meal;
@@ -14,8 +12,7 @@ public class MealService(
     IOrderPurchaseItemsByStoreAction orderPurchaseItemsByStoreAction,
     IGetRecipesForMealsAction getRecipesForMealsAction,
     EfCoreContext context,
-    SimpleCrudHelper simpleCrudHelper,
-    IMapper mapper)
+    SimpleCrudHelper simpleCrudHelper)
     : IMealService
 {
     /// <inheritdoc />
@@ -35,28 +32,21 @@ public class MealService(
 
     /// <inheritdoc />
     public IEnumerable<ExistingMealDto> GetFutureMeals()
-    {
-        var allMeals = simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>();
-
-        var results = new Collection<ExistingMealDto>();
-        foreach (var meal in allMeals.Where(IsInFuture))
-        {
-            results.Add(meal);
-        }
-
-        return results.OrderBy(x => x.Day).ThenBy(x => x.MealType.Order);
-    }
+        => simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>(meal => meal.ToDto())
+            .Where(IsInFuture)
+            .OrderBy(meal => meal.Day)
+            .ThenBy(meal => meal.MealType.Order);
 
     /// <inheritdoc />
     public IEnumerable<ExistingMealDto> GetMealsForToday()
-        => simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>()
+        => simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>(meal => meal.ToDto())
             .Where(IsToday)
             .OrderBy(meal => meal.MealType.Order);
 
     /// <inheritdoc />
     public IEnumerable<NewPurchaseItemDto> GetOrderedPurchaseItems(ExistingStoreDto existingStoreDto)
     {
-        var meals = context.Meals.Where(x => !x.HasBeenShopped);
+        var meals = context.Meals.Where(meal => !meal.HasBeenShopped);
         var recipes = getRecipesForMealsAction.GetRecipesForMeals(meals);
         var store = simpleCrudHelper.Find<Store>(existingStoreDto.StoreId);
 
@@ -70,7 +60,7 @@ public class MealService(
             meal.HasBeenShopped = true;
         }
 
-        var newPurchaseItemDtos = mapper.Map<IEnumerable<NewPurchaseItemDto>>(orderedPurchaseItemsByStore);
+        var newPurchaseItemDtos = orderedPurchaseItemsByStore.Select(item => item.ToNewDto());
 
         // TODO MUL: Investigate why conversion has to be done before calling SaveChanges()
         context.SaveChanges();

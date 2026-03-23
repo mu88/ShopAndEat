@@ -2,7 +2,6 @@
 using FluentAssertions;
 using NUnit.Framework;
 using ServiceLayer.Concrete;
-using Tests.Doubles;
 
 namespace Tests.Unit.ServiceLayer;
 
@@ -14,12 +13,12 @@ public class UnitServiceTests
     public void CreateUnit()
     {
         using var context = new InMemoryDbContext();
-        var testee = new UnitService(new SimpleCrudHelper(context, TestMapper.Create()));
+        var testee = new UnitService(new SimpleCrudHelper(context));
         var newUnitDto = new NewUnitDto("Piece");
 
         testee.CreateUnit(newUnitDto);
 
-        context.Units.Should().Contain(x => x.Name == "Piece");
+        context.Units.Should().Contain(unit => unit.Name == "Piece");
     }
 
     [Test]
@@ -28,12 +27,12 @@ public class UnitServiceTests
         using var context = new InMemoryDbContext();
         var existingUnit = context.Units.Add(new global::DataLayer.EfClasses.Unit("Piece"));
         context.SaveChanges();
-        var testee = new UnitService(new SimpleCrudHelper(context, TestMapper.Create()));
+        var testee = new UnitService(new SimpleCrudHelper(context));
         var deleteUnitDto = new DeleteUnitDto(existingUnit.Entity.UnitId);
 
         testee.DeleteUnit(deleteUnitDto);
 
-        context.Units.Should().NotContain(x => x.Name == "Piece");
+        context.Units.Should().NotContain(unit => unit.Name == "Piece");
     }
 
     [Test]
@@ -43,10 +42,10 @@ public class UnitServiceTests
         context.Units.Add(new global::DataLayer.EfClasses.Unit("Piece"));
         context.Units.Add(new global::DataLayer.EfClasses.Unit("Bag"));
         context.SaveChanges();
-        var testee = new UnitService(new SimpleCrudHelper(context, TestMapper.Create()));
+        var testee = new UnitService(new SimpleCrudHelper(context));
 
         var results = testee.GetAllUnits();
 
-        results.Should().Contain(x => x.Name == "Piece").And.Contain(x => x.Name == "Bag");
+        results.Should().Contain(unit => unit.Name == "Piece").And.Contain(unit => unit.Name == "Bag");
     }
 }

@@ -10,7 +10,6 @@ using FluentAssertions.Extensions;
 using NSubstitute;
 using NUnit.Framework;
 using ServiceLayer.Concrete;
-using Tests.Doubles;
 
 namespace Tests.Unit.ServiceLayer;
 
@@ -84,7 +83,7 @@ public class MealServiceTests
             new ExistingRecipeDto(lunchRecipe.Name,
                 lunchRecipe.NumberOfDays,
                 lunchRecipe.NumberOfPersons,
-                Enumerable.Empty<ExistingIngredientDto>(),
+                [],
                 lunchRecipe.RecipeId),
             1,
             2);
@@ -103,13 +102,11 @@ public class MealServiceTests
 
     private static MealService CreateTestee(EfCoreContext context)
     {
-        var mapper = TestMapper.Create();
         var testee = new MealService(Substitute.For<IGeneratePurchaseItemsForRecipesAction>(),
             Substitute.For<IOrderPurchaseItemsByStoreAction>(),
             Substitute.For<IGetRecipesForMealsAction>(),
             context,
-            new SimpleCrudHelper(context, mapper),
-            mapper);
+            new SimpleCrudHelper(context));
         return testee;
     }
 }

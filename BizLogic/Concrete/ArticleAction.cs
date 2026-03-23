@@ -1,19 +1,17 @@
-﻿using AutoMapper;
-using BizDbAccess;
-using DataLayer.EfClasses;
+﻿using BizDbAccess;
 using DTO.Article;
 
 namespace BizLogic.Concrete;
 
-public class ArticleAction(IArticleDbAccess articleDbAccess, IMapper mapper) : IArticleAction
+public class ArticleAction(IArticleDbAccess articleDbAccess) : IArticleAction
 {
     /// <inheritdoc />
     public ExistingArticleDto CreateArticle(NewArticleDto newArticleDto)
     {
-        var newArticle = mapper.Map<Article>(newArticleDto);
+        var newArticle = newArticleDto.ToEntity();
         var createdArticle = articleDbAccess.AddArticle(newArticle);
 
-        return mapper.Map<ExistingArticleDto>(createdArticle);
+        return createdArticle.ToDto();
     }
 
     /// <inheritdoc />
@@ -24,5 +22,5 @@ public class ArticleAction(IArticleDbAccess articleDbAccess, IMapper mapper) : I
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingArticleDto> GetAllArticles() => mapper.Map<IEnumerable<ExistingArticleDto>>(articleDbAccess.GetArticles());
+    public IEnumerable<ExistingArticleDto> GetAllArticles() => articleDbAccess.GetArticles().Select(a => a.ToDto());
 }

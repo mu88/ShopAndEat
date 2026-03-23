@@ -3,7 +3,6 @@ using BizDbAccess.Concrete;
 using BizLogic;
 using BizLogic.Concrete;
 using DataLayer.EF;
-using DTO;
 using Microsoft.EntityFrameworkCore;
 using mu88.Shared.OpenTelemetry;
 using Scalar.AspNetCore;
@@ -94,7 +93,6 @@ void ConfigureShopAndEatServices(IServiceCollection services, IConfiguration con
     services.AddTransient<IGeneratePurchaseItemsForRecipesAction, GeneratePurchaseItemsForRecipesAction>();
     services.AddTransient<IOrderPurchaseItemsByStoreAction, OrderPurchaseItemsByStoreAction>();
     services.AddTransient<IGetRecipesForMealsAction, GetRecipesForMealsAction>();
-    services.AddAutoMapper(config => config.AddProfile<AutoMapperProfile>());
 
     services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies().UseSqlite(configuration.GetConnectionString("SQLite")));
 

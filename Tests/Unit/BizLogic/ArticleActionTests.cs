@@ -5,7 +5,6 @@ using DTO.Article;
 using DTO.ArticleGroup;
 using NSubstitute;
 using NUnit.Framework;
-using Tests.Doubles;
 
 namespace Tests.Unit.BizLogic;
 
@@ -18,7 +17,8 @@ public class ArticleActionTests
     {
         var newArticleDto = new NewArticleDto("Cheese", new ExistingArticleGroupDto(3, "Diary"), true);
         var articleDbAccessMock = Substitute.For<IArticleDbAccess>();
-        var testee = new ArticleAction(articleDbAccessMock, TestMapper.Create());
+        articleDbAccessMock.AddArticle(Arg.Any<Article>()).Returns(call => call.Arg<Article>());
+        var testee = new ArticleAction(articleDbAccessMock);
 
         testee.CreateArticle(newArticleDto);
 
@@ -31,7 +31,7 @@ public class ArticleActionTests
         var deleteArticleGroupDto = new DeleteArticleDto(3);
         var articleDbAccessMock = Substitute.For<IArticleDbAccess>();
         articleDbAccessMock.GetArticle(3).Returns(new Article { Name = "Cheese", ArticleGroup = new ArticleGroup("Diary"), IsInventory = false });
-        var testee = new ArticleAction(articleDbAccessMock, TestMapper.Create());
+        var testee = new ArticleAction(articleDbAccessMock);
 
         testee.DeleteArticle(deleteArticleGroupDto);
 
@@ -42,7 +42,7 @@ public class ArticleActionTests
     public void GetAllArticles()
     {
         var articleDbAccessMock = Substitute.For<IArticleDbAccess>();
-        var testee = new ArticleAction(articleDbAccessMock, TestMapper.Create());
+        var testee = new ArticleAction(articleDbAccessMock);
 
         testee.GetAllArticles();
 

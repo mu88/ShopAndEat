@@ -1,11 +1,11 @@
 ﻿using BizLogic;
+using DataLayer.EfClasses;
 using DTO.Article;
 using DTO.ArticleGroup;
 using FluentAssertions;
 using NSubstitute;
 using NUnit.Framework;
 using ServiceLayer.Concrete;
-using Tests.Doubles;
 
 namespace Tests.Unit.ServiceLayer;
 
@@ -17,13 +17,15 @@ public class ArticleServiceTests
     public void CreateArticle()
     {
         using var context = new InMemoryDbContext();
-        var newArticleDto = new NewArticleDto("Cheese", new ExistingArticleGroupDto(3, "Diary"), true);
+        var articleGroup = context.ArticleGroups.Add(new ArticleGroup("Diary"));
+        context.SaveChanges();
+        var newArticleDto = new NewArticleDto("Cheese", new ExistingArticleGroupDto(articleGroup.Entity.ArticleGroupId, "Diary"), true);
         var articleActionMock = Substitute.For<IArticleAction>();
         var testee = CreateTestee(articleActionMock, context);
 
         testee.CreateArticle(newArticleDto);
 
-        context.Articles.Should().Contain(x => x.Name == "Cheese");
+        context.Articles.Should().Contain(article => article.Name == "Cheese");
     }
 
     [Test]
@@ -52,9 +54,5 @@ public class ArticleServiceTests
     }
 
     private static ArticleService CreateTestee(IArticleAction articleActionMock, InMemoryDbContext context)
-    {
-        var mapper = TestMapper.Create();
-        var testee = new ArticleService(articleActionMock, context, mapper, new SimpleCrudHelper(context, mapper));
-        return testee;
-    }
+        => new(articleActionMock, context, new SimpleCrudHelper(context));
 }

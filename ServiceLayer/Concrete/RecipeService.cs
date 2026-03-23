@@ -7,7 +7,7 @@ namespace ServiceLayer.Concrete;
 
 public class RecipeService(SimpleCrudHelper simpleCrudHelper, EfCoreContext context) : IRecipeService
 {
-    public IEnumerable<ExistingRecipeDto> GetAllRecipes() => simpleCrudHelper.GetAllAsDto<Recipe, ExistingRecipeDto>().OrderBy(recipe => recipe.Name, StringComparer.Ordinal);
+    public IEnumerable<ExistingRecipeDto> GetAllRecipes() => simpleCrudHelper.GetAllAsDto<Recipe, ExistingRecipeDto>(recipe => recipe.ToDto()).OrderBy(recipe => recipe.Name, StringComparer.Ordinal);
 
     /// <inheritdoc />
     public void CreateNewRecipe(NewRecipeDto newRecipeDto)
@@ -28,12 +28,18 @@ public class RecipeService(SimpleCrudHelper simpleCrudHelper, EfCoreContext cont
     /// <inheritdoc />
     public void DeleteRecipe(DeleteRecipeDto recipeToDelete)
     {
-        var existingMeals = simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>();
-        existingMeals.Where(x => x.Recipe.RecipeId == recipeToDelete.RecipeId)
-            .ToList()
-            .ForEach(x => simpleCrudHelper.Delete<Meal>(x.MealId));
+        var existingMeals = simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>(meal => meal.ToDto());
+        foreach (var meal in existingMeals.Where(meal => meal.Recipe.RecipeId == recipeToDelete.RecipeId))
+        {
+            simpleCrudHelper.Delete<Meal>(meal.MealId);
+        }
+
         var existingRecipe = simpleCrudHelper.Find<Recipe>(recipeToDelete.RecipeId);
-        existingRecipe.Ingredients.Select(x => x.IngredientId).ToList().ForEach(x => simpleCrudHelper.Delete<Ingredient>(x));
+        foreach (var ingredient in existingRecipe.Ingredients)
+        {
+            simpleCrudHelper.Delete<Ingredient>(ingredient.IngredientId);
+        }
+
         simpleCrudHelper.Delete<Recipe>(recipeToDelete.RecipeId);
         context.SaveChanges();
     }
@@ -42,7 +48,7 @@ public class RecipeService(SimpleCrudHelper simpleCrudHelper, EfCoreContext cont
     {
         var recipe = simpleCrudHelper.Find<Recipe>(existingRecipeDto.RecipeId);
 
-        foreach (var ingredientId in recipe.Ingredients.Select(x => x.IngredientId).ToList())
+        foreach (var ingredientId in recipe.Ingredients.Select(ingredient => ingredient.IngredientId).ToList())
         {
             simpleCrudHelper.Delete<Ingredient>(ingredientId);
         }

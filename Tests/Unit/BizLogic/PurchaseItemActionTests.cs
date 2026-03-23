@@ -7,7 +7,6 @@ using DTO.PurchaseItem;
 using DTO.Unit;
 using NSubstitute;
 using NUnit.Framework;
-using Tests.Doubles;
 
 namespace Tests.Unit.BizLogic;
 
@@ -23,7 +22,8 @@ public class PurchaseItemActionTests
                 new ExistingUnitDto(1, "Piece"),
                 2);
         var purchaseItemDbAccessMock = Substitute.For<IPurchaseItemDbAccess>();
-        var testee = new PurchaseItemAction(purchaseItemDbAccessMock, TestMapper.Create());
+        purchaseItemDbAccessMock.AddPurchaseItem(Arg.Any<PurchaseItem>()).Returns(call => call.Arg<PurchaseItem>());
+        var testee = new PurchaseItemAction(purchaseItemDbAccessMock);
 
         testee.CreatePurchaseItem(newPurchaseItemDto);
 
@@ -39,7 +39,7 @@ public class PurchaseItemActionTests
             .Returns(new PurchaseItem(new Article { Name = "Tomato", ArticleGroup = new ArticleGroup("Vegetables"), IsInventory = false },
                 2,
                 new global::DataLayer.EfClasses.Unit("Piece")));
-        var testee = new PurchaseItemAction(purchaseItemDbAccessMock, TestMapper.Create());
+        var testee = new PurchaseItemAction(purchaseItemDbAccessMock);
 
         testee.DeletePurchaseItem(deletePurchaseItemGroupDto);
 

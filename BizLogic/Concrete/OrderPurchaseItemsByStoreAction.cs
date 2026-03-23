@@ -10,9 +10,9 @@ public class OrderPurchaseItemsByStoreAction : IOrderPurchaseItemsByStoreAction
         => purchaseItems
             .Select(purchaseItem =>
                 new KeyValuePair<PurchaseItem, ShoppingOrder>(purchaseItem,
-                    store.Compartments.Single(x => x.ArticleGroup == purchaseItem.Article.ArticleGroup)))
-            .OrderBy(x => x.Value.Order)
-            .ThenBy(x => x.Key.Article.Name)
-            .ThenBy(x => x.Key.Unit.Name)
-            .Select(x => x.Key);
+                    store.Compartments.Single(compartment => compartment.ArticleGroup == purchaseItem.Article.ArticleGroup)))
+            .OrderBy(orderedPurchaseItem => orderedPurchaseItem.Value.Order)
+            .ThenBy(orderedPurchaseItem => orderedPurchaseItem.Key.Article.Name)
+            .ThenBy(orderedPurchaseItem => orderedPurchaseItem.Key.Unit.Name)
+            .Select(orderedPurchaseItem => orderedPurchaseItem.Key);
 }

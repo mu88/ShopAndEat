@@ -1,18 +1,16 @@
-﻿using AutoMapper;
-using BizDbAccess;
-using DataLayer.EfClasses;
+﻿using BizDbAccess;
 using DTO.Ingredient;
 
 namespace BizLogic.Concrete;
 
-public class IngredientAction(IIngredientDbAccess ingredientDbAccess, IMapper mapper) : IIngredientAction
+public class IngredientAction(IIngredientDbAccess ingredientDbAccess) : IIngredientAction
 {
     public ExistingIngredientDto CreateIngredient(NewIngredientDto newIngredientDto)
     {
-        var newIngredient = mapper.Map<Ingredient>(newIngredientDto);
+        var newIngredient = newIngredientDto.ToEntity();
         var createdIngredient = ingredientDbAccess.AddIngredient(newIngredient);
 
-        return mapper.Map<ExistingIngredientDto>(createdIngredient);
+        return createdIngredient.ToDto();
     }
 
     /// <inheritdoc />
@@ -26,6 +24,6 @@ public class IngredientAction(IIngredientDbAccess ingredientDbAccess, IMapper ma
     {
         var ingredients = ingredientDbAccess.GetIngredients();
 
-        return mapper.Map<IEnumerable<ExistingIngredientDto>>(ingredients);
+        return ingredients.Select(i => i.ToDto());
     }
 }

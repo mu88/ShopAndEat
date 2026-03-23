@@ -135,7 +135,7 @@ public class SystemTests
         var logValues = await container.GetLogsAsync(ct: cancellationToken);
         Console.WriteLine($"Stderr:{Environment.NewLine}{logValues.Stderr}");
         Console.WriteLine($"Stdout:{Environment.NewLine}{logValues.Stdout}");
-        logValues.Stdout.Replace("warn: LuckyPennySoftware.AutoMapper.License", string.Empty).Should().NotContain("warn:");
+        logValues.Stdout.Should().NotContain("warn:");
     }
 
     [SuppressMessage("Design", "MA0076:Do not use implicit culture-sensitive ToString in interpolated strings", Justification = "Okay for me")]

@@ -3,7 +3,6 @@
     <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AutoMapper" />
     <PackageReference Include="mu88.Shared" />
   </ItemGroup>
   <ItemGroup>

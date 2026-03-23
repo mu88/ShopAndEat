@@ -7,7 +7,6 @@ using DTO.Ingredient;
 using DTO.Unit;
 using NSubstitute;
 using NUnit.Framework;
-using Tests.Doubles;
 
 namespace Tests.Unit.BizLogic;
 
@@ -23,7 +22,8 @@ public class IngredientActionTests
                 2,
                 new ExistingUnitDto(1, "Piece"));
         var ingredientDbAccessMock = Substitute.For<IIngredientDbAccess>();
-        var testee = new IngredientAction(ingredientDbAccessMock, TestMapper.Create());
+        ingredientDbAccessMock.AddIngredient(Arg.Any<Ingredient>()).Returns(call => call.Arg<Ingredient>());
+        var testee = new IngredientAction(ingredientDbAccessMock);
 
         testee.CreateIngredient(newIngredientDto);
 
@@ -39,7 +39,7 @@ public class IngredientActionTests
             .Returns(new Ingredient(new Article { Name = "Tomato", ArticleGroup = new ArticleGroup("Vegetables"), IsInventory = false },
                 2,
                 new global::DataLayer.EfClasses.Unit("Piece")));
-        var testee = new IngredientAction(ingredientDbAccessMock, TestMapper.Create());
+        var testee = new IngredientAction(ingredientDbAccessMock);
 
         testee.DeleteIngredient(deleteIngredientGroupDto);
 
@@ -50,7 +50,7 @@ public class IngredientActionTests
     public void GetAllIngredients()
     {
         var ingredientDbAccessMock = Substitute.For<IIngredientDbAccess>();
-        var testee = new IngredientAction(ingredientDbAccessMock, TestMapper.Create());
+        var testee = new IngredientAction(ingredientDbAccessMock);
 
         testee.GetAllIngredients();
 
