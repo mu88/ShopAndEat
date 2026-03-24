@@ -1,0 +1,14 @@
+<Configuration>
+    <CodeCoverage>
+        <ModulePaths>
+            <Include>
+                <ModulePath>.*BizDbAccess\.dll$</ModulePath>
+                <ModulePath>.*BizLogic\.dll$</ModulePath>
+                <ModulePath>.*DataLayer\.dll$</ModulePath>
+                <ModulePath>.*DTO\.dll$</ModulePath>
+                <ModulePath>.*ServiceLayer\.dll$</ModulePath>
+                <ModulePath>.*ShopAndEat\.dll$</ModulePath>
+            </Include>
+        </ModulePaths>
+    </CodeCoverage>
+</Configuration>
