@@ -1,4 +1,7 @@
-﻿<div class="top-row pl-4 navbar navbar-dark">
+﻿@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<NavMenu> L
+
+<div class="top-row pl-4 navbar navbar-dark">
     <a class="navbar-brand" href="">ShopAndEat</a>
     <button class="navbar-toggler" @onclick="ToggleNavMenu">
         <span class="navbar-toggler-icon"></span>
@@ -8,18 +11,23 @@
 <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
     <ul class="nav flex-column">
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="meal">
+            <NavLink class="nav-link" href="meal" data-enhance-nav="false">
                 <span class="oi oi-plus" aria-hidden="true"></span> Meal
             </NavLink>
         </li>
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="recipe">
+            <NavLink class="nav-link" href="recipe" data-enhance-nav="false">
                 <span class="oi oi-plus" aria-hidden="true"></span> Recipe
             </NavLink>
         </li>
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="article">
+            <NavLink class="nav-link" href="article" data-enhance-nav="false">
                 <span class="oi oi-plus" aria-hidden="true"></span> Article
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="shopping" data-enhance-nav="false">
+                <span class="oi oi-cart" aria-hidden="true"></span> @L["ShoppingAssistant"]
             </NavLink>
         </li>
     </ul>

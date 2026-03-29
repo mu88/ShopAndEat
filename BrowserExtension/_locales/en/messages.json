@@ -1,0 +1,148 @@
+{
+  "extensionName": {
+    "message": "ShopAndEat Shopping Agent",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "AI-powered shopping assistant – browser tool executor for the ShoppingAgent",
+    "description": "Description of the extension"
+  },
+  "unknownProduct": {
+    "message": "Unknown",
+    "description": "Fallback name for a product without a name"
+  },
+  "unknownTool": {
+    "message": "Unknown tool: $TOOL$",
+    "description": "Error when an unknown tool is requested",
+    "placeholders": {
+      "tool": { "content": "$1", "example": "search" }
+    }
+  },
+  "cartButtonNotFound": {
+    "message": "Add to cart button not found",
+    "description": "Error when the add-to-cart button cannot be located on the page"
+  },
+  "productAdded": {
+    "message": "Product added",
+    "description": "Success message after adding a product to the cart"
+  },
+  "cartEmptyOrWrongPage": {
+    "message": "Cart is empty or not on the cart page",
+    "description": "Message when no cart items are found"
+  },
+  "tabLoadTimeout": {
+    "message": "Tab load timeout",
+    "description": "Error when a tab takes too long to load"
+  },
+  "logBackgroundToolRequest": {
+    "message": "[Background] Tool request:",
+    "description": "Console log prefix for background tool requests"
+  },
+  "logBackgroundLoaded": {
+    "message": "[ShopAndEat Background] Service worker loaded",
+    "description": "Console log when background service worker is ready"
+  },
+  "logBridgeLoaded": {
+    "message": "[ShopAndEat Bridge] Content script loaded",
+    "description": "Console log when bridge content script is loaded"
+  },
+  "logBridgeToolRequest": {
+    "message": "[ShopAndEat Bridge] Tool request:",
+    "description": "Console log prefix for bridge tool requests"
+  },
+  "logBridgeError": {
+    "message": "[ShopAndEat Bridge] Error:",
+    "description": "Console log prefix for bridge errors"
+  },
+  "logBridgeToolResult": {
+    "message": "[ShopAndEat Bridge] Tool result:",
+    "description": "Console log prefix for bridge tool results"
+  },
+  "logBridgeWasmReady": {
+    "message": "[ShopAndEat Bridge] WASM app is ready",
+    "description": "Console log when WASM app signals readiness"
+  },
+  "logCoopLoaded": {
+    "message": "[ShopAndEat Coop] Content script loaded on",
+    "description": "Console log when coop content script is loaded"
+  },
+  "errorProductIdExtraction": {
+    "message": "Could not extract product ID from URL: $URL$",
+    "description": "Error when the product ID cannot be extracted from the URL",
+    "placeholders": {
+      "url": { "content": "$1", "example": "https://www.coop.ch/de/food/p/123" }
+    }
+  },
+  "errorCsrfTokenNotFound": {
+    "message": "CSRF token not found. Please reload the coop.ch page.",
+    "description": "Error when the CSRF token cannot be found on the page"
+  },
+  "errorProductNotAvailable": {
+    "message": "Product not available (product code: $CODE$). The product may be out of stock or only available in store. Please try an alternative search term.",
+    "description": "Error when a product is not available for online ordering",
+    "placeholders": {
+      "code": { "content": "$1", "example": "1234567" }
+    }
+  },
+  "errorApiFailed": {
+    "message": "API error: $DETAILS$",
+    "description": "Error for a failed API response",
+    "placeholders": {
+      "details": { "content": "$1", "example": "{\"success\":false}" }
+    }
+  },
+  "errorNetworkError": {
+    "message": "Network error: $MSG$",
+    "description": "Error for a network failure",
+    "placeholders": {
+      "msg": { "content": "$1", "example": "Failed to fetch" }
+    }
+  },
+  "errorFetchTimeout": {
+    "message": "Network request timed out",
+    "description": "Error when a network request exceeds the timeout"
+  },
+  "errorProductNotInCart": {
+    "message": "Product \"$NAME$\" not found in cart. Existing items: $ITEMS$",
+    "description": "Error when a product cannot be found in the cart",
+    "placeholders": {
+      "name": { "content": "$1", "example": "Milk" },
+      "items": { "content": "$2", "example": "Bread, Butter" }
+    }
+  },
+  "errorCartEntryUidNotFound": {
+    "message": "cartEntryUid not found for \"$NAME$\".",
+    "description": "Error when the cartEntryUid for a product cannot be found",
+    "placeholders": {
+      "name": { "content": "$1", "example": "Milk" }
+    }
+  },
+  "optionsTitle": {
+    "message": "ShopAndEat – Extension Settings",
+    "description": "Title of the options page"
+  },
+  "optionsBridgeHostsLabel": {
+    "message": "Allowed host URLs",
+    "description": "Label for the bridge hosts textarea"
+  },
+  "optionsBridgeHostsHelp": {
+    "message": "URL patterns where the extension bridge content script will be injected. One pattern per line. Use * as wildcard.",
+    "description": "Help text for bridge hosts"
+  },
+  "optionsSave": {
+    "message": "Save",
+    "description": "Save button text"
+  },
+  "optionsReset": {
+    "message": "Reset to defaults",
+    "description": "Reset button text"
+  },
+  "optionsSaved": {
+    "message": "✓ Saved",
+    "description": "Status message after saving"
+  },
+  "optionsResetDone": {
+    "message": "✓ Reset to defaults",
+    "description": "Status message after resetting"
+  }
+}

@@ -1,16 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName">
     <head>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <base href="/shopAndEat/" />
         <title>ShopAndEat</title>
+        <link rel="icon" href="favicon.ico" />
         <link rel="stylesheet" href="@Assets["css/bootstrap/bootstrap.min.css"]"/>
         <link href="@Assets["css/site.css"]" rel="stylesheet"/>
-        <HeadOutlet @rendermode="InteractiveServer"/>
+        <link href="@Assets["css/app.css"]" rel="stylesheet"/>
+        <HeadOutlet />
     </head>
     <body>
-        <Routes @rendermode="InteractiveServer"/>
+        <Routes />
+        <ImportMap />
         <script src="@Assets["_framework/blazor.web.js"]"></script>
+        <script src="@Assets["js/extension-bridge.js"]"></script>
+        <script src="@Assets["js/chat-splitter.js"]"></script>
+        <script src="@Assets["js/details-state.js"]"></script>
     </body>
 </html>

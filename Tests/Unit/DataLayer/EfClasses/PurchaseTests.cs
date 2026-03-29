@@ -12,6 +12,7 @@ public class PurchaseTests
     [Test]
     public void CreatePurchase()
     {
+        // Arrange
         var from = DateTime.MinValue;
         var to = DateTime.MinValue;
         var purchaseItems = new Collection<PurchaseItem>
@@ -21,8 +22,10 @@ public class PurchaseTests
                 new global::DataLayer.EfClasses.Unit("Bag"))
         };
 
+        // Act
         var testee = new Purchase(from, to, purchaseItems);
 
+        // Assert
         testee.From.Should().Be(from);
         testee.To.Should().Be(to);
         testee.PurchaseItems.Should().BeEquivalentTo(purchaseItems);

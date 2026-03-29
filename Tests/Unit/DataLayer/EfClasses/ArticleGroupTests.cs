@@ -11,10 +11,13 @@ public class ArticleGroupTests
     [Test]
     public void CreateArticleGroup()
     {
-        var name = "Gemüse";
+        // Arrange
+        var name = "Vegetables";
 
+        // Act
         var testee = new ArticleGroup(name);
 
+        // Assert
         testee.Name.Should().Be(name);
     }
 }

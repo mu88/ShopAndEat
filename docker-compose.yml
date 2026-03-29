@@ -1,0 +1,23 @@
+services:
+  shopandeat:
+    image: shopandeat:latest-chiseled
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+    depends_on:
+      aspire-dashboard:
+        condition: service_started
+    volumes:
+      - .:/home/app/db
+
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.3
+    ports:
+      - "18888:18888"  # Dashboard Web UI
+      - "18889:18889"  # OTLP gRPC receiver
+    environment:
+      DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+      DASHBOARD__OTLP__GRPC__ENDPOINT: http://+:18889

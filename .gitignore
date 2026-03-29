@@ -3,3 +3,14 @@
 bin
 obj
 *.user
+
+# Build & test artifacts
+TestResults/
+Tests/coverage.xml
+.sonarqube/
+diff_output.txt
+
+# Local SQLite database
+ShopAndEat.db
+ShopAndEat.db-wal
+ShopAndEat.db-shm

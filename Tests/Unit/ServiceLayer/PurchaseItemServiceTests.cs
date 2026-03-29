@@ -16,6 +16,7 @@ public class PurchaseItemServiceTests
     [Test]
     public void CreatePurchaseItem()
     {
+        // Arrange
         using var context = new InMemoryDbContext();
         var newPurchaseItemDto =
             new NewPurchaseItemDto(new ExistingArticleDto(1, "Tomato", new ExistingArticleGroupDto(1, "Vegetables"), false),
@@ -24,21 +25,26 @@ public class PurchaseItemServiceTests
         var purchaseItemActionMock = Substitute.For<IPurchaseItemAction>();
         var testee = new PurchaseItemService(purchaseItemActionMock, context);
 
+        // Act
         testee.CreatePurchaseItem(newPurchaseItemDto);
 
+        // Assert
         purchaseItemActionMock.Received(1).CreatePurchaseItem(newPurchaseItemDto);
     }
 
     [Test]
     public void DeletePurchaseItem()
     {
+        // Arrange
         using var context = new InMemoryDbContext();
         var deletePurchaseItemGroupDto = new DeletePurchaseItemDto(3);
         var purchaseItemActionMock = Substitute.For<IPurchaseItemAction>();
         var testee = new PurchaseItemService(purchaseItemActionMock, context);
 
+        // Act
         testee.DeletePurchaseItem(deletePurchaseItemGroupDto);
 
+        // Assert
         purchaseItemActionMock.Received(1).DeletePurchaseItem(deletePurchaseItemGroupDto);
     }
 }

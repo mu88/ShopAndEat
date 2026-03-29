@@ -16,6 +16,7 @@ public class ArticleServiceTests
     [Test]
     public void CreateArticle()
     {
+        // Arrange
         using var context = new InMemoryDbContext();
         var articleGroup = context.ArticleGroups.Add(new ArticleGroup("Diary"));
         context.SaveChanges();
@@ -23,33 +24,41 @@ public class ArticleServiceTests
         var articleActionMock = Substitute.For<IArticleAction>();
         var testee = CreateTestee(articleActionMock, context);
 
+        // Act
         testee.CreateArticle(newArticleDto);
 
+        // Assert
         context.Articles.Should().Contain(article => article.Name == "Cheese");
     }
 
     [Test]
     public void DeleteArticle()
     {
+        // Arrange
         using var context = new InMemoryDbContext();
         var deleteArticleGroupDto = new DeleteArticleDto(3);
         var articleActionMock = Substitute.For<IArticleAction>();
         var testee = CreateTestee(articleActionMock, context);
 
+        // Act
         testee.DeleteArticle(deleteArticleGroupDto);
 
+        // Assert
         articleActionMock.Received(1).DeleteArticle(deleteArticleGroupDto);
     }
 
     [Test]
     public void GetAllArticles()
     {
+        // Arrange
         using var context = new InMemoryDbContext();
         var articleActionMock = Substitute.For<IArticleAction>();
         var testee = CreateTestee(articleActionMock, context);
 
+        // Act
         testee.GetAllArticles();
 
+        // Assert
         articleActionMock.Received(1).GetAllArticles();
     }
 

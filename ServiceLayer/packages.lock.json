@@ -270,6 +270,7 @@
         "type": "Project",
         "dependencies": {
           "DataLayer": "[6.0.0, )",
+          "Microsoft.EntityFrameworkCore": "[10.0.5, )",
           "mu88.Shared": "[8.0.0, )"
         }
       },

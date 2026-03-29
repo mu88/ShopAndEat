@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
+
+  <!-- Header -->
+  <data name="AppTitle" xml:space="preserve"><value>🛒 Einkaufsassistent</value></data>
+  <data name="ExtensionConnected" xml:space="preserve"><value>🔗 Extension verbunden</value></data>
+  <data name="ExtensionNotConnected" xml:space="preserve"><value>⚠️ Extension nicht verbunden</value></data>
+  <data name="LlmReady" xml:space="preserve"><value>🤖 LLM bereit</value></data>
+  <data name="LlmNotReachable" xml:space="preserve"><value>⚠️ LLM nicht erreichbar</value></data>
+
+  <!-- Welcome -->
+  <data name="WelcomeMessage" xml:space="preserve"><value>👋 Willkommen! Gib mir deine Zutatenliste und ich fülle deinen Warenkorb.</value></data>
+  <data name="WelcomeHint" xml:space="preserve"><value>Beispiel: "3 Packungen Toast, 1 kleine Butter, 500g Karotten"</value></data>
+
+  <!-- Input -->
+  <data name="InputPlaceholder" xml:space="preserve"><value>Zutatenliste eingeben oder Nachricht schreiben...</value></data>
+
+  <!-- Agent messages -->
+  <data name="LlmError" xml:space="preserve"><value>⚠️ LLM-Fehler: {0}</value></data>
+  <data name="LlmTimeout" xml:space="preserve"><value>⏱️ LLM-Anfrage nach 60 Sekunden abgebrochen. Bitte erneut versuchen.</value></data>
+  <data name="ToolCall" xml:space="preserve"><value>🔧 Tool: {0}({1})...</value></data>
+  <data name="ToolResult" xml:space="preserve"><value>✅ Ergebnis: {0}</value></data>
+  <data name="ProductAddedToCart" xml:space="preserve"><value>Produkt erfolgreich in den Warenkorb gelegt.</value></data>
+  <data name="ErrorAddingToCart" xml:space="preserve"><value>Fehler beim Hinzufügen zum Warenkorb.</value></data>
+  <data name="UnknownTool" xml:space="preserve"><value>Unbekanntes Tool: {0}</value></data>
+  <data name="ToolError" xml:space="preserve"><value>Tool-Fehler: {0}</value></data>
+  <data name="RepeatedToolFailure" xml:space="preserve"><value>Tool „{0}" ist 3 Mal hintereinander fehlgeschlagen. Abbruch zur Vermeidung einer Endlosschleife.</value></data>
+  <data name="PreferenceSaved" xml:space="preserve"><value>Präferenz für zukünftige Einkäufe gespeichert.</value></data>
+  <data name="PreferenceDeleted" xml:space="preserve"><value>Präferenz gelöscht.</value></data>
+  <data name="PreferenceNotFound" xml:space="preserve"><value>Präferenz nicht gefunden.</value></data>
+  <data name="ToolCallingFallback" xml:space="preserve"><value>⚠️ Dieses Modell unterstützt kein Tool-Calling. Wechsle in den Textmodus — ich gebe Anweisungen, kann den Browser aber nicht direkt steuern.</value></data>
+
+  <!-- Extension bridge -->
+  <data name="ExtensionNotConnectedError" xml:space="preserve"><value>Chrome Extension ist nicht verbunden. Bitte Extension installieren und Seite neu laden.</value></data>
+  <data name="ToolCallTimeout" xml:space="preserve"><value>Tool-Aufruf Timeout nach 30 Sekunden.</value></data>
+  <data name="EmptyExtensionResponse" xml:space="preserve"><value>Leere Antwort von Extension.</value></data>
+  <data name="ParseError" xml:space="preserve"><value>Fehler beim Parsen: {0}</value></data>
+
+  <!-- Preferences -->
+  <data name="LearnedPreferences" xml:space="preserve"><value>Gelernte Präferenzen:</value></data>
+
+  <!-- Chat UI -->
+  <data name="ClearChat" xml:space="preserve"><value>Löschen</value></data>
+  <data name="CopyChat" xml:space="preserve"><value>Chat kopieren</value></data>
+  <data name="StopProcessing" xml:space="preserve"><value>Stopp</value></data>
+  <data name="ProcessingStopped" xml:space="preserve"><value>Verarbeitung abgebrochen.</value></data>
+  <data name="LoadFromMealPlan" xml:space="preserve"><value>Aus Speiseplan laden</value></data>
+  <data name="NoIngredientsFound" xml:space="preserve"><value>Keine Zutaten im Speiseplan gefunden. Bitte erstelle zuerst Mahlzeiten.</value></data>
+
+  <!-- API Key -->
+  <data name="ApiKeyPrompt" xml:space="preserve"><value>Gib deinen Mistral API-Key ein. Der Key wird nur im Arbeitsspeicher gehalten und nie im Browser gespeichert.</value></data>
+  <data name="ApiKeySubmit" xml:space="preserve"><value>Verbinden</value></data>
+  <data name="ApiKeyCancel" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="ApiKeyValidating" xml:space="preserve"><value>Wird überprüft...</value></data>
+  <data name="ApiKeyInvalid" xml:space="preserve"><value>Ungültiger API-Key. Bitte prüfen und erneut versuchen.</value></data>
+
+  <!-- Navigation -->
+  <data name="TabTitle" xml:space="preserve"><value>Einkaufsassistent</value></data>
+</root>

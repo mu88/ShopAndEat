@@ -8,6 +8,7 @@
                 <ModulePath>.*DTO\.dll$</ModulePath>
                 <ModulePath>.*ServiceLayer\.dll$</ModulePath>
                 <ModulePath>.*ShopAndEat\.dll$</ModulePath>
+                <ModulePath>.*ShoppingAgent\.dll$</ModulePath>
             </Include>
         </ModulePaths>
     </CodeCoverage>

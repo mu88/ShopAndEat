@@ -1,0 +1,331 @@
+@page "/shopping"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using Microsoft.Extensions.Localization
+@using ShoppingAgent.Resources
+@using ShoppingAgent.Services
+@using ShoppingAgent.Models
+@using Markdig
+@inject IAgentService Agent
+@inject IExtensionBridge Bridge
+@inject IMistralChatClientProvider ChatClientProvider
+@inject ISessionService SessionService
+@inject IStringLocalizer<Messages> L
+@inject IJSRuntime JS
+@inject TimeProvider TimeProvider
+@implements IAsyncDisposable
+
+<PageTitle>ShopAndEat – @L["TabTitle"]</PageTitle>
+
+@if (!ChatClientProvider.HasApiKey && !_apiKeyDismissed)
+{
+    <div class="api-key-overlay">
+        <div class="api-key-dialog">
+            <h2>🔑 Mistral API Key</h2>
+            <p>@L["ApiKeyPrompt"]</p>
+            @if (!string.IsNullOrEmpty(_apiKeyError))
+            {
+                <p class="api-key-error">⚠️ @_apiKeyError</p>
+            }
+            <input type="password" @bind="_apiKeyInput" @bind:event="oninput"
+                   @onkeydown="HandleApiKeyKeyDown"
+                   placeholder="sk-..." class="api-key-input"
+                   disabled="@_isValidatingKey" />
+            <div class="api-key-buttons">
+                <button class="api-key-submit" @onclick="SubmitApiKey"
+                        disabled="@(string.IsNullOrWhiteSpace(_apiKeyInput) || _isValidatingKey)">
+                    @if (_isValidatingKey)
+                    {
+                        <span>⏳ @L["ApiKeyValidating"]</span>
+                    }
+                    else
+                    {
+                        @L["ApiKeySubmit"]
+                    }
+                </button>
+                <button class="api-key-cancel" @onclick="() => _apiKeyDismissed = true"
+                        disabled="@_isValidatingKey">
+                    @L["ApiKeyCancel"]
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="chat-container">
+    <header class="chat-header">
+        <h1>@L["AppTitle"]</h1>
+        <div class="header-actions">
+            <div class="shop-selector">
+                <select @onchange="OnShopChanged" disabled="@Agent.IsProcessing">
+                    @foreach (var shop in Agent.AvailableShops)
+                    {
+                        <option value="@shop.Key" selected="@(shop.Key == Agent.SelectedShopKey)">
+                            🛒 @shop.Name
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="status-indicators">
+                <span class="status-badge @(Bridge.IsExtensionConnected ? "connected" : "disconnected")">
+                    @(Bridge.IsExtensionConnected ? L["ExtensionConnected"] : L["ExtensionNotConnected"])
+                </span>
+                <span class="status-badge @(ChatClientProvider.HasApiKey ? "connected" : "disconnected")">
+                    @(ChatClientProvider.HasApiKey ? L["LlmReady"] : L["LlmNotReachable"])
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <div class="chat-messages" id="chatMessages">
+        @if (Agent.Messages.Count == 0)
+        {
+            <div class="welcome-message">
+                <p>@L["WelcomeMessage"]</p>
+                <p class="hint">@L["WelcomeHint"]</p>
+            </div>
+        }
+
+        @foreach (var message in Agent.Messages)
+        {
+            <div class="chat-message @message.Role">
+                <div class="message-content">
+                    <span class="message-role">@(message.Role == "user" ? "👤" : "🤖")</span>
+                    <div class="message-text">@((MarkupString)FormatMessage(message.Content))</div>
+                </div>
+                @if (message.IsStreaming)
+                {
+                    <span class="typing-indicator">●●●</span>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="chat-splitter" id="chatSplitter"></div>
+
+    <div class="chat-input-area" id="chatInputArea">
+        <div class="input-toolbar">
+            <button class="toolbar-btn" data-testid="load-meal-plan" @onclick="LoadFromMealPlan" disabled="@Agent.IsProcessing"
+                    title="@L["LoadFromMealPlan"]">
+                📥 @L["LoadFromMealPlan"]
+            </button>
+            <button class="toolbar-btn" data-testid="copy-chat" @onclick="CopyChat" disabled="@(Agent.Messages.Count == 0)"
+                    title="@L["CopyChat"]">
+                @(_copyFeedback ? "✅" : "📋") @L["CopyChat"]
+            </button>
+            <button class="toolbar-btn" data-testid="clear-chat" @onclick="ClearChat" disabled="@Agent.IsProcessing"
+                    title="@L["ClearChat"]">
+                🗑️ @L["ClearChat"]
+            </button>
+        </div>
+        <div class="input-row">
+            <textarea @bind="_userInput"
+                      @bind:event="oninput"
+                      @onkeydown="HandleKeyDown"
+                      placeholder="@L["InputPlaceholder"]"
+                      disabled="@Agent.IsProcessing"
+                      rows="1"></textarea>
+            <button class="send-button" @onclick="SendMessage" disabled="@(Agent.IsProcessing || string.IsNullOrWhiteSpace(_userInput))">
+                📤
+            </button>
+            @if (Agent.IsProcessing)
+            {
+                <button class="stop-button" @onclick="StopProcessing" title="@L["StopProcessing"]">
+                    ⏹️
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _copyFeedback;
+    private string _userInput = string.Empty;
+    private string _apiKeyInput = string.Empty;
+    private string _apiKeyError;
+    private bool _isValidatingKey;
+    private bool _apiKeyDismissed;
+    private CancellationTokenSource _cts;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Bridge.OnConnectionChanged += () => InvokeAsync(StateHasChanged);
+            Agent.OnStateChanged += () => InvokeAsync(StateHasChanged);
+
+            await Bridge.InitializeAsync(CancellationToken.None);
+            await Agent.InitializeAsync(cancellationToken: CancellationToken.None);
+            StateHasChanged();
+            await ScrollToBottomAsync();
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("restoreDetailsStates");
+        }
+    }
+
+    private async Task HandleApiKeyKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SubmitApiKey();
+        }
+    }
+
+    private async Task SubmitApiKey()
+    {
+        if (string.IsNullOrWhiteSpace(_apiKeyInput)) return;
+
+        ChatClientProvider.ApiKey = _apiKeyInput.Trim();
+        _apiKeyError = null;
+        _isValidatingKey = true;
+        StateHasChanged();
+
+        var error = await ChatClientProvider.ValidateKeyAsync(CancellationToken.None);
+        _isValidatingKey = false;
+
+        if (error != null)
+        {
+            _apiKeyError = L["ApiKeyInvalid"];
+        }
+        else
+        {
+            _apiKeyInput = string.Empty;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OnShopChanged(ChangeEventArgs e)
+    {
+        var shopKey = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(shopKey) && shopKey != Agent.SelectedShopKey)
+        {
+            await Agent.SwitchShopAsync(shopKey, CancellationToken.None);
+            await JS.InvokeVoidAsync("clearDetailsStates");
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(_userInput) || Agent.IsProcessing)
+        {
+            return;
+        }
+
+        var input = _userInput.Trim();
+        _userInput = string.Empty;
+
+        Agent.Messages.Add(new ChatMessage { Role = "user", Content = input, Timestamp = TimeProvider.GetUtcNow() });
+
+        var assistantMessage = new ChatMessage { Role = "assistant", Content = string.Empty, IsStreaming = true, Timestamp = TimeProvider.GetUtcNow() };
+        Agent.Messages.Add(assistantMessage);
+        StateHasChanged();
+        await ScrollToBottomAsync();
+
+        _cts = new CancellationTokenSource();
+        try
+        {
+            await foreach (var chunk in Agent.ProcessMessageAsync(input, _cts.Token))
+            {
+                assistantMessage.Content += chunk;
+                StateHasChanged();
+                await ScrollToBottomAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            assistantMessage.Content += $"\n\n⛔ {L["ProcessingStopped"]}";
+        }
+        finally
+        {
+            _cts.Dispose();
+            _cts = null;
+        }
+
+        assistantMessage.IsStreaming = false;
+        StateHasChanged();
+    }
+
+    private void StopProcessing()
+    {
+        _cts?.Cancel();
+    }
+
+    private async Task CopyChat()
+    {
+        if (Agent.Messages.Count == 0) return;
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var message in Agent.Messages)
+        {
+            var role = message.Role == "user" ? "👤 User" : "🤖 Assistant";
+            sb.AppendLine($"{role}:");
+            sb.AppendLine(message.Content);
+            sb.AppendLine();
+        }
+
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", sb.ToString());
+        _copyFeedback = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _copyFeedback = false;
+        StateHasChanged();
+    }
+
+    private async Task ClearChat()
+    {
+        await Agent.SwitchShopAsync(Agent.SelectedShopKey);
+        await JS.InvokeVoidAsync("clearDetailsStates");
+        StateHasChanged();
+    }
+
+    private async Task LoadFromMealPlan()
+    {
+        var ingredients = await SessionService.GetIngredientListAsync();
+        if (ingredients.Count == 0)
+        {
+            Agent.Messages.Add(new ChatMessage { Role = "assistant", Content = L["NoIngredientsFound"].Value, Timestamp = TimeProvider.GetUtcNow() });
+            StateHasChanged();
+            return;
+        }
+
+        _userInput = string.Join("\n", ingredients.Select(i => i.Text));
+        StateHasChanged();
+    }
+
+    private async Task ScrollToBottomAsync()
+    {
+        await JS.InvokeVoidAsync("eval", "document.getElementById('chatMessages')?.scrollTo(0, document.getElementById('chatMessages').scrollHeight)");
+    }
+
+    private static readonly MarkdownPipeline MarkdownPipeline = new MarkdownPipelineBuilder()
+        .UseAdvancedExtensions()
+        .Build();
+
+    private static string FormatMessage(string content)
+    {
+        if (string.IsNullOrEmpty(content))
+        {
+            return string.Empty;
+        }
+
+        return Markdown.ToHtml(content, MarkdownPipeline);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        await Bridge.DisposeAsync();
+    }
+}

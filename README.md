@@ -6,3 +6,46 @@
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=mu88_ShopAndEat&metric=bugs)](https://sonarcloud.io/summary/new_code?id=mu88_ShopAndEat)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=mu88_ShopAndEat&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=mu88_ShopAndEat)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=mu88_ShopAndEat&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=mu88_ShopAndEat)
+
+## Modernization Backlog
+
+The ShoppingAgent feature introduced modern .NET patterns. The following items track applying these patterns to the legacy parts of the application (existing entities, controllers, and services). Read `Directory.Build.props` for .NET version, `Directory.Packages.props` for package versions, and `.config/dotnet-tools.json` for tool versions — do not hardcode these values.
+
+### ShoppingAgent Architecture
+- [ ] Split `ConversationManager` into focused services: separate LLM communication, tool execution orchestration, and fallback/retry logic
+- [ ] `IConversationManager.ProcessAsync` accepts `List<ChatMessage>` because the implementation mutates it (adds assistant/tool messages). Consider redesigning to return new messages instead of mutating the shared list, then change the parameter to `IReadOnlyList<ChatMessage>`
+
+### Nullable Reference Types
+- [ ] Enable NRTs globally across the solution (`<Nullable>enable</Nullable>` in `Directory.Build.props`) and fix all resulting warnings — currently only the ShoppingAgent project has NRTs enabled
+
+### Entity Layer (`DataLayer/EfClasses/`)
+- [ ] Add constructors + `private set` to `Article`, `Recipe` (like `ShoppingSession`, `OnlineArticleMapping`)
+- [ ] Create strongly typed IDs (`ArticleId`, `MealId`, `RecipeId`, `UnitId`, `StoreId`, `ArticleGroupId`) as `readonly record struct` (pattern: see `ShoppingSessionId.cs`)
+- [ ] Register ID value conversions in `EfCoreContext.OnModelCreating` via `HasConversion`
+- [ ] Update all repositories and callers to use typed IDs instead of `int`
+
+### Controller Layer (`ShopAndEat/Api/`)
+- [ ] Migrate `UnitsController` to `TypedResults` return types (like `SessionsController`)
+- [ ] Add `ProblemDetails` error responses where missing
+- [ ] Add `CancellationToken` parameter to all controller actions (e.g., `UnitsController.GetUnits()`)
+- [ ] Thread `CancellationToken` through all service and repository async calls
+
+### Service/Business Layer (`ServiceLayer/`, `BizLogic/`, `BizDbAccess/`)
+- [ ] Inject `TimeProvider` instead of `DateTime.Now`/`DateTimeOffset.UtcNow`
+- [ ] Review return types: use `IEnumerable<T>` when only iterating, `IReadOnlyList<T>` when count/index needed
+- [ ] Make all async service methods accept `CancellationToken`
+
+### DTO Layer (`DTO/`)
+- [ ] Ensure all DTOs use `record` with `init` properties (fix `NewMealDto` mutable properties)
+- [ ] Verify all DTOs have mapping extension methods (`ToDto()`, `ToEntity()`)
+
+### Cross-Cutting
+- [ ] Add `IStringLocalizer` + `.resx` for user-facing strings in legacy controllers
+- [ ] Add `ActivitySource` instrumentation to old service operations for OpenTelemetry tracing
+- [ ] Evaluate `IOptions<T>` pattern for any hardcoded configuration values in services
+
+### Observability
+- [ ] `ShoppingAgentMetrics` are collected in the browser (WASM) but have no OTLP exporter — metrics don't reach the Aspire Dashboard. Options: proxy metrics via server-side API, or configure browser-side OTLP-over-HTTP export.
+
+### Testing
+- [ ] Add browser-based system test (e.g. Playwright) to verify the Blazor WASM app boots successfully in Docker — current `HttpClient`-based system tests cannot catch client-side errors like DI resolution failures or missing JS modules

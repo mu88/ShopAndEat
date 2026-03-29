@@ -1,4 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
+using System.Text;
+using System.Text.Json;
 using CliWrap;
 using CliWrap.Buffered;
 using Docker.DotNet;
@@ -13,6 +16,7 @@ using NUnit.Framework.Interfaces;
 namespace Tests.System;
 
 [Category("System")]
+[SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP014:Use a single instance of HttpClient", Justification = "System tests create isolated HttpClient instances per test by design")]
 public class SystemTests
 {
     private CancellationTokenSource _cancellationTokenSource;
@@ -23,7 +27,7 @@ public class SystemTests
     [SetUp]
     public void Setup()
     {
-        _cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(1));
+        _cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(2));
         _cancellationToken = _cancellationTokenSource.Token;
         _dockerClient = new DockerClientConfiguration().CreateClient();
     }
@@ -49,7 +53,6 @@ public class SystemTests
     }
 
     [Test]
-    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP014:Use a single instance of HttpClient", Justification = "Just a single test, not a perf issue")]
     public async Task AppRunningInDocker_ShouldBeHealthy()
     {
         // Arrange
@@ -68,6 +71,53 @@ public class SystemTests
         await HealthCheckShouldBeHealthyAsync(healthCheckResponse, _cancellationToken);
         await AppShouldRunAsync(appResponse, _cancellationToken);
         healthCheckToolResult.ExitCode.Should().Be(0);
+    }
+
+    [Test]
+    public async Task ShoppingFeature_ShouldBeAccessibleInDocker()
+    {
+        // Arrange
+        var containerImageTag = GenerateContainerImageTag();
+        await BuildDockerImageOfAppAsync(containerImageTag, _cancellationToken);
+        _container = await StartAppInContainersAsync(containerImageTag, _cancellationToken);
+        var httpClient = new HttpClient { BaseAddress = GetAppBaseAddress(_container) };
+
+        // Act & Assert - Preferences CRUD roundtrip
+        var getPreferences1 = await httpClient.GetAsync("/shopAndEat/api/preferences", _cancellationToken);
+        getPreferences1.Should().Be200Ok();
+        using var doc1 = JsonDocument.Parse(await getPreferences1.Content.ReadAsStringAsync(_cancellationToken));
+        doc1.RootElement.GetArrayLength().Should().Be(0);
+
+        var postPreferences = await httpClient.PostAsync(
+            "/shopAndEat/api/preferences",
+            new StringContent("""{"scope":"test","key":"testKey","value":"testValue"}""", Encoding.UTF8, "application/json"),
+            _cancellationToken);
+        postPreferences.Should().Be200Ok();
+
+        var getPreferences2 = await httpClient.GetAsync("/shopAndEat/api/preferences", _cancellationToken);
+        getPreferences2.Should().Be200Ok();
+        using var doc2 = JsonDocument.Parse(await getPreferences2.Content.ReadAsStringAsync(_cancellationToken));
+        doc2.RootElement.GetArrayLength().Should().Be(1);
+
+        var deletePreferences = await httpClient.DeleteAsync("/shopAndEat/api/preferences?scope=test&key=testKey", _cancellationToken);
+        deletePreferences.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var getPreferences3 = await httpClient.GetAsync("/shopAndEat/api/preferences", _cancellationToken);
+        getPreferences3.Should().Be200Ok();
+        using var doc3 = JsonDocument.Parse(await getPreferences3.Content.ReadAsStringAsync(_cancellationToken));
+        doc3.RootElement.GetArrayLength().Should().Be(0);
+
+        // Act & Assert - Sessions and Units
+        var getSessions = await httpClient.GetAsync("/shopAndEat/api/shopping/sessions", _cancellationToken);
+        getSessions.Should().Be200Ok();
+
+        var getUnits = await httpClient.GetAsync("/shopAndEat/api/units", _cancellationToken);
+        getUnits.Should().Be200Ok();
+
+        // Act & Assert - WASM static files
+        var shoppingPage = await httpClient.GetAsync("/shopAndEat/shopping/", _cancellationToken);
+        shoppingPage.Should().Be200Ok();
+        (await shoppingPage.Content.ReadAsStringAsync(_cancellationToken)).Should().ContainAny("blazor", "_framework");
     }
 
     private static async Task BuildDockerImageOfAppAsync(string containerImageTag, CancellationToken cancellationToken)

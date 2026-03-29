@@ -16,7 +16,7 @@ namespace DataLayer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.13")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true);
@@ -133,6 +133,66 @@ namespace DataLayer.Migrations
                     b.ToTable("MealTypes");
                 });
 
+            modelBuilder.Entity("DataLayer.EfClasses.OnlineArticleMapping", b =>
+                {
+                    b.Property<int>("OnlineArticleMappingId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ArticleName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<float>("Confidence")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("FeedbackCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastUsedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MatchMethod")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("QuantityPerUnit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StoreKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StoreProductCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StoreProductName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("StoreProductPrice")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("OnlineArticleMappingId");
+
+                    b.HasIndex("StoreKey", "ArticleName");
+
+                    b.HasIndex("ArticleName", "StoreKey", "StoreProductCode")
+                        .IsUnique();
+
+                    b.ToTable("OnlineArticleMappings");
+                });
+
             modelBuilder.Entity("DataLayer.EfClasses.Purchase", b =>
                 {
                     b.Property<int>("PurchaseId")
@@ -221,6 +281,121 @@ namespace DataLayer.Migrations
                     b.HasIndex("StoreId");
 
                     b.ToTable("ShoppingOrders");
+                });
+
+            modelBuilder.Entity("DataLayer.EfClasses.ShoppingPreference", b =>
+                {
+                    b.Property<int>("ShoppingPreferenceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StoreKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ShoppingPreferenceId");
+
+                    b.HasIndex("Scope", "Key", "StoreKey")
+                        .IsUnique();
+
+                    b.ToTable("ShoppingPreferences");
+                });
+
+            modelBuilder.Entity("DataLayer.EfClasses.ShoppingSession", b =>
+                {
+                    b.Property<int>("ShoppingSessionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IngredientList")
+                        .HasMaxLength(50000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StartedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ShoppingSessionId");
+
+                    b.HasIndex("StartedAt");
+
+                    b.ToTable("ShoppingSessions");
+                });
+
+            modelBuilder.Entity("DataLayer.EfClasses.ShoppingSessionItem", b =>
+                {
+                    b.Property<int>("ShoppingSessionItemId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AddedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OriginalIngredient")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Price")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SelectedProductName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SelectedProductUrl")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SessionId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ShoppingSessionId");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ShoppingSessionItemId");
+
+                    b.HasIndex("SessionId");
+
+                    b.ToTable("ShoppingSessionItems");
                 });
 
             modelBuilder.Entity("DataLayer.EfClasses.Store", b =>
@@ -326,6 +501,17 @@ namespace DataLayer.Migrations
                     b.Navigation("ArticleGroup");
                 });
 
+            modelBuilder.Entity("DataLayer.EfClasses.ShoppingSessionItem", b =>
+                {
+                    b.HasOne("DataLayer.EfClasses.ShoppingSession", "ShoppingSession")
+                        .WithMany("Items")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ShoppingSession");
+                });
+
             modelBuilder.Entity("DataLayer.EfClasses.Purchase", b =>
                 {
                     b.Navigation("PurchaseItems");
@@ -334,6 +520,11 @@ namespace DataLayer.Migrations
             modelBuilder.Entity("DataLayer.EfClasses.Recipe", b =>
                 {
                     b.Navigation("Ingredients");
+                });
+
+            modelBuilder.Entity("DataLayer.EfClasses.ShoppingSession", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("DataLayer.EfClasses.Store", b =>

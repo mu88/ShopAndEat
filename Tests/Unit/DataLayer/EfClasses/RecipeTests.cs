@@ -12,6 +12,7 @@ public class RecipeTests
     [Test]
     public void CreateRecipe()
     {
+        // Arrange
         var name = "Suppe";
         var numberOfDays = 3;
         var ingredients = new Collection<Ingredient>
@@ -21,8 +22,10 @@ public class RecipeTests
                 new global::DataLayer.EfClasses.Unit("Bag"))
         };
 
+        // Act
         var testee = new Recipe(name, numberOfDays, 2, ingredients);
 
+        // Assert
         testee.Name.Should().Be(name);
         testee.NumberOfDays.Should().Be(numberOfDays);
         testee.Ingredients.Should().BeEquivalentTo(ingredients);

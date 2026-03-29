@@ -16,5 +16,6 @@
   <Project Path="DTO/DTO.csproj" />
   <Project Path="ServiceLayer/ServiceLayer.csproj" />
   <Project Path="ShopAndEat/ShopAndEat.csproj" />
+  <Project Path="ShoppingAgent/ShoppingAgent.csproj" />
   <Project Path="Tests/Tests.csproj" />
 </Solution>

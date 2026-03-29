@@ -12,6 +12,7 @@ public class OrderPurchaseItemsByStoreActionTests
     [Test]
     public void OrderPurchaseItemsByStore()
     {
+        // Arrange
         var dairy = new ArticleGroup("Dairy");
         var vegetables = new ArticleGroup("Vegetables");
         var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
@@ -26,8 +27,10 @@ public class OrderPurchaseItemsByStoreActionTests
         var purchaseItems = new[] { purchaseItem1, purchaseItem2 };
         var testee = new OrderPurchaseItemsByStoreAction();
 
+        // Act
         var results = testee.OrderPurchaseItemsByStore(store, purchaseItems).ToList();
 
+        // Assert
         results.Should().HaveCount(2);
         results.Should().BeEquivalentTo([purchaseItem2, purchaseItem1]);
     }

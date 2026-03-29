@@ -1,0 +1,148 @@
+{
+  "extensionName": {
+    "message": "ShopAndEat Einkaufsassistent",
+    "description": "Name der Erweiterung"
+  },
+  "extensionDescription": {
+    "message": "KI-gestützter Einkaufsassistent – Browser-Tool-Executor für den ShoppingAgent",
+    "description": "Beschreibung der Erweiterung"
+  },
+  "unknownProduct": {
+    "message": "Unbekannt",
+    "description": "Fallback-Name für ein Produkt ohne Namen"
+  },
+  "unknownTool": {
+    "message": "Unbekanntes Tool: $TOOL$",
+    "description": "Fehler, wenn ein unbekanntes Tool angefragt wird",
+    "placeholders": {
+      "tool": { "content": "$1", "example": "search" }
+    }
+  },
+  "cartButtonNotFound": {
+    "message": "Warenkorb-Button nicht gefunden",
+    "description": "Fehler, wenn der Warenkorb-Button nicht gefunden wird"
+  },
+  "productAdded": {
+    "message": "Produkt hinzugefügt",
+    "description": "Erfolgsmeldung nach dem Hinzufügen eines Produkts zum Warenkorb"
+  },
+  "cartEmptyOrWrongPage": {
+    "message": "Warenkorb ist leer oder nicht auf Warenkorbseite",
+    "description": "Meldung, wenn keine Warenkorb-Artikel gefunden werden"
+  },
+  "tabLoadTimeout": {
+    "message": "Zeitüberschreitung beim Laden des Tabs",
+    "description": "Fehler, wenn ein Tab zu lange zum Laden braucht"
+  },
+  "logBackgroundToolRequest": {
+    "message": "[Background] Tool-Anfrage:",
+    "description": "Konsolenlog-Präfix für Background-Tool-Anfragen"
+  },
+  "logBackgroundLoaded": {
+    "message": "[ShopAndEat Background] Service Worker geladen",
+    "description": "Konsolenlog, wenn der Background-Service-Worker bereit ist"
+  },
+  "logBridgeLoaded": {
+    "message": "[ShopAndEat Bridge] Content Script geladen",
+    "description": "Konsolenlog, wenn das Bridge-Content-Script geladen ist"
+  },
+  "logBridgeToolRequest": {
+    "message": "[ShopAndEat Bridge] Tool-Anfrage:",
+    "description": "Konsolenlog-Präfix für Bridge-Tool-Anfragen"
+  },
+  "logBridgeError": {
+    "message": "[ShopAndEat Bridge] Fehler:",
+    "description": "Konsolenlog-Präfix für Bridge-Fehler"
+  },
+  "logBridgeToolResult": {
+    "message": "[ShopAndEat Bridge] Tool-Ergebnis:",
+    "description": "Konsolenlog-Präfix für Bridge-Tool-Ergebnisse"
+  },
+  "logBridgeWasmReady": {
+    "message": "[ShopAndEat Bridge] WASM-App ist bereit",
+    "description": "Konsolenlog, wenn die WASM-App Bereitschaft signalisiert"
+  },
+  "logCoopLoaded": {
+    "message": "[ShopAndEat Coop] Content Script geladen auf",
+    "description": "Konsolenlog, wenn das Coop-Content-Script geladen ist"
+  },
+  "errorProductIdExtraction": {
+    "message": "Produkt-ID nicht aus URL extrahierbar: $URL$",
+    "description": "Fehler, wenn die Produkt-ID nicht aus der URL extrahiert werden kann",
+    "placeholders": {
+      "url": { "content": "$1", "example": "https://www.coop.ch/de/lebensmittel/p/123" }
+    }
+  },
+  "errorCsrfTokenNotFound": {
+    "message": "CSRF-Token nicht gefunden. Bitte coop.ch Seite neu laden.",
+    "description": "Fehler, wenn der CSRF-Token nicht auf der Seite gefunden wird"
+  },
+  "errorProductNotAvailable": {
+    "message": "Produkt nicht verfügbar (Produkt-Code: $CODE$). Möglicherweise ist das Produkt ausverkauft oder nur im Laden erhältlich. Bitte alternativen Suchbegriff versuchen.",
+    "description": "Fehler, wenn ein Produkt nicht für die Online-Bestellung verfügbar ist",
+    "placeholders": {
+      "code": { "content": "$1", "example": "1234567" }
+    }
+  },
+  "errorApiFailed": {
+    "message": "API-Fehler: $DETAILS$",
+    "description": "Fehler bei einer fehlgeschlagenen API-Antwort",
+    "placeholders": {
+      "details": { "content": "$1", "example": "{\"success\":false}" }
+    }
+  },
+  "errorNetworkError": {
+    "message": "Netzwerkfehler: $MSG$",
+    "description": "Fehler bei einem Netzwerkfehler",
+    "placeholders": {
+      "msg": { "content": "$1", "example": "Failed to fetch" }
+    }
+  },
+  "errorFetchTimeout": {
+    "message": "Zeitüberschreitung beim Netzwerkaufruf",
+    "description": "Fehler, wenn ein Netzwerkaufruf das Timeout überschreitet"
+  },
+  "errorProductNotInCart": {
+    "message": "Produkt \"$NAME$\" nicht im Warenkorb gefunden. Vorhandene Artikel: $ITEMS$",
+    "description": "Fehler, wenn ein Produkt nicht im Warenkorb gefunden wird",
+    "placeholders": {
+      "name": { "content": "$1", "example": "Milch" },
+      "items": { "content": "$2", "example": "Brot, Butter" }
+    }
+  },
+  "errorCartEntryUidNotFound": {
+    "message": "cartEntryUid für \"$NAME$\" nicht gefunden.",
+    "description": "Fehler, wenn die cartEntryUid für ein Produkt nicht gefunden wird",
+    "placeholders": {
+      "name": { "content": "$1", "example": "Milch" }
+    }
+  },
+  "optionsTitle": {
+    "message": "ShopAndEat – Erweiterungs-Einstellungen",
+    "description": "Titel der Options-Seite"
+  },
+  "optionsBridgeHostsLabel": {
+    "message": "Erlaubte Host-URLs",
+    "description": "Label für das Bridge-Hosts-Textfeld"
+  },
+  "optionsBridgeHostsHelp": {
+    "message": "URL-Muster, auf denen das Bridge-Content-Script der Erweiterung injiziert wird. Ein Muster pro Zeile. * als Wildcard verwenden.",
+    "description": "Hilfetext für Bridge-Hosts"
+  },
+  "optionsSave": {
+    "message": "Speichern",
+    "description": "Speichern-Button"
+  },
+  "optionsReset": {
+    "message": "Auf Standard zurücksetzen",
+    "description": "Zurücksetzen-Button"
+  },
+  "optionsSaved": {
+    "message": "✓ Gespeichert",
+    "description": "Statusmeldung nach dem Speichern"
+  },
+  "optionsResetDone": {
+    "message": "✓ Auf Standard zurückgesetzt",
+    "description": "Statusmeldung nach dem Zurücksetzen"
+  }
+}
