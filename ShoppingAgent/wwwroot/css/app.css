@@ -1,3 +1,9 @@
+/* Hide scrollbar on WASM page wrapper while keeping scroll functionality */
+.page {
+    scrollbar-width: none;
+    overflow: auto;
+}
+
 /* API Key Dialog Overlay */
 .api-key-overlay {
     position: fixed;

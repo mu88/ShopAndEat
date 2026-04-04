@@ -11,7 +11,7 @@
     "tabs"
   ],
   "host_permissions": [
-    "http://*/*",
+    "*://*/*",
     "https://www.coop.ch/*"
   ],
   "background": {
