@@ -2,5 +2,14 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>mu88/common//renovate/default.json5"
+  ],
+  "packageRules": [
+    {
+      "description": "Unfortunately, these packages do not return a release timestamp. To prevent Renovate from skipping updates for these packages, we set the minimum release age behavior to 'timestamp-optional' so that updates will be created even without a release timestamp.",
+      "matchPackageNames": [
+        "mcr.microsoft.com/dotnet/aspire-dashboard"
+      ],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    }
   ]
 }
