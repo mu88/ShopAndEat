@@ -121,6 +121,39 @@ public class SystemPromptBuilderTests
     }
 
     [Test]
+    public async Task BuildSystemPromptAsync_ContainsAlwaysAskInstructions()
+    {
+        // Arrange
+        _preferencesMock.GetAllPreferencesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns([]);
+        _sessionMock.GetUnitsAsync(Arg.Any<CancellationToken>())
+            .Returns(["kg"]);
+
+        // Act
+        var result = await _sut.BuildSystemPromptAsync("Coop", "https://www.coop.ch", "coop");
+
+        // Assert
+        result.Should().Contain("always_ask");
+    }
+
+    [Test]
+    public async Task BuildSystemPromptAsync_DoesNotContainHardCodedFreshProduceRule()
+    {
+        // Arrange
+        _preferencesMock.GetAllPreferencesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns([]);
+        _sessionMock.GetUnitsAsync(Arg.Any<CancellationToken>())
+            .Returns(["kg"]);
+
+        // Act
+        var result = await _sut.BuildSystemPromptAsync("Coop", "https://www.coop.ch", "coop");
+
+        // Assert — these were hard-coded defaults that are now removed; user preferences drive this behavior
+        result.Should().NotContain("Prefer fresh produce over canned");
+        result.Should().NotContain("Do not choose beverages, sauces, or prepared foods when searching for raw ingredients");
+    }
+
+    [Test]
     public async Task BuildSystemPromptAsync_WithEmptyUnits_ProducesEmptyUnitList()
     {
         // Arrange
