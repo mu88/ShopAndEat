@@ -7,7 +7,7 @@ public record ToolRequest
 {
     public string ToolName { get; init; } = string.Empty;
 
-    public Dictionary<string, object> Arguments { get; init; } = new();
+    public IDictionary<string, object> Arguments { get; init; } = new Dictionary<string, object>(StringComparer.Ordinal);
 }
 
 /// <summary>

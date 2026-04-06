@@ -9,5 +9,5 @@ public class ShopOptions
 
     [Required]
     [MinLength(1)]
-    public List<ShopConfig> Shops { get; set; } = [];
+    public IList<ShopConfig> Shops { get; set; } = [];
 }

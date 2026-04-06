@@ -8,15 +8,6 @@
         "resolved": "10.0.5",
         "contentHash": "Oxw9Ps1/nd6c/EMCAI13AeJFEqXezAvCEOshMjUWmL7LeGirHJNzytR2e/3jINYg0j2TmPvNUowGHf+gp8zDSQ=="
       },
-      "Microsoft.AspNetCore.Components.WebAssembly.Server": {
-        "type": "Direct",
-        "requested": "[10.0.5, )",
-        "resolved": "10.0.5",
-        "contentHash": "wDK4Yiuz9oq3LLO8ies4UzpRLGQ56WGHj099h0MzkFyU8YcaZJ9h76ZkBpcgJQPNECjxL0lXg4hQz2fhrt0qHQ==",
-        "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "10.0.5"
-        }
-      },
       "Microsoft.AspNetCore.OpenApi": {
         "type": "Direct",
         "requested": "[10.0.5, )",
@@ -191,11 +182,6 @@
           "SQLitePCLRaw.core": "2.1.11"
         }
       },
-      "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
-        "type": "Transitive",
-        "resolved": "10.0.201",
-        "contentHash": "4EAMH3CqtVwVm7Sx4DnNtZj/J0b+A1YGcTnCL6prhQ8ZHlwbVtZ3RmSyJdi85mSnLl+u94aVr8fElRGkjZkKmw=="
-      },
       "Microsoft.EntityFrameworkCore.Abstractions": {
         "type": "Transitive",
         "resolved": "10.0.5",
@@ -226,11 +212,6 @@
         "type": "Transitive",
         "resolved": "10.0.5",
         "contentHash": "xA4kkL+QS6KCAOKz/O0oquHs44Ob8J7zpBCNt3wjkBWDg5aCqfwG8rWWLsg5V86AM0sB849g9JjPjIdksTCIKg=="
-      },
-      "Microsoft.JSInterop.WebAssembly": {
-        "type": "Transitive",
-        "resolved": "10.0.5",
-        "contentHash": "9iva1I1opPJA1xMSGTNmbyLhyzw383l6StST9gebB/UEBrYuadzwsv7O3eKAhmJVsPUGy6wWo4SVUcfFnPNQXA=="
       },
       "Microsoft.OpenApi": {
         "type": "Transitive",
@@ -476,9 +457,8 @@
         "type": "Project",
         "dependencies": {
           "Markdig": "[1.1.1, )",
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.5, )",
-          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.201, )",
-          "Microsoft.Extensions.AI.OpenAI": "[10.4.1, )"
+          "Microsoft.Extensions.AI.OpenAI": "[10.4.1, )",
+          "mu88.Shared": "[8.0.0, )"
         }
       },
       "JetBrains.Annotations": {
@@ -492,15 +472,6 @@
         "requested": "[1.1.1, )",
         "resolved": "1.1.1",
         "contentHash": "wACpji8aLjtmghzdancNFRDUH66F2kS8QE0uywUXvLHgfbTD7LPNj7Vx43sTckpEQFtn5YndEoZvGqIHosBzGQ=="
-      },
-      "Microsoft.AspNetCore.Components.WebAssembly": {
-        "type": "CentralTransitive",
-        "requested": "[10.0.5, )",
-        "resolved": "10.0.5",
-        "contentHash": "fjmhjvZpYTJVl/sxpDStP8+fQ6XEG8r9iuhafuTCp2nAAGPcJhsSND58he9BOekbxs6nMv2OECUGwtWqHBGFcg==",
-        "dependencies": {
-          "Microsoft.JSInterop.WebAssembly": "10.0.5"
-        }
       },
       "Microsoft.EntityFrameworkCore": {
         "type": "CentralTransitive",

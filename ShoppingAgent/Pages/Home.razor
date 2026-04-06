@@ -1,5 +1,5 @@
 @page "/shopping"
-@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@rendermode InteractiveServer
 @using Microsoft.Extensions.Localization
 @using ShoppingAgent.Resources
 @using ShoppingAgent.Services
@@ -7,49 +7,22 @@
 @using Markdig
 @inject IAgentService Agent
 @inject IExtensionBridge Bridge
-@inject IMistralChatClientProvider ChatClientProvider
 @inject ISessionService SessionService
 @inject IStringLocalizer<Messages> L
 @inject IJSRuntime JS
 @inject TimeProvider TimeProvider
+@inject IMistralChatClientProvider LlmProvider
 @implements IAsyncDisposable
 
 <PageTitle>ShopAndEat – @L["TabTitle"]</PageTitle>
 
-@if (!ChatClientProvider.HasApiKey && !_apiKeyDismissed)
-{
-    <div class="api-key-overlay">
-        <div class="api-key-dialog">
-            <h2>🔑 Mistral API Key</h2>
-            <p>@L["ApiKeyPrompt"]</p>
-            @if (!string.IsNullOrEmpty(_apiKeyError))
-            {
-                <p class="api-key-error">⚠️ @_apiKeyError</p>
-            }
-            <input type="password" @bind="_apiKeyInput" @bind:event="oninput"
-                   @onkeydown="HandleApiKeyKeyDown"
-                   placeholder="sk-..." class="api-key-input"
-                   disabled="@_isValidatingKey" />
-            <div class="api-key-buttons">
-                <button class="api-key-submit" @onclick="SubmitApiKey"
-                        disabled="@(string.IsNullOrWhiteSpace(_apiKeyInput) || _isValidatingKey)">
-                    @if (_isValidatingKey)
-                    {
-                        <span>⏳ @L["ApiKeyValidating"]</span>
-                    }
-                    else
-                    {
-                        @L["ApiKeySubmit"]
-                    }
-                </button>
-                <button class="api-key-cancel" @onclick="() => _apiKeyDismissed = true"
-                        disabled="@_isValidatingKey">
-                    @L["ApiKeyCancel"]
-                </button>
-            </div>
-        </div>
-    </div>
-}
+<HeadContent>
+    <style>
+        html, body { overflow: hidden; }
+        .main { display: flex; flex-direction: column; height: 100vh; }
+        .main > .content { flex: 1; overflow: hidden; padding: 0 !important; min-height: 0; }
+    </style>
+</HeadContent>
 
 <div class="chat-container">
     <header class="chat-header">
@@ -69,8 +42,8 @@
                 <span class="status-badge @(Bridge.IsExtensionConnected ? "connected" : "disconnected")">
                     @(Bridge.IsExtensionConnected ? L["ExtensionConnected"] : L["ExtensionNotConnected"])
                 </span>
-                <span class="status-badge @(ChatClientProvider.HasApiKey ? "connected" : "disconnected")">
-                    @(ChatClientProvider.HasApiKey ? L["LlmReady"] : L["LlmNotReachable"])
+                <span class="status-badge @(_isLlmReady ? "connected" : "disconnected")">
+                    @L["LlmReady"]
                 </span>
             </div>
         </div>
@@ -139,11 +112,8 @@
 
 @code {
     private bool _copyFeedback;
+    private bool _isLlmReady;
     private string _userInput = string.Empty;
-    private string _apiKeyInput = string.Empty;
-    private string _apiKeyError;
-    private bool _isValidatingKey;
-    private bool _apiKeyDismissed;
     private CancellationTokenSource _cts;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -155,45 +125,18 @@
 
             await Bridge.InitializeAsync(CancellationToken.None);
             await Agent.InitializeAsync(cancellationToken: CancellationToken.None);
+            _isLlmReady = await LlmProvider.CheckConnectionAsync(CancellationToken.None);
             StateHasChanged();
             await ScrollToBottomAsync();
         }
         else
         {
-            await JS.InvokeVoidAsync("restoreDetailsStates");
+            try
+            {
+                await JS.InvokeVoidAsync("restoreDetailsStates");
+            }
+            catch (JSDisconnectedException) { }
         }
-    }
-
-    private async Task HandleApiKeyKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await SubmitApiKey();
-        }
-    }
-
-    private async Task SubmitApiKey()
-    {
-        if (string.IsNullOrWhiteSpace(_apiKeyInput)) return;
-
-        ChatClientProvider.ApiKey = _apiKeyInput.Trim();
-        _apiKeyError = null;
-        _isValidatingKey = true;
-        StateHasChanged();
-
-        var error = await ChatClientProvider.ValidateKeyAsync(CancellationToken.None);
-        _isValidatingKey = false;
-
-        if (error != null)
-        {
-            _apiKeyError = L["ApiKeyInvalid"];
-        }
-        else
-        {
-            _apiKeyInput = string.Empty;
-        }
-
-        StateHasChanged();
     }
 
     private async Task OnShopChanged(ChangeEventArgs e)
@@ -305,7 +248,11 @@
 
     private async Task ScrollToBottomAsync()
     {
-        await JS.InvokeVoidAsync("eval", "document.getElementById('chatMessages')?.scrollTo(0, document.getElementById('chatMessages').scrollHeight)");
+        try
+        {
+            await JS.InvokeVoidAsync("eval", "document.getElementById('chatMessages')?.scrollTo(0, document.getElementById('chatMessages').scrollHeight)");
+        }
+        catch (JSDisconnectedException) { }
     }
 
     private static readonly MarkdownPipeline MarkdownPipeline = new MarkdownPipelineBuilder()

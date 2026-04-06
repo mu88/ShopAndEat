@@ -26,20 +26,17 @@ public class ConversationManager(
     private bool _toolCallingSupported = true;
 
     public async IAsyncEnumerable<string> ProcessAsync(
-        List<ChatMessage> conversationHistory,
+        IList<ChatMessage> conversationHistory,
         IChatClient chatClient,
         IReadOnlyList<AITool> tools,
         string shopKey,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var effectiveTools = _toolCallingSupported ? tools.ToList() : new List<AITool>();
+        var effectiveTools = _toolCallingSupported ? tools.ToList() : [];
         var options = new ChatOptions { Tools = effectiveTools.Count > 0 ? effectiveTools : null };
-
         AgentLogMessages.ProcessingUserMessage(logger, llmOptions.Value.DefaultModel);
-
         using var processActivity = ShoppingAgentDiagnostics.ActivitySource.StartActivity("ShoppingAgent.ProcessMessage");
         processActivity?.SetTag("agent.shop", shopKey);
-
         var sw = Stopwatch.StartNew();
         var iteration = 0;
         var toolState = new ToolExecutionState();
@@ -48,13 +45,13 @@ public class ConversationManager(
             for (iteration = 0; iteration < agentOptions.Value.MaxToolCallingIterations; iteration++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
                 var (response, errorMessage, fallbackMessage, updatedOptions) =
                     await GetLlmResponseAsync(chatClient, conversationHistory, options, cancellationToken);
                 options = updatedOptions;
-
                 if (fallbackMessage != null)
+                {
                     yield return fallbackMessage;
+                }
 
                 if (errorMessage != null)
                 {
@@ -63,27 +60,19 @@ public class ConversationManager(
                     break;
                 }
 
-                var toolCalls = response.Messages
-                    .SelectMany(msg => msg.Contents.OfType<FunctionCallContent>())
-                    .ToList();
-
+                var toolCalls = GetToolCalls(response);
                 if (toolCalls.Count == 0)
                 {
-                    var textContent = string.Join(string.Empty, response.Messages
-                        .SelectMany(msg => msg.Contents.OfType<TextContent>())
-                        .Select(text => text.Text));
-
-                    conversationHistory.Add(new ChatMessage(ChatRole.Assistant, textContent));
-                    yield return textContent;
+                    yield return HandleTextOnlyResponse(response, conversationHistory);
                     break;
                 }
 
-                conversationHistory.Add(new ChatMessage(ChatRole.Assistant, response.Messages.SelectMany(msg => msg.Contents).ToList()));
-
+                conversationHistory.Add(BuildAssistantMessage(response));
                 var toolGroups = dispatcher.GroupConsecutiveToolCalls(toolCalls);
-
                 await foreach (var chunk in ProcessToolGroupsAsync(toolGroups, toolState, conversationHistory, shopKey, cancellationToken))
+                {
                     yield return chunk;
+                }
 
                 if (toolState.RepeatedFailureTool != null)
                 {
@@ -100,8 +89,33 @@ public class ConversationManager(
         }
     }
 
+    private static string HandleTextOnlyResponse(ChatResponse response, IList<ChatMessage> conversationHistory)
+    {
+        var textContent = GetFinalTextContent(response);
+        conversationHistory.Add(new ChatMessage(ChatRole.Assistant, textContent));
+        return textContent;
+    }
+
+    private static List<FunctionCallContent> GetToolCalls(ChatResponse response)
+        => response.Messages.SelectMany(msg => msg.Contents.OfType<FunctionCallContent>()).ToList();
+
+    private static string GetFinalTextContent(ChatResponse response)
+        => string.Join(string.Empty, response.Messages.SelectMany(msg => msg.Contents.OfType<TextContent>()).Select(text => text.Text));
+
+    private static ChatMessage BuildAssistantMessage(ChatResponse response)
+        => new(ChatRole.Assistant, response.Messages.SelectMany(msg => msg.Contents).ToList());
+
+    private static bool IsToolCallingNotSupportedError(Exception ex)
+    {
+        var message = ex.Message.ToUpperInvariant();
+        return message.Contains("TOOL", StringComparison.Ordinal)
+            && (message.Contains("NOT SUPPORTED", StringComparison.Ordinal)
+                || message.Contains("UNSUPPORTED", StringComparison.Ordinal)
+                || message.Contains("DOES NOT SUPPORT", StringComparison.Ordinal));
+    }
+
     private async Task<(ChatResponse Response, string ErrorMessage, string FallbackMessage, ChatOptions UpdatedOptions)> GetLlmResponseAsync(
-        IChatClient chatClient, List<ChatMessage> conversationHistory, ChatOptions options, CancellationToken cancellationToken)
+        IChatClient chatClient, IList<ChatMessage> conversationHistory, ChatOptions options, CancellationToken cancellationToken)
     {
         using var llmTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         llmTimeout.CancelAfter(TimeSpan.FromSeconds(llmOptions.Value.TimeoutSeconds));
@@ -136,7 +150,7 @@ public class ConversationManager(
     }
 
     private async Task<(ChatResponse Response, string ErrorMessage, string FallbackMessage, ChatOptions UpdatedOptions)> GetLlmResponseWithFallbackAsync(
-        IChatClient chatClient, List<ChatMessage> conversationHistory, CancellationTokenSource llmTimeout, CancellationToken cancellationToken)
+        IChatClient chatClient, IList<ChatMessage> conversationHistory, CancellationTokenSource llmTimeout, CancellationToken cancellationToken)
     {
         AgentLogMessages.ToolCallingFallback(logger);
         using var activity = ShoppingAgentDiagnostics.ActivitySource.StartActivity("ShoppingAgent.ToolFallback");
@@ -161,9 +175,9 @@ public class ConversationManager(
     }
 
     private async IAsyncEnumerable<string> ProcessToolGroupsAsync(
-        List<(string Key, string Label, string Icon, List<FunctionCallContent> Tools)> toolGroups,
+        IReadOnlyList<(string Key, string Label, string Icon, IReadOnlyList<FunctionCallContent> Tools)> toolGroups,
         ToolExecutionState state,
-        List<ChatMessage> conversationHistory,
+        IList<ChatMessage> conversationHistory,
         string shopKey,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -195,7 +209,9 @@ public class ConversationManager(
                 if (!toolSuccess)
                 {
                     metrics.ToolCallsFailed.Add(1, new KeyValuePair<string, object>("tool.name", toolCall.Name));
-                    AgentLogMessages.ToolCallFailed(logger, toolCall.Name,
+                    AgentLogMessages.ToolCallFailed(
+                        logger,
+                        toolCall.Name,
                         state.FailureTracker.TryGetValue(toolCall.Name + "|" + dispatcher.FormatArgs(toolCall.Arguments), out var fc) ? fc : 1,
                         toolResult);
                 }
@@ -205,15 +221,23 @@ public class ConversationManager(
                 conversationHistory.Add(new ChatMessage(ChatRole.Tool,
                     [new FunctionResultContent(toolCall.CallId, toolResult)]));
 
-                if (state.RepeatedFailureTool != null) break;
+                if (state.RepeatedFailureTool != null)
+                {
+                    break;
+                }
             }
 
             if (state.RepeatedFailureTool != null)
+            {
                 groupActivity?.SetStatus(ActivityStatusCode.Error, $"Repeated failure: {state.RepeatedFailureTool}");
+            }
 
             yield return renderer.RenderToolGroupEnd();
 
-            if (state.RepeatedFailureTool != null) break;
+            if (state.RepeatedFailureTool != null)
+            {
+                break;
+            }
         }
     }
 
@@ -236,18 +260,9 @@ public class ConversationManager(
         }
     }
 
-    private static bool IsToolCallingNotSupportedError(Exception ex)
-    {
-        var message = ex.Message.ToUpperInvariant();
-        return message.Contains("TOOL", StringComparison.Ordinal)
-            && (message.Contains("NOT SUPPORTED", StringComparison.Ordinal)
-                || message.Contains("UNSUPPORTED", StringComparison.Ordinal)
-                || message.Contains("DOES NOT SUPPORT", StringComparison.Ordinal));
-    }
-
     private sealed class ToolExecutionState
     {
         public string RepeatedFailureTool { get; set; }
-        public Dictionary<string, int> FailureTracker { get; } = new();
+        public Dictionary<string, int> FailureTracker { get; } = new(StringComparer.Ordinal);
     }
 }

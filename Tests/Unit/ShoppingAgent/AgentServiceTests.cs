@@ -13,6 +13,7 @@ using ShoppingAgent.Resources;
 using ShoppingAgent.Services;
 using ShoppingAgent.Services.Concrete;
 using AiChatMessage = Microsoft.Extensions.AI.ChatMessage;
+using ModelChatMessage = ShoppingAgent.Models.ChatMessage;
 
 namespace Tests.Unit.ShoppingAgent;
 
@@ -366,10 +367,52 @@ public class AgentServiceTests
         result.Should().NotBeEmpty("an error message should be shown when the LLM call fails");
     }
 
+    [Test]
+    public async Task SwitchShopAsync_ClearsMessagesAndReinitializes()
+    {
+        // Arrange
+        var chatClientMock = Substitute.For<IChatClient>();
+        chatClientMock.GetResponseAsync(Arg.Any<IEnumerable<AiChatMessage>>(), Arg.Any<ChatOptions>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new ChatResponse([new AiChatMessage(ChatRole.Assistant, "Hi")])));
+        var testee = CreateTestee(chatClientMock);
+
+        // Seed one message
+        testee.Messages.Add(new ModelChatMessage { Role = "user", Content = "Hello" });
+        testee.Messages.Should().HaveCount(1);
+
+        // Act
+        await testee.SwitchShopAsync("coop");
+
+        // Assert
+        testee.Messages.Should().BeEmpty("SwitchShopAsync must clear the conversation");
+        testee.SelectedShopKey.Should().Be("coop");
+    }
+
+    [Test]
+    public async Task InitializeAsync_DoesNotRebuildPrompt_WhenAlreadyInitializedWithSameShop()
+    {
+        // Arrange
+        var promptBuilderMock = Substitute.For<ISystemPromptBuilder>();
+        promptBuilderMock
+            .BuildSystemPromptAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult("system prompt"));
+        var testee = CreateTestee(Substitute.For<IChatClient>(), systemPromptBuilder: promptBuilderMock);
+
+        await testee.InitializeAsync("coop");
+
+        // Act — second call with the same shop key must hit the early return
+        await testee.InitializeAsync("coop");
+
+        // Assert — BuildSystemPromptAsync called only once despite two InitializeAsync calls
+        await promptBuilderMock.Received(1).BuildSystemPromptAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
     private static AgentService CreateTestee(
         IChatClient chatClient,
         IShopToolExecutor toolExecutor = null,
-        IPreferencesService preferencesService = null)
+        IPreferencesService preferencesService = null,
+        ISystemPromptBuilder systemPromptBuilder = null)
     {
         toolExecutor ??= Substitute.For<IShopToolExecutor>();
 
@@ -404,12 +447,12 @@ public class AgentServiceTests
         meterFactory.Create(Arg.Any<MeterOptions>()).Returns(callInfo => new Meter(callInfo.Arg<MeterOptions>()));
         var metrics = new ShoppingAgentMetrics(meterFactory);
 
-        var systemPromptBuilder = new SystemPromptBuilder(preferencesMock, sessionMock, localizerMock);
+        var systemPromptBuilderInstance = systemPromptBuilder ?? new SystemPromptBuilder(preferencesMock, sessionMock, localizerMock);
         var toolDefinitionProvider = new ToolDefinitionProvider();
         var toolCallDispatcher = new ToolCallDispatcher(factoryMock, preferencesMock, localizerMock);
         var conversationManager = new ConversationManager(toolCallDispatcher, new HtmlToolResultRenderer(localizerMock), localizerMock, NullLogger<ConversationManager>.Instance, metrics, Options.Create(new AgentOptions()), Options.Create(new LlmClientOptions()));
         var shopSessionManager = new ShopSessionManager(factoryMock, NullLogger<ShopSessionManager>.Instance);
 
-        return new AgentService(chatClientProviderMock, systemPromptBuilder, toolDefinitionProvider, conversationManager, shopSessionManager, metrics, NullLogger<AgentService>.Instance);
+        return new AgentService(chatClientProviderMock, systemPromptBuilderInstance, toolDefinitionProvider, conversationManager, shopSessionManager, metrics, NullLogger<AgentService>.Instance);
     }
 }

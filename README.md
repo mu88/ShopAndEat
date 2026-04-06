@@ -45,7 +45,7 @@ The ShoppingAgent feature introduced modern .NET patterns. The following items t
 - [ ] Evaluate `IOptions<T>` pattern for any hardcoded configuration values in services
 
 ### Observability
-- [ ] `ShoppingAgentMetrics` are collected in the browser (WASM) but have no OTLP exporter — metrics don't reach the Aspire Dashboard. Options: proxy metrics via server-side API, or configure browser-side OTLP-over-HTTP export.
+- ✅ **Resolved**: ShoppingAgent now runs server-side (Blazor Server / InteractiveServer). All traces and metrics are emitted directly into the server-side OpenTelemetry pipeline and reach the Aspire Dashboard.
 
 ### Testing
-- [ ] Add browser-based system test (e.g. Playwright) to verify the Blazor WASM app boots successfully in Docker — current `HttpClient`-based system tests cannot catch client-side errors like DI resolution failures or missing JS modules
+- ✅ **Resolved**: No WASM app to boot — the ShoppingAgent Razor components render server-side via SignalR. Standard `HttpClient`-based system tests cover the full application.

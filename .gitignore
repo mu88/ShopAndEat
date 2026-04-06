@@ -8,6 +8,9 @@ obj
 TestResults/
 Tests/coverage.xml
 .sonarqube/
+
+# Docker secrets — never commit API keys
+secrets/
 diff_output.txt
 
 # Local SQLite database

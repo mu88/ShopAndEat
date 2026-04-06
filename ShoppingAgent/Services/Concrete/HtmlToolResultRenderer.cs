@@ -22,7 +22,9 @@ public class HtmlToolResultRenderer(IStringLocalizer<Messages> localizer) : IToo
     private static string Truncate(string text, int maxLength)
     {
         if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+        {
             return text;
+        }
 
         return text[..maxLength] + "...";
     }

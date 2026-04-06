@@ -9,7 +9,8 @@ Layered .NET application with a Blazor Server frontend and a Blazor WebAssembly 
 - `ServiceLayer/` — Service interfaces + implementations consumed by controllers
 - `DTO/` — DTOs and mapping extension methods (`ToDto()`, `ToEntity()`)
 - `ShopAndEat/` — ASP.NET Core Blazor Server host. API controllers in `Api/`, Razor components, `Program.cs`
-- `ShoppingAgent/` — Blazor WebAssembly (`Microsoft.NET.Sdk.BlazorWebAssembly`). **MUST remain a separate project** — WASM compilation requires this SDK. Hosted via `AddAdditionalAssemblies()`.
+- `ShoppingAgent/` — Razor Class Library (RCL). Contains the AI shopping agent feature: agent services, Blazor component (`Home.razor`), browser extension bridge, tool executors, and diagnostics. Activated via `.EnableShoppingAgent()` + `.MapShoppingAgent()` in the host. **Must remain a separate project** to keep the feature boundary clean.
+- `ShopAndEat/Features/ShoppingAgent/` — Host-side adapters (`ServerPreferencesAdapter`, `ServerSessionAdapter`) and the `ShoppingAgentFeature.cs` convenience extension. These bridge the agent feature to the ShopAndEat infrastructure layer (repositories, services).
 - `ShoppingClient/` — HTTP client for the ShoppingAgent WASM app
 - `BrowserExtension/` — Browser extension (excluded from Sonar analysis)
 - `Tests/` — Single test project with subdirectories `Unit/`, `Integration/`, `System/`

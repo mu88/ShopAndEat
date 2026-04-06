@@ -12,9 +12,9 @@ namespace ShoppingAgent.Services.Concrete;
 /// </summary>
 public class ShopToolExecutorFactory(IExtensionBridge bridge, ILoggerFactory loggerFactory, IOptions<ShopOptions> shopOptions) : IShopToolExecutorFactory
 {
-    private readonly ConcurrentDictionary<string, IShopToolExecutor> _executors = new();
+    private readonly ConcurrentDictionary<string, IShopToolExecutor> _executors = new(StringComparer.Ordinal);
 
-    public IReadOnlyList<ShopConfig> AvailableShops => shopOptions.Value.Shops;
+    public IReadOnlyList<ShopConfig> AvailableShops => (IReadOnlyList<ShopConfig>)shopOptions.Value.Shops;
 
     public IShopToolExecutor GetExecutor(string shopKey) => _executors.GetOrAdd(shopKey, CreateExecutor);
 

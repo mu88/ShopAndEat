@@ -8,10 +8,11 @@ public static class ShoppingAgentDiagnostics
     public const string ActivitySourceName = "ShoppingAgent";
     public const string MeterName = "ShoppingAgent";
 
-    private static readonly string Version = Assembly.GetExecutingAssembly()
-        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-        ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString()
-        ?? "0.0.0";
+    public static readonly ActivitySource ActivitySource = new(ActivitySourceName, GetVersion());
 
-    public static readonly ActivitySource ActivitySource = new(ActivitySourceName, Version);
+    private static string GetVersion() =>
+        Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString()
+            ?? "0.0.0";
 }

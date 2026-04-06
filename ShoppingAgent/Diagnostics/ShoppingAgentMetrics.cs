@@ -4,17 +4,11 @@ namespace ShoppingAgent.Diagnostics;
 
 public sealed class ShoppingAgentMetrics
 {
-    public Counter<int> SessionsCreated { get; }
-    public UpDownCounter<int> ActiveSessions { get; }
-    public Counter<int> MessagesProcessed { get; }
-    public Counter<int> ToolCallsTotal { get; }
-    public Counter<int> ToolCallsFailed { get; }
-    public Histogram<double> LlmResponseTimeMs { get; }
-    public Histogram<double> ToolExecutionTimeMs { get; }
-
     public ShoppingAgentMetrics(IMeterFactory meterFactory)
     {
+#pragma warning disable IDISP001 // Meter is managed by IMeterFactory, not by this class
         var meter = meterFactory.Create(ShoppingAgentDiagnostics.MeterName);
+#pragma warning restore IDISP001
         SessionsCreated = meter.CreateCounter<int>(
             "shopping_agent.sessions.created",
             description: "Total number of shopping sessions created");
@@ -39,4 +33,18 @@ public sealed class ShoppingAgentMetrics
             unit: "ms",
             description: "Tool execution time in milliseconds");
     }
+
+    public Counter<int> SessionsCreated { get; }
+
+    public UpDownCounter<int> ActiveSessions { get; }
+
+    public Counter<int> MessagesProcessed { get; }
+
+    public Counter<int> ToolCallsTotal { get; }
+
+    public Counter<int> ToolCallsFailed { get; }
+
+    public Histogram<double> LlmResponseTimeMs { get; }
+
+    public Histogram<double> ToolExecutionTimeMs { get; }
 }

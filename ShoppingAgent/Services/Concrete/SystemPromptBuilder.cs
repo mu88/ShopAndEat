@@ -43,15 +43,15 @@ public class SystemPromptBuilder : ISystemPromptBuilder
         var units = await unitsTask;
 
         var prefText = preferences.Count > 0
-            ? $"{Environment.NewLine}{Environment.NewLine}{_localizer["LearnedPreferences"]}{Environment.NewLine}" + string.Join(Environment.NewLine, preferences.Select(pref => $"- [{pref.Scope}] {pref.Key}: `{pref.Value.Replace("\n", " ").Replace("\r", "").Replace("`", "'")}`"))
+            ? $"{Environment.NewLine}{Environment.NewLine}{_localizer["LearnedPreferences"]}{Environment.NewLine}" + string.Join(Environment.NewLine, preferences.Select(pref => $"- [{pref.Scope}] {pref.Key}: `{pref.Value.Replace('\n', ' ').Replace("\r", string.Empty, StringComparison.Ordinal).Replace('`', '\'')}`"))
             : string.Empty;
 
         var unitList = string.Join(", ", units.Select(unit => $"\"{unit}\""));
 
         return PromptTemplate.Value
-            .Replace("{shopName}", shopName)
-            .Replace("{shopUrl}", shopUrl)
-            .Replace("{unitList}", unitList)
-            .Replace("{prefText}", prefText);
+            .Replace("{shopName}", shopName, StringComparison.Ordinal)
+            .Replace("{shopUrl}", shopUrl, StringComparison.Ordinal)
+            .Replace("{unitList}", unitList, StringComparison.Ordinal)
+            .Replace("{prefText}", prefText, StringComparison.Ordinal);
     }
 }

@@ -18,20 +18,16 @@ namespace ShoppingAgent.Services.Concrete;
 /// The extension's content script on the ShopAndEat page listens for messages,
 /// forwards them to the background worker, which executes tools on the target shop's tab.
 /// </summary>
-public class ExtensionBridge : IExtensionBridge
+public sealed class ExtensionBridge : IExtensionBridge
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private readonly IJSRuntime _jsRuntime;
     private readonly IStringLocalizer<Messages> _localizer;
     private readonly ILogger<ExtensionBridge> _logger;
     private readonly ExtensionOptions _extensionOptions;
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<ToolResult>> _pendingCalls = new(StringComparer.Ordinal);
     private DotNetObjectReference<ExtensionBridge> _dotNetRef;
-    private readonly ConcurrentDictionary<string, TaskCompletionSource<ToolResult>> _pendingCalls = new();
     private bool _extensionConnected;
-
-    public bool IsExtensionConnected => _extensionConnected;
-
-    public event Action OnConnectionChanged;
 
     public ExtensionBridge(IJSRuntime jsRuntime, IStringLocalizer<Messages> localizer, ILogger<ExtensionBridge> logger, IOptions<ExtensionOptions> extensionOptions)
     {
@@ -41,8 +37,15 @@ public class ExtensionBridge : IExtensionBridge
         _extensionOptions = extensionOptions.Value;
     }
 
+#pragma warning disable MA0046
+    public event Action OnConnectionChanged;
+#pragma warning restore MA0046
+
+    public bool IsExtensionConnected => _extensionConnected;
+
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
+        _dotNetRef?.Dispose();
         _dotNetRef = DotNetObjectReference.Create(this);
         await _jsRuntime.InvokeVoidAsync("extensionBridge.initialize", cancellationToken, _dotNetRef);
         ServiceLogMessages.ExtensionBridgeInitialized(_logger);
@@ -51,7 +54,7 @@ public class ExtensionBridge : IExtensionBridge
     /// <summary>
     /// Sends a tool call to the extension and waits for the result.
     /// </summary>
-    public async Task<ToolResult> ExecuteToolAsync(string toolName, Dictionary<string, object> arguments, string shopKey, CancellationToken cancellationToken = default)
+    public async Task<ToolResult> ExecuteToolAsync(string toolName, IDictionary<string, object> arguments, string shopKey, CancellationToken cancellationToken = default)
     {
         if (!_extensionConnected)
         {
@@ -64,7 +67,7 @@ public class ExtensionBridge : IExtensionBridge
         _pendingCalls[callId] = tcs;
 
         var request = new { tool = toolName, args = arguments, shop = shopKey, id = callId };
-        await _jsRuntime.InvokeVoidAsync("extensionBridge.sendToolCall", JsonSerializer.Serialize(request));
+        await _jsRuntime.InvokeVoidAsync("extensionBridge.sendToolCall", cancellationToken, JsonSerializer.Serialize(request));
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(TimeSpan.FromSeconds(_extensionOptions.ToolCallTimeoutSeconds));
@@ -78,7 +81,10 @@ public class ExtensionBridge : IExtensionBridge
             var result = await tcs.Task.WaitAsync(cts.Token);
             activity?.SetTag("extension.success", result.Success);
             if (!result.Success)
+            {
                 activity?.SetStatus(ActivityStatusCode.Error, result.Error);
+            }
+
             return result;
         }
         catch (OperationCanceledException)
@@ -137,7 +143,15 @@ public class ExtensionBridge : IExtensionBridge
     {
         if (_dotNetRef != null)
         {
-            await _jsRuntime.InvokeVoidAsync("extensionBridge.dispose");
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("extensionBridge.dispose");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already disconnected — JS interop is no longer available
+            }
+
             _dotNetRef.Dispose();
         }
     }

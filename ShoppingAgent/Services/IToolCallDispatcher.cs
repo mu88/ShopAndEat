@@ -6,8 +6,8 @@ public interface IToolCallDispatcher
 {
     Task<(string Result, bool Success)> DispatchAsync(FunctionCallContent toolCall, string shopKey, CancellationToken ct = default);
 
-    List<(string Key, string Label, string Icon, List<FunctionCallContent> Tools)> GroupConsecutiveToolCalls(
-        List<FunctionCallContent> toolCalls);
+    IReadOnlyList<(string Key, string Label, string Icon, IReadOnlyList<FunctionCallContent> Tools)> GroupConsecutiveToolCalls(
+        IReadOnlyList<FunctionCallContent> toolCalls);
 
     string FormatArgs(IDictionary<string, object> args);
 

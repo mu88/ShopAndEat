@@ -97,25 +97,30 @@ public class ShoppingFeatureSystemTests
     }
 
     [Test]
-    public async Task WasmApp_ShouldServeStaticFilesInDocker()
+    public async Task BlazorServerApp_ShouldServeShoppingPageInDocker()
     {
         // Act
         var response = await _httpClient.GetAsync("/shopAndEat/shopping/", _cancellationToken);
+        var html = await response.Content.ReadAsStringAsync(_cancellationToken);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK, "because the Blazor WASM shopping page should be served");
-        (await response.Content.ReadAsStringAsync(_cancellationToken))
-            .Should().ContainAny("blazor", "_framework", "because the page should reference the Blazor framework");
+        response.StatusCode.Should().Be(HttpStatusCode.OK, "because the Blazor Server shopping page should be served");
+
+        // With InteractiveServer render mode, the first response is SSR pre-rendered,
+        // so the component markup (including localised text) must be present immediately —
+        // unlike WASM where the server returned an empty shell and rendering happened in-browser.
+        html.Should().Contain("Shopping Assistant", "because the Home component is pre-rendered SSR and its content must be in the initial HTML");
+        html.Should().Contain("blazor.server.js", "because the Blazor Server runtime script must be referenced for subsequent interactivity");
     }
 
     [Test]
-    public async Task WasmRuntime_ShouldBeLoadableInDocker()
+    public async Task BlazorServerRuntime_ShouldBeServableInDocker()
     {
-        // Act - verify that the WASM framework entry point is actually servable
-        var response = await _httpClient.GetAsync("/shopAndEat/_framework/dotnet.js", _cancellationToken);
+        // Act - verify that the Blazor Server framework script is actually servable
+        var response = await _httpClient.GetAsync("/shopAndEat/_framework/blazor.server.js", _cancellationToken);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK, "because the Blazor WASM runtime (dotnet.js) must be loadable for the shopping page to work");
+        response.StatusCode.Should().Be(HttpStatusCode.OK, "because the Blazor Server runtime (blazor.server.js) must be loadable for the shopping page to work");
     }
 
     private static async Task CreatePreference(string scope, string key, string value)

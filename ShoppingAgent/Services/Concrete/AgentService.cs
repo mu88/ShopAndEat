@@ -19,20 +19,27 @@ public class AgentService(
     ShoppingAgentMetrics metrics,
     ILogger<AgentService> logger) : IAgentService
 {
-    private readonly List<Microsoft.Extensions.AI.ChatMessage> _conversationHistory = new();
+    private readonly List<Microsoft.Extensions.AI.ChatMessage> _conversationHistory = [];
+    private readonly List<Models.ChatMessage> _messages = [];
     private bool _isProcessing;
 
-    public bool IsProcessing => _isProcessing;
-    public List<Models.ChatMessage> Messages { get; } = new();
+#pragma warning disable MA0046
     public event Action OnStateChanged;
+#pragma warning restore MA0046
+
+    public bool IsProcessing => _isProcessing;
+
+    public IList<Models.ChatMessage> Messages => _messages;
 
     public string SelectedShopKey => shopSessionManager.SelectedShopKey;
     public IReadOnlyList<ShopConfig> AvailableShops => shopSessionManager.AvailableShops;
 
     public async Task InitializeAsync(string shopKey = null, CancellationToken cancellationToken = default)
     {
-        if (shopSessionManager.IsInitialized && shopKey == shopSessionManager.SelectedShopKey)
+        if (shopSessionManager.IsInitialized && string.Equals(shopKey, shopSessionManager.SelectedShopKey, StringComparison.Ordinal))
+        {
             return;
+        }
 
         shopSessionManager.SelectShop(shopKey);
 
@@ -48,7 +55,7 @@ public class AgentService(
     {
         AgentLogMessages.SwitchingShop(logger, shopKey);
         shopSessionManager.Reset();
-        Messages.Clear();
+        _messages.Clear();
         await InitializeAsync(shopKey, cancellationToken);
     }
 
@@ -57,7 +64,9 @@ public class AgentService(
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (!shopSessionManager.IsInitialized)
+        {
             await InitializeAsync(cancellationToken: cancellationToken);
+        }
 
         _isProcessing = true;
         OnStateChanged?.Invoke();

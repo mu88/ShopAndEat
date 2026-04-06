@@ -4,6 +4,7 @@ using BizDbAccess.Concrete;
 using BizLogic;
 using BizLogic.Concrete;
 using DataLayer.EF;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using mu88.Shared.OpenTelemetry;
 using OpenTelemetry;
@@ -11,23 +12,33 @@ using Scalar.AspNetCore;
 using ServiceLayer;
 using ServiceLayer.Concrete;
 using ShopAndEat.Components;
-using ShoppingAgent.Diagnostics;
+using ShopAndEat.Features.ShoppingAgent;
+using ShoppingAgent;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.ConfigureOpenTelemetry("shopandeat", builder.Configuration);
+// Load Docker secrets — explicitly map known secret files to config keys.
+// Values are trimmed to avoid trailing newlines.
+var llmApiKeyFile = "/run/secrets/llm_api_key";
+if (File.Exists(llmApiKeyFile))
+{
+    builder.Configuration["LlmClient:ApiKey"] = File.ReadAllText(llmApiKeyFile).Trim();
+}
 
-// Extend OTel with custom ShoppingAgent ActivitySource and Meter
-builder.Services.AddOpenTelemetry()
-    .WithTracing(tracing => tracing.AddSource(ShoppingAgentDiagnostics.ActivitySourceName))
-    .WithMetrics(metrics => metrics.AddMeter(ShoppingAgentDiagnostics.MeterName));
+// Persist Data Protection keys to tmpfs so they survive within a container session but are never written to disk.
+// Keys are lost on container restart — which is acceptable since a restart disconnects all Blazor circuits anyway.
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/home/app/dataprotection-keys"));
+
+builder.Services.ConfigureOpenTelemetry("shopandeat", builder.Configuration);
 
 ConfigureShopAndEatServices(builder.Services, builder.Configuration);
 
+builder.Services.EnableShoppingAgent(builder.Configuration);
+
 builder.Services.AddHealthChecks();
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
-    .AddInteractiveWebAssemblyComponents();
+    .AddInteractiveServerComponents();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -69,8 +80,7 @@ app.MapHealthChecks("/healthz");
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(ShoppingAgent.Pages.Home).Assembly);
+    .MapShoppingAgent();
 
 await app.RunAsync();
 
@@ -102,7 +112,6 @@ void CreateDbIfNotExists(WebApplication webApp)
 void ConfigureShopAndEatServices(IServiceCollection services, IConfiguration configuration)
 {
     services.AddSingleton(TimeProvider.System);
-    services.AddSingleton<ShoppingAgentMetrics>();
     services.AddScoped<ISessionRepository, SessionRepository>();
     services.AddScoped<IPreferencesRepository, PreferencesRepository>();
     services.AddScoped<IArticleMappingRepository, ArticleMappingRepository>();

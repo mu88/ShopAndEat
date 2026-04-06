@@ -7,7 +7,7 @@ namespace ShoppingAgent.Services;
 /// </summary>
 public interface IShopToolExecutorFactory
 {
-    IShopToolExecutor GetExecutor(string shopKey);
-
     IReadOnlyList<ShopConfig> AvailableShops { get; }
+
+    IShopToolExecutor GetExecutor(string shopKey);
 }

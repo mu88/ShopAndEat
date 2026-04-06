@@ -13,8 +13,8 @@ namespace ShoppingAgent.Services.Concrete;
 /// </summary>
 public class CoopToolExecutor : IShopToolExecutor
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private const string ShopKey = "coop";
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private readonly IExtensionBridge _bridge;
     private readonly ILogger<CoopToolExecutor> _logger;
 
@@ -32,15 +32,15 @@ public class CoopToolExecutor : IShopToolExecutor
         ServiceLogMessages.CoopSearching(_logger, searchTerm);
         using var activity = ShoppingAgentDiagnostics.ActivitySource.StartActivity("ShoppingAgent.Coop.SearchProducts");
         activity?.SetTag("coop.search_term", searchTerm);
-        var result = await _bridge.ExecuteToolAsync("search", new Dictionary<string, object> { ["term"] = searchTerm }, ShopKey, ct);
+        var result = await _bridge.ExecuteToolAsync("search", new Dictionary<string, object>(StringComparer.Ordinal) { ["term"] = searchTerm }, ShopKey, ct);
 
         if (!result.Success)
         {
             activity?.SetStatus(ActivityStatusCode.Error, result.Error);
-            return [];
+            return Array.Empty<ShopProduct>();
         }
 
-        var products = JsonSerializer.Deserialize<List<ShopProduct>>(result.Data, JsonOptions) ?? new List<ShopProduct>();
+        var products = JsonSerializer.Deserialize<List<ShopProduct>>(result.Data, JsonOptions) ?? [];
         activity?.SetTag("coop.result_count", products.Count);
         ServiceLogMessages.CoopSearchComplete(_logger, searchTerm, products.Count);
         return products;
@@ -54,7 +54,7 @@ public class CoopToolExecutor : IShopToolExecutor
         ServiceLogMessages.CoopGettingProductDetails(_logger, productUrl);
         using var activity = ShoppingAgentDiagnostics.ActivitySource.StartActivity("ShoppingAgent.Coop.GetProductDetails");
         activity?.SetTag("coop.product_url", productUrl);
-        var result = await _bridge.ExecuteToolAsync("getProductDetails", new Dictionary<string, object> { ["url"] = productUrl }, ShopKey, ct);
+        var result = await _bridge.ExecuteToolAsync("getProductDetails", new Dictionary<string, object>(StringComparer.Ordinal) { ["url"] = productUrl }, ShopKey, ct);
 
         if (!result.Success)
         {
@@ -75,11 +75,16 @@ public class CoopToolExecutor : IShopToolExecutor
         using var activity = ShoppingAgentDiagnostics.ActivitySource.StartActivity("ShoppingAgent.Coop.AddToCart");
         activity?.SetTag("coop.product_url", productUrl);
         activity?.SetTag("coop.quantity", quantity);
-        var result = await _bridge.ExecuteToolAsync("addToCart",
-            new Dictionary<string, object> { ["url"] = productUrl, ["quantity"] = quantity }, ShopKey, ct);
+        var result = await _bridge.ExecuteToolAsync(
+            "addToCart",
+            new Dictionary<string, object>(StringComparer.Ordinal) { ["url"] = productUrl, ["quantity"] = quantity },
+            ShopKey,
+            ct);
 
         if (!result.Success)
+        {
             activity?.SetStatus(ActivityStatusCode.Error, result.Error);
+        }
 
         return result.Success ? result.Data : $"ERROR: {result.Error}";
     }
@@ -89,8 +94,11 @@ public class CoopToolExecutor : IShopToolExecutor
     /// </summary>
     public async Task<string> RemoveFromCartAsync(string productName, CancellationToken ct = default)
     {
-        var result = await _bridge.ExecuteToolAsync("removeFromCart",
-            new Dictionary<string, object> { ["productName"] = productName }, ShopKey, ct);
+        var result = await _bridge.ExecuteToolAsync(
+            "removeFromCart",
+            new Dictionary<string, object>(StringComparer.Ordinal) { ["productName"] = productName },
+            ShopKey,
+            ct);
 
         return result.Success ? result.Data : $"ERROR: {result.Error}";
     }
@@ -100,7 +108,7 @@ public class CoopToolExecutor : IShopToolExecutor
     /// </summary>
     public async Task<string> GetCartContentsAsync(CancellationToken ct = default)
     {
-        var result = await _bridge.ExecuteToolAsync("getCartContents", new Dictionary<string, object>(), ShopKey, ct);
+        var result = await _bridge.ExecuteToolAsync("getCartContents", new Dictionary<string, object>(StringComparer.Ordinal), ShopKey, ct);
         return result.Success ? result.Data : $"ERROR: {result.Error}";
     }
 
@@ -109,7 +117,7 @@ public class CoopToolExecutor : IShopToolExecutor
     /// </summary>
     public async Task<string> NavigateToCartAsync(CancellationToken ct = default)
     {
-        var result = await _bridge.ExecuteToolAsync("navigateToCart", new Dictionary<string, object>(), ShopKey, ct);
+        var result = await _bridge.ExecuteToolAsync("navigateToCart", new Dictionary<string, object>(StringComparer.Ordinal), ShopKey, ct);
         return result.Success ? result.Data : $"ERROR: {result.Error}";
     }
 }

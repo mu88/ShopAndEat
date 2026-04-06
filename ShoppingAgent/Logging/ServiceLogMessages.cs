@@ -36,7 +36,8 @@ internal static partial class ServiceLogMessages
     [LoggerMessage(SkipEnabledCheck = true, Level = LogLevel.Warning, Message = "Mistral API key validation failed: {ErrorMessage}")]
     public static partial void ApiKeyValidationFailed(ILogger logger, string errorMessage);
 
-    // ExtensionBridge
+    [LoggerMessage(SkipEnabledCheck = true, Level = LogLevel.Warning, Message = "LLM connection check failed")]
+    public static partial void LlmConnectionCheckFailed(ILogger logger, Exception exception);
     [LoggerMessage(SkipEnabledCheck = true, Level = LogLevel.Information, Message = "Extension bridge initialized")]
     public static partial void ExtensionBridgeInitialized(ILogger logger);
 

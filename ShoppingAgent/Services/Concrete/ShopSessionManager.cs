@@ -22,7 +22,7 @@ public class ShopSessionManager(
     public void SelectShop(string shopKey = null)
     {
         SelectedShopKey = shopKey ?? shopToolExecutorFactory.AvailableShops[0].Key;
-        SelectedShop = shopToolExecutorFactory.AvailableShops.First(shop => shop.Key == SelectedShopKey);
+        SelectedShop = shopToolExecutorFactory.AvailableShops.First(shop => string.Equals(shop.Key, SelectedShopKey, StringComparison.Ordinal));
         IsInitialized = true;
         AgentLogMessages.AgentInitialized(logger, SelectedShopKey);
     }

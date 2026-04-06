@@ -1,6 +1,4 @@
 using System.Diagnostics.Metrics;
-using System.Net;
-using System.Reflection;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components.Web;
@@ -24,15 +22,25 @@ namespace Tests.Unit.ShoppingAgent;
 
 [TestFixture]
 [Category("Unit")]
-[global::System.Diagnostics.CodeAnalysis.SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP014:Use a single instance of HttpClient", Justification = "Unit tests create isolated HttpClient instances per test by design")]
 public class HomePageTests
 {
-    private static BunitContext CreateBunitContext(IChatClient mockChatClient = null, bool preSetApiKey = false)
+    private static BunitContext CreateBunitContext(IChatClient mockChatClient = null)
     {
         var ctx = new BunitContext();
         ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 
-        var chatClientProvider = CreateChatClientProvider(mockChatClient, preSetApiKey);
+        var chatClientProvider = Substitute.For<IMistralChatClientProvider>();
+        if (mockChatClient != null)
+        {
+            chatClientProvider.GetChatClientAsync().Returns(Task.FromResult(mockChatClient));
+        }
+        else
+        {
+            var noOpClient = Substitute.For<IChatClient>();
+            noOpClient.GetResponseAsync(Arg.Any<IEnumerable<AiChatMessage>>(), Arg.Any<ChatOptions>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(new ChatResponse([new AiChatMessage(ChatRole.Assistant, string.Empty)])));
+            chatClientProvider.GetChatClientAsync().Returns(Task.FromResult(noOpClient));
+        }
 
         var preferencesMock = Substitute.For<IPreferencesService>();
         preferencesMock.GetAllPreferencesAsync(Arg.Any<string>()).Returns(new List<PreferenceDto>());
@@ -55,24 +63,6 @@ public class HomePageTests
         return ctx;
     }
 
-    private static MistralChatClientProvider CreateChatClientProvider(IChatClient mockChatClient, bool preSetApiKey)
-    {
-        var provider = new MistralChatClientProvider(new HttpClient(new SuccessHttpHandler()), Microsoft.Extensions.Logging.Abstractions.NullLogger<MistralChatClientProvider>.Instance, Options.Create(new LlmClientOptions()));
-        if (!preSetApiKey)
-        {
-            return provider;
-        }
-
-        provider.ApiKey = "test-key-123";
-        if (mockChatClient != null)
-        {
-            var field = typeof(MistralChatClientProvider).GetField("_cachedClient", BindingFlags.NonPublic | BindingFlags.Instance);
-            field!.SetValue(provider, mockChatClient);
-        }
-
-        return provider;
-    }
-
     private static void RegisterServices(BunitContext ctx, IMistralChatClientProvider chatClientProvider, IPreferencesService preferencesMock, ISessionService sessionMock, IShopToolExecutorFactory factoryMock)
     {
         var localizerMock = Substitute.For<IStringLocalizer<Messages>>();
@@ -92,7 +82,7 @@ public class HomePageTests
         ctx.Services.AddSingleton<IShopToolExecutorFactory>(factoryMock);
         ctx.Services.AddSingleton<IMeterFactory>(meterFactory);
         ctx.Services.AddSingleton<ShoppingAgentMetrics>();
-        ctx.Services.AddSingleton(Options.Create(new LlmClientOptions()));
+        ctx.Services.AddSingleton(Options.Create(new LlmClientOptions { ApiKey = "test-key" }));
         ctx.Services.AddSingleton(Options.Create(new AgentOptions()));
         ctx.Services.AddSingleton(Options.Create(new ExtensionOptions()));
         ctx.Services.AddSingleton<ISystemPromptBuilder, SystemPromptBuilder>();
@@ -107,42 +97,12 @@ public class HomePageTests
     }
 
     [Test]
-    public async Task InitialRender_ShowsApiKeyInput()
-    {
-        // Arrange
-        await using var ctx = CreateBunitContext();
-
-        // Act
-        var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
-
-        // Assert
-        cut.FindAll(".api-key-overlay").Should().HaveCount(1);
-        cut.FindAll(".api-key-input").Should().HaveCount(1);
-    }
-
-    [Test]
-    public async Task ApiKeySubmit_ShowsChat_WhenValid()
-    {
-        // Arrange
-        await using var ctx = CreateBunitContext();
-        var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
-
-        // Act
-        cut.Find(".api-key-input").Input("sk-test-api-key");
-        cut.Find(".api-key-submit").Click();
-
-        // Assert
-        cut.WaitForAssertion(() =>
-            cut.FindAll(".api-key-overlay").Should().BeEmpty());
-    }
-
-    [Test]
     public async Task SendMessage_DisplaysUserMessage()
     {
         // Arrange
         var mockChatClient = CreateMockChatClient("Agent reply");
 
-        await using var ctx = CreateBunitContext(mockChatClient, preSetApiKey: true);
+        await using var ctx = CreateBunitContext(mockChatClient);
         var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
 
         // Act
@@ -160,7 +120,7 @@ public class HomePageTests
         // Arrange
         var mockChatClient = CreateMockChatClient("I can help you shop!");
 
-        await using var ctx = CreateBunitContext(mockChatClient, preSetApiKey: true);
+        await using var ctx = CreateBunitContext(mockChatClient);
         var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
 
         // Act
@@ -176,7 +136,7 @@ public class HomePageTests
     public async Task ClearChat_ClearsMessages()
     {
         // Arrange
-        await using var ctx = CreateBunitContext(preSetApiKey: true);
+        await using var ctx = CreateBunitContext();
         var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
 
         var agent = ctx.Services.GetRequiredService<IAgentService>();
@@ -190,17 +150,14 @@ public class HomePageTests
 
         // Assert
         cut.WaitForAssertion(() =>
-        {
-            cut.FindAll(".chat-message").Should().BeEmpty();
-            cut.FindAll(".api-key-overlay").Should().BeEmpty("because clearing the chat should not require re-entering the API key");
-        });
+            cut.FindAll(".chat-message").Should().BeEmpty());
     }
 
     [Test]
     public async Task MarkdownRendering_AllowsSafeHtml()
     {
         // Arrange
-        await using var ctx = CreateBunitContext(preSetApiKey: true);
+        await using var ctx = CreateBunitContext();
         var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
 
         var agent = ctx.Services.GetRequiredService<IAgentService>();
@@ -219,57 +176,12 @@ public class HomePageTests
         messageText.InnerHtml.Should().Contain("<summary>");
     }
 
-    private static IChatClient CreateMockChatClient(string responseText)
-    {
-        var chatClientMock = Substitute.For<IChatClient>();
-        var response = new ChatResponse([new Microsoft.Extensions.AI.ChatMessage(ChatRole.Assistant, responseText)]);
-        chatClientMock.GetResponseAsync(
-                Arg.Any<IEnumerable<Microsoft.Extensions.AI.ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(response));
-        return chatClientMock;
-    }
-
-    [Test]
-    public async Task HandleApiKeyKeyDown_SubmitsOnEnter()
-    {
-        // Arrange
-        await using var ctx = CreateBunitContext();
-        var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
-
-        // Act
-        var input = cut.Find(".api-key-input");
-        input.Input("sk-test-api-key");
-        await input.KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
-
-        // Assert
-        cut.WaitForAssertion(() =>
-            cut.FindAll(".api-key-overlay").Should().BeEmpty());
-    }
-
-    [Test]
-    public async Task HandleApiKeyKeyDown_DoesNotSubmitOnOtherKey()
-    {
-        // Arrange
-        await using var ctx = CreateBunitContext();
-        var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
-
-        // Act
-        var input = cut.Find(".api-key-input");
-        input.Input("sk-test-api-key");
-        await input.KeyDownAsync(new KeyboardEventArgs { Key = "a" });
-
-        // Assert
-        cut.FindAll(".api-key-overlay").Should().HaveCount(1);
-    }
-
     [Test]
     public async Task HandleKeyDown_SendsMessageOnEnter()
     {
         // Arrange
         var mockChatClient = CreateMockChatClient("Reply");
-        await using var ctx = CreateBunitContext(mockChatClient, preSetApiKey: true);
+        await using var ctx = CreateBunitContext(mockChatClient);
         var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
 
         // Act
@@ -287,7 +199,7 @@ public class HomePageTests
     {
         // Arrange
         var mockChatClient = CreateMockChatClient("Reply");
-        await using var ctx = CreateBunitContext(mockChatClient, preSetApiKey: true);
+        await using var ctx = CreateBunitContext(mockChatClient);
         var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
 
         // Act
@@ -303,7 +215,7 @@ public class HomePageTests
     public async Task LoadFromMealPlan_ShowsNoIngredientsMessage_WhenEmpty()
     {
         // Arrange
-        await using var ctx = CreateBunitContext(preSetApiKey: true);
+        await using var ctx = CreateBunitContext();
         var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
 
         // Act
@@ -318,7 +230,7 @@ public class HomePageTests
     public async Task LoadFromMealPlan_PopulatesTextarea_WhenIngredientsExist()
     {
         // Arrange
-        await using var ctx = CreateBunitContext(preSetApiKey: true);
+        await using var ctx = CreateBunitContext();
         var sessionMock = ctx.Services.GetRequiredService<ISessionService>();
         sessionMock.GetIngredientListAsync().Returns(
         [
@@ -343,7 +255,7 @@ public class HomePageTests
     public async Task OnShopChanged_SwitchesShop()
     {
         // Arrange
-        await using var ctx = CreateBunitContext(preSetApiKey: true);
+        await using var ctx = CreateBunitContext();
         var agentMock = Substitute.For<IAgentService>();
         agentMock.Messages.Returns([]);
         agentMock.SelectedShopKey.Returns("coop");
@@ -363,14 +275,15 @@ public class HomePageTests
             agentMock.Received(1).SwitchShopAsync("migros", Arg.Any<CancellationToken>()));
     }
 
-    private sealed class SuccessHttpHandler : HttpMessageHandler
+    private static IChatClient CreateMockChatClient(string responseText)
     {
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-            => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("{\"data\":[]}"),
-            });
+        var chatClientMock = Substitute.For<IChatClient>();
+        var response = new ChatResponse([new AiChatMessage(ChatRole.Assistant, responseText)]);
+        chatClientMock.GetResponseAsync(
+                Arg.Any<IEnumerable<AiChatMessage>>(),
+                Arg.Any<ChatOptions>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(response));
+        return chatClientMock;
     }
 }

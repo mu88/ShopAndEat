@@ -7,6 +7,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+    secrets:
+      - llm_api_key
+    tmpfs:
+      - /home/app/dataprotection-keys
     depends_on:
       aspire-dashboard:
         condition: service_started
@@ -21,3 +25,7 @@ services:
     environment:
       DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
       DASHBOARD__OTLP__GRPC__ENDPOINT: http://+:18889
+
+secrets:
+  llm_api_key:
+    file: ./secrets/LlmClient__ApiKey

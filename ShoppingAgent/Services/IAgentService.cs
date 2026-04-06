@@ -4,11 +4,13 @@ namespace ShoppingAgent.Services;
 
 public interface IAgentService
 {
+#pragma warning disable MA0046
+    event Action OnStateChanged;
+#pragma warning restore MA0046
+
     bool IsProcessing { get; }
 
-    List<ChatMessage> Messages { get; }
-
-    event Action OnStateChanged;
+    IList<ChatMessage> Messages { get; }
 
     string SelectedShopKey { get; }
 
