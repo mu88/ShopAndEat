@@ -14,7 +14,7 @@ services:
       - .:/home/app/db
 
   aspire-dashboard:
-    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.3
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:13.2
     ports:
       - "18888:18888"  # Dashboard Web UI
       - "18889:18889"  # OTLP gRPC receiver
