@@ -36,6 +36,7 @@ public static class ShoppingAgentExtensions
         services.AddScoped<IShopToolExecutorFactory, ShopToolExecutorFactory>();
         services.AddScoped<ISystemPromptBuilder, SystemPromptBuilder>();
         services.AddScoped<IToolDefinitionProvider, ToolDefinitionProvider>();
+        services.AddScoped<IShoppingListVerifier, ShoppingListVerifier>();
         services.AddScoped<IToolCallDispatcher, ToolCallDispatcher>();
         services.AddScoped<IToolResultRenderer, HtmlToolResultRenderer>();
         services.AddScoped<IConversationManager, ConversationManager>();

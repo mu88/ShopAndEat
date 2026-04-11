@@ -1,3 +1,4 @@
+#nullable enable
 using Microsoft.Extensions.AI;
 
 namespace ShoppingAgent.Services.Concrete;
@@ -27,9 +28,9 @@ public class ToolDefinitionProvider : IToolDefinitionProvider
                 $"Adds a product with the specified quantity to the {shopName} shopping cart. Uses the shop API directly — reliable and fast. For promotional products, the result contains promoAvailable/promoText."),
 
             AIFunctionFactory.Create(
-                (string product_name) => Task.FromResult(string.Empty),
+                (string product_name, string? cart_entry_uid = null) => Task.FromResult(string.Empty),
                 "remove_from_cart",
-                $"Removes a product from the {shopName} shopping cart. Use the product name (or part of it) as shown in the cart."),
+                $"Removes a product from the {shopName} shopping cart. Prefer passing the cart_entry_uid from the add_to_cart result when the product was added in this session — this ensures the correct item is removed. Fall back to product_name (or part of it) only when cart_entry_uid is unavailable."),
 
             AIFunctionFactory.Create(
                 () => Task.FromResult(string.Empty),
@@ -50,6 +51,10 @@ public class ToolDefinitionProvider : IToolDefinitionProvider
                 (string scope, string key) => Task.FromResult(string.Empty),
                 "delete_preference",
                 "Deletes a saved preference. Use this when the user says 'forget Tofu' (scope='article:Tofu', key='confirmed_product') or 'remove X from the reminder list' (scope='reminder', key='X')."),
+            AIFunctionFactory.Create(
+                (string shopping_list) => Task.FromResult(string.Empty),
+                "verify_shopping_list",
+                "Verifies that all items from the original shopping list are represented in the current cart. Call this BEFORE navigate_to_cart when processing a shopping list. Pass the original list text exactly as the user provided it. Returns a list of potentially missing items, or 'OK' if everything is accounted for."),
         };
     }
 }

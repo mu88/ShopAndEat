@@ -78,7 +78,7 @@ async function handleToolRequest(request) {
       result = await handleAddToCart(shop, args.url, args.quantity);
       break;
     case 'removeFromCart':
-      result = await handleRemoveFromCart(shop, args.productName);
+      result = await handleRemoveFromCart(shop, args.productName, args.cartEntryUid);
       break;
     case 'getCartContents':
       result = await handleGetCartContents(shop);
@@ -267,7 +267,7 @@ async function handleNavigateToCart(shop) {
   return { success: true, data: 'Warenkorb geöffnet' };
 }
 
-async function handleRemoveFromCart(shop, productName) {
+async function handleRemoveFromCart(shop, productName, cartEntryUid) {
   const tabId = await ensureShopTab(shop);
 
   // Ensure we're on the cart page
@@ -278,7 +278,7 @@ async function handleRemoveFromCart(shop, productName) {
   }
 
   const csrfToken = await getCSRFTokenFromPage(tabId);
-  return await executeOnShopTab(shop, 'removeFromCart', { productName, csrfToken });
+  return await executeOnShopTab(shop, 'removeFromCart', { productName, cartEntryUid, csrfToken });
 }
 
 // Clean up when any shop tab is closed

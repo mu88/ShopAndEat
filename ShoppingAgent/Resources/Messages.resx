@@ -83,6 +83,9 @@
   <data name="ApiKeyValidating" xml:space="preserve"><value>Validating...</value></data>
   <data name="ApiKeyInvalid" xml:space="preserve"><value>Invalid API key. Please check and try again.</value></data>
 
+  <!-- Reminder gate -->
+  <data name="ReminderGate" xml:space="preserve"><value>⚠️ Reminder check: The user has active reminders for: {0}. Ask the user whether they want to add any of these items before finishing.</value></data>
+
   <!-- Navigation -->
   <data name="TabTitle" xml:space="preserve"><value>Shopping Assistant</value></data>
 </root>

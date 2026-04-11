@@ -12,6 +12,7 @@ namespace ShoppingAgent.Services.Concrete;
 public class ToolCallDispatcher(
     IShopToolExecutorFactory shopToolExecutorFactory,
     IPreferencesService preferencesService,
+    IShoppingListVerifier shoppingListVerifier,
     IStringLocalizer<Messages> localizer) : IToolCallDispatcher
 {
     public async Task<(string Result, bool Success)> DispatchAsync(
@@ -34,15 +35,19 @@ public class ToolCallDispatcher(
                     ct),
 
                 "remove_from_cart" => await toolExecutor.RemoveFromCartAsync(
-                    GetArg(toolCall.Arguments, "product_name"), ct),
+                    GetArg(toolCall.Arguments, "product_name"),
+                    GetArg(toolCall.Arguments, "cart_entry_uid"),
+                    ct),
 
                 "get_cart_contents" => await toolExecutor.GetCartContentsAsync(ct),
 
-                "navigate_to_cart" => await toolExecutor.NavigateToCartAsync(ct),
+                "navigate_to_cart" => await NavigateToCartWithReminderCheckAsync(toolExecutor, shopKey, ct),
 
                 "save_preference" => await SavePreferenceAsync(toolCall, shopKey, ct),
 
                 "delete_preference" => await DeletePreferenceAsync(toolCall, shopKey, ct),
+
+                "verify_shopping_list" => await VerifyShoppingListAsync(toolCall, shopKey, ct),
 
                 _ => localizer["UnknownTool", toolCall.Name].Value
             };
@@ -126,5 +131,36 @@ public class ToolCallDispatcher(
 
         var success = await preferencesService.DeletePreferenceAsync(scope, key, storeKey, ct);
         return success ? localizer["PreferenceDeleted"].Value : localizer["PreferenceNotFound"].Value;
+    }
+
+    private async Task<string> NavigateToCartWithReminderCheckAsync(IShopToolExecutor toolExecutor, string shopKey, CancellationToken ct)
+    {
+        var navigationResult = await toolExecutor.NavigateToCartAsync(ct);
+
+        var allPreferences = await preferencesService.GetAllPreferencesAsync(shopKey, ct);
+        var reminders = allPreferences.Where(pref => string.Equals(pref.Scope, "reminder", StringComparison.OrdinalIgnoreCase)).ToList();
+        if (reminders.Count == 0)
+        {
+            return navigationResult;
+        }
+
+        var reminderList = string.Join(", ", reminders.Select(reminder => reminder.Key));
+        return navigationResult + Environment.NewLine + localizer["ReminderGate", reminderList].Value;
+    }
+
+    private async Task<string> VerifyShoppingListAsync(FunctionCallContent toolCall, string shopKey, CancellationToken ct)
+    {
+        var shoppingList = GetArg(toolCall.Arguments, "shopping_list");
+        var toolExecutor = shopToolExecutorFactory.GetExecutor(shopKey);
+        var cartContents = await toolExecutor.GetCartContentsAsync(ct);
+
+        var missingItems = shoppingListVerifier.FindMissingItems(shoppingList, cartContents);
+        if (missingItems.Count == 0)
+        {
+            return "OK — all items from the shopping list appear to be in the cart.";
+        }
+
+        return "Potentially missing from cart: " + string.Join(", ", missingItems) +
+               ". Please check and add them before navigating to cart.";
     }
 }

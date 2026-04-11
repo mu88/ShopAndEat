@@ -87,6 +87,7 @@ public class HomePageTests
         ctx.Services.AddSingleton(Options.Create(new ExtensionOptions()));
         ctx.Services.AddSingleton<ISystemPromptBuilder, SystemPromptBuilder>();
         ctx.Services.AddSingleton<IToolDefinitionProvider, ToolDefinitionProvider>();
+        ctx.Services.AddSingleton<IShoppingListVerifier, ShoppingListVerifier>();
         ctx.Services.AddSingleton<IToolCallDispatcher, ToolCallDispatcher>();
         ctx.Services.AddSingleton<IToolResultRenderer, HtmlToolResultRenderer>();
         ctx.Services.AddSingleton<IConversationManager, ConversationManager>();

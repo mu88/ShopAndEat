@@ -13,7 +13,7 @@ public class ToolDefinitionProviderTests
     private readonly ToolDefinitionProvider _sut = new();
 
     [Test]
-    public void GetToolDefinitions_Returns8Tools()
+    public void GetToolDefinitions_Returns9Tools()
     {
         // Arrange
         var shopName = "TestShop";
@@ -22,7 +22,7 @@ public class ToolDefinitionProviderTests
         var tools = _sut.GetToolDefinitions(shopName);
 
         // Assert
-        tools.Should().HaveCount(8);
+        tools.Should().HaveCount(9);
     }
 
     [Test]
@@ -287,4 +287,19 @@ public class ToolDefinitionProviderTests
     private static AIFunction FindTool(IReadOnlyList<AITool> tools, string name) =>
         tools.OfType<AIFunction>().Single(
             tool => string.Equals(tool.Name, name, StringComparison.Ordinal));
+
+    [Test]
+    public async Task VerifyShoppingList_FunctionReturnsExpectedResult()
+    {
+        // Arrange
+        var tools = _sut.GetToolDefinitions("TestShop");
+        var verifyTool = FindTool(tools, "verify_shopping_list");
+
+        // Act
+        var result = await verifyTool.InvokeAsync(
+            new AIFunctionArguments { ["shopping_list"] = "1 Packung Milch" });
+
+        // Assert — stub returns no meaningful data
+        (result as string).Should().BeNullOrEmpty();
+    }
 }

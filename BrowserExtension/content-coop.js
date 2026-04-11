@@ -141,7 +141,7 @@ async function handleTool(toolName, args) {
       result = await addToCart(args.productUrl, args.quantity || 1, args.csrfToken);
       break;
     case 'removeFromCart':
-      result = await removeFromCart(args.productName, args.csrfToken);
+      result = await removeFromCart(args.productName, args.cartEntryUid, args.csrfToken);
       break;
     case 'getCartContents':
       result = getCartContents();
@@ -356,8 +356,19 @@ async function addToCart(productUrl, quantity, passedCsrfToken) {
   }
 }
 
-async function removeFromCart(productName, passedCsrfToken) {
-  console.log(`${LOG_PREFIX} removeFromCart: looking for "${productName}"`);
+async function removeFromCart(productName, cartEntryUid, passedCsrfToken) {
+  console.log(`${LOG_PREFIX} removeFromCart: looking for "${productName}" (cartEntryUid=${cartEntryUid ?? 'none'})`);
+
+  const csrfToken = passedCsrfToken || getCSRFToken();
+  if (!csrfToken) {
+    return { success: false, error: i18n('errorCsrfTokenNotFound') };
+  }
+
+  // Fast path: when cartEntryUid is provided, skip DOM matching entirely
+  if (cartEntryUid) {
+    console.log(`${LOG_PREFIX} removeFromCart: removing by cartEntryUid=${cartEntryUid}`);
+    return await deleteCartEntry(cartEntryUid, productName, csrfToken);
+  }
 
   const cartItems = document.querySelectorAll('[data-testauto="basket-product"], .basket-item[data-productid]');
   if (cartItems.length === 0) {
@@ -404,17 +415,16 @@ async function removeFromCart(productName, passedCsrfToken) {
     return { success: false, error: i18n('errorProductNotInCart', [productName, allNames.join(', ')]) };
   }
 
-  const cartEntryUid = targetItem.getAttribute('data-cartentryuid');
-  if (!cartEntryUid) {
+  const resolvedCartEntryUid = targetItem.getAttribute('data-cartentryuid');
+  if (!resolvedCartEntryUid) {
     return { success: false, error: i18n('errorCartEntryUidNotFound', matchedName) };
   }
 
-  const csrfToken = passedCsrfToken || getCSRFToken();
-  if (!csrfToken) {
-    return { success: false, error: i18n('errorCsrfTokenNotFound') };
-  }
+  return await deleteCartEntry(resolvedCartEntryUid, matchedName, csrfToken);
+}
 
-  console.log(`${LOG_PREFIX} removeFromCart API: cartEntryUid=${cartEntryUid} for "${matchedName}"`);
+async function deleteCartEntry(cartEntryUid, productName, csrfToken) {
+  console.log(`${LOG_PREFIX} removeFromCart API: cartEntryUid=${cartEntryUid} for "${productName}"`);
 
   const controller = new AbortController();
   const fetchTimeout = setTimeout(() => controller.abort(), 15000);
@@ -433,7 +443,7 @@ async function removeFromCart(productName, passedCsrfToken) {
     const data = await response.json();
     console.log(`${LOG_PREFIX} removeFromCart API response:`, JSON.stringify(data).substring(0, 200));
 
-    return { success: true, data: JSON.stringify({ removed: matchedName, cartEntryUid }) };
+    return { success: true, data: JSON.stringify({ removed: productName, cartEntryUid }) };
   } catch (err) {
     clearTimeout(fetchTimeout);
     console.log(`${LOG_PREFIX} removeFromCart API error:`, err.message);

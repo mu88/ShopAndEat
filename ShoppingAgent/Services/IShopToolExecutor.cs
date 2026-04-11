@@ -14,7 +14,7 @@ public interface IShopToolExecutor
 
     Task<string> AddToCartAsync(string productUrl, int quantity, CancellationToken ct = default);
 
-    Task<string> RemoveFromCartAsync(string productName, CancellationToken ct = default);
+    Task<string> RemoveFromCartAsync(string productName, string cartEntryUid = null, CancellationToken ct = default);
 
     Task<string> GetCartContentsAsync(CancellationToken ct = default);
 

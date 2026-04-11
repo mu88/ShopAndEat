@@ -22,6 +22,7 @@ public interface IToolCallDispatcher
         "save_preference" => ("prefs", "Preferences", "💾"),
         "delete_preference" => ("prefs", "Preferences", "💾"),
         "get_preferences" => ("prefs", "Preferences", "💾"),
+        "verify_shopping_list" => ("verify", "Cart Verification", "✅"),
         _ => ("other", "Processing", "🔧")
     };
 }

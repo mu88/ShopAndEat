@@ -18,6 +18,7 @@ public class ToolCallDispatcherTests
     private IShopToolExecutorFactory _factoryMock;
     private IShopToolExecutor _executorMock;
     private IPreferencesService _preferencesMock;
+    private IShoppingListVerifier _verifierMock;
     private IStringLocalizer<Messages> _localizerMock;
     private ToolCallDispatcher _sut;
 
@@ -30,13 +31,15 @@ public class ToolCallDispatcherTests
 
         _preferencesMock = Substitute.For<IPreferencesService>();
 
+        _verifierMock = Substitute.For<IShoppingListVerifier>();
+
         _localizerMock = Substitute.For<IStringLocalizer<Messages>>();
         _localizerMock[Arg.Any<string>()].Returns(call =>
             new LocalizedString(call.Arg<string>(), call.Arg<string>()));
         _localizerMock[Arg.Any<string>(), Arg.Any<object[]>()].Returns(call =>
             new LocalizedString(call.ArgAt<string>(0), call.ArgAt<string>(0)));
 
-        _sut = new ToolCallDispatcher(_factoryMock, _preferencesMock, _localizerMock);
+        _sut = new ToolCallDispatcher(_factoryMock, _preferencesMock, _verifierMock, _localizerMock);
     }
 
     [Test]
@@ -107,7 +110,7 @@ public class ToolCallDispatcherTests
     public async Task DispatchAsync_RemoveFromCart_CallsRemoveFromCartAsync()
     {
         // Arrange
-        _executorMock.RemoveFromCartAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _executorMock.RemoveFromCartAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns("Removed");
         var toolCall = CreateToolCall("remove_from_cart", new Dictionary<string, object> { ["product_name"] = "Milk" });
 
@@ -117,7 +120,27 @@ public class ToolCallDispatcherTests
         // Assert
         success.Should().BeTrue();
         result.Should().Be("Removed");
-        await _executorMock.Received(1).RemoveFromCartAsync("Milk", Arg.Any<CancellationToken>());
+        await _executorMock.Received(1).RemoveFromCartAsync("Milk", string.Empty, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task DispatchAsync_RemoveFromCart_WithCartEntryUid_PassesUidToExecutor()
+    {
+        // Arrange
+        _executorMock.RemoveFromCartAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns("Removed");
+        var toolCall = CreateToolCall("remove_from_cart", new Dictionary<string, object>
+        {
+            ["product_name"] = "Milk",
+            ["cart_entry_uid"] = "uid-123",
+        });
+
+        // Act
+        var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        success.Should().BeTrue();
+        await _executorMock.Received(1).RemoveFromCartAsync("Milk", "uid-123", Arg.Any<CancellationToken>());
     }
 
     [Test]
@@ -365,6 +388,7 @@ public class ToolCallDispatcherTests
     [TestCase("save_preference", "prefs", "Preferences", "💾")]
     [TestCase("delete_preference", "prefs", "Preferences", "💾")]
     [TestCase("get_preferences", "prefs", "Preferences", "💾")]
+    [TestCase("verify_shopping_list", "verify", "Cart Verification", "✅")]
     [TestCase("completely_unknown", "other", "Processing", "🔧")]
     public void GetToolGroup_ReturnsCorrectGroup(string toolName, string expectedKey, string expectedLabel, string expectedIcon)
     {
@@ -379,4 +403,66 @@ public class ToolCallDispatcherTests
 
     private static FunctionCallContent CreateToolCall(string name, Dictionary<string, object> args) =>
         new("call-id", name, args);
+
+    [Test]
+    public async Task DispatchAsync_NavigateToCart_WithReminders_AppendsReminderGate()
+    {
+        // Arrange
+        _executorMock.NavigateToCartAsync(Arg.Any<CancellationToken>()).Returns("Navigated");
+        _preferencesMock.GetAllPreferencesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new List<PreferenceDto>
+            {
+                new() { Scope = "reminder", Key = "Kaffee", Value = "true" },
+                new() { Scope = "reminder", Key = "Bier", Value = "true" },
+            });
+        var toolCall = CreateToolCall("navigate_to_cart", []);
+
+        // Act
+        var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        success.Should().BeTrue();
+        result.Should().Contain("Navigated");
+        result.Should().Contain("ReminderGate"); // localizer key indicates reminder gate was appended
+        await _preferencesMock.Received(1).GetAllPreferencesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task DispatchAsync_VerifyShoppingList_AllItemsFound_ReturnsOk()
+    {
+        // Arrange
+        _executorMock.GetCartContentsAsync(Arg.Any<CancellationToken>()).Returns("[{\"Name\":\"Milch\"}]");
+        _verifierMock.FindMissingItems(Arg.Any<string>(), Arg.Any<string>()).Returns([]);
+        var toolCall = CreateToolCall("verify_shopping_list", new Dictionary<string, object>
+        {
+            ["shopping_list"] = "1 Packung Milch",
+        });
+
+        // Act
+        var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        success.Should().BeTrue();
+        result.Should().Contain("OK");
+    }
+
+    [Test]
+    public async Task DispatchAsync_VerifyShoppingList_MissingItems_ReturnsMissingList()
+    {
+        // Arrange
+        _executorMock.GetCartContentsAsync(Arg.Any<CancellationToken>()).Returns("[{\"Name\":\"Milch\"}]");
+        _verifierMock.FindMissingItems(Arg.Any<string>(), Arg.Any<string>()).Returns(["Lauch", "Kartoffeln"]);
+        var toolCall = CreateToolCall("verify_shopping_list", new Dictionary<string, object>
+        {
+            ["shopping_list"] = "1 Stück Lauch\n2 Stück Kartoffeln\n1 Packung Milch",
+        });
+
+        // Act
+        var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        success.Should().BeTrue();
+        result.Should().Contain("Lauch");
+        result.Should().Contain("Kartoffeln");
+    }
 }

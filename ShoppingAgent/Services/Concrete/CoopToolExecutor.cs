@@ -90,15 +90,19 @@ public class CoopToolExecutor : IShopToolExecutor
     }
 
     /// <summary>
-    /// Removes a product from the Coop shopping cart by name.
+    /// Removes a product from the Coop shopping cart by name or cart entry UID.
+    /// When <paramref name="cartEntryUid"/> is provided, the product is removed directly by ID,
+    /// bypassing fragile name-based matching in the browser extension.
     /// </summary>
-    public async Task<string> RemoveFromCartAsync(string productName, CancellationToken ct = default)
+    public async Task<string> RemoveFromCartAsync(string productName, string cartEntryUid = null, CancellationToken ct = default)
     {
-        var result = await _bridge.ExecuteToolAsync(
-            "removeFromCart",
-            new Dictionary<string, object>(StringComparer.Ordinal) { ["productName"] = productName },
-            ShopKey,
-            ct);
+        var args = new Dictionary<string, object>(StringComparer.Ordinal) { ["productName"] = productName };
+        if (!string.IsNullOrEmpty(cartEntryUid))
+        {
+            args["cartEntryUid"] = cartEntryUid;
+        }
+
+        var result = await _bridge.ExecuteToolAsync("removeFromCart", args, ShopKey, ct);
 
         return result.Success ? result.Data : $"ERROR: {result.Error}";
     }

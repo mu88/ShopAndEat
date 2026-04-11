@@ -449,7 +449,7 @@ public class AgentServiceTests
 
         var systemPromptBuilderInstance = systemPromptBuilder ?? new SystemPromptBuilder(preferencesMock, sessionMock, localizerMock);
         var toolDefinitionProvider = new ToolDefinitionProvider();
-        var toolCallDispatcher = new ToolCallDispatcher(factoryMock, preferencesMock, localizerMock);
+        var toolCallDispatcher = new ToolCallDispatcher(factoryMock, preferencesMock, Substitute.For<IShoppingListVerifier>(), localizerMock);
         var conversationManager = new ConversationManager(toolCallDispatcher, new HtmlToolResultRenderer(localizerMock), localizerMock, NullLogger<ConversationManager>.Instance, metrics, Options.Create(new AgentOptions()), Options.Create(new LlmClientOptions()));
         var shopSessionManager = new ShopSessionManager(factoryMock, NullLogger<ShopSessionManager>.Instance);
 

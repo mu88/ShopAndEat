@@ -83,6 +83,9 @@
   <data name="ApiKeyValidating" xml:space="preserve"><value>Wird überprüft...</value></data>
   <data name="ApiKeyInvalid" xml:space="preserve"><value>Ungültiger API-Key. Bitte prüfen und erneut versuchen.</value></data>
 
+  <!-- Reminder gate -->
+  <data name="ReminderGate" xml:space="preserve"><value>⚠️ Reminder-Prüfung: Der Nutzer hat aktive Reminders für: {0}. Frage den Nutzer, ob er diese Artikel noch bestellen möchte, bevor du fertig bist.</value></data>
+
   <!-- Navigation -->
   <data name="TabTitle" xml:space="preserve"><value>Einkaufsassistent</value></data>
 </root>

@@ -291,5 +291,28 @@ public class CoopToolExecutorTests
         result.Should().Contain("Navigation failed");
     }
 
+    [Test]
+    public async Task RemoveFromCartAsync_WithCartEntryUid_PassesUidToBridge()
+    {
+        // Arrange
+        _bridgeMock
+            .ExecuteToolAsync(Arg.Any<string>(), Arg.Any<Dictionary<string, object>>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = "Removed" });
+
+        var testee = CreateTestee();
+
+        // Act
+        await testee.RemoveFromCartAsync("Bio Milch", "uid-abc123");
+
+        // Assert
+        await _bridgeMock.Received(1).ExecuteToolAsync(
+            "removeFromCart",
+            Arg.Is<Dictionary<string, object>>(d =>
+                d["productName"].ToString() == "Bio Milch" &&
+                d["cartEntryUid"].ToString() == "uid-abc123"),
+            "coop",
+            Arg.Any<CancellationToken>());
+    }
+
     private CoopToolExecutor CreateTestee() => new(_bridgeMock, NullLogger<CoopToolExecutor>.Instance);
 }
