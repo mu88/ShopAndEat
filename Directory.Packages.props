@@ -31,9 +31,9 @@
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="nunit" Version="4.5.1" />
     <PackageVersion Include="NUnit3TestAdapter" Version="6.2.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.13.13" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.13.17" />
     <PackageVersion Include="bunit" Version="2.6.2" />
-    <PackageVersion Include="Markdig" Version="1.1.1" />
+    <PackageVersion Include="Markdig" Version="1.1.2" />
     <PackageVersion Include="Testcontainers" Version="4.11.0" />
   </ItemGroup>
 </Project>

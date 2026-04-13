@@ -85,9 +85,9 @@
       },
       "Scalar.AspNetCore": {
         "type": "Direct",
-        "requested": "[2.13.13, )",
-        "resolved": "2.13.13",
-        "contentHash": "QS94/CNp2thhykXwBaOHjDe8Zlexs8v0QOrdLfUvxS85uW84IhCf1zGiOnYZNNtVxunJvtsr7yPgEP36TXnJ3w=="
+        "requested": "[2.13.17, )",
+        "resolved": "2.13.17",
+        "contentHash": "v44WF0m58HBwaUiZVrvuetICcoaf2ZvIYu8JxsaJRRtsrNLlCIqjCcncTTDIy7pUiC2r2EO3eCJqcqGaTKZplQ=="
       },
       "Castle.Core": {
         "type": "Transitive",
@@ -456,7 +456,7 @@
       "shoppingagent": {
         "type": "Project",
         "dependencies": {
-          "Markdig": "[1.1.1, )",
+          "Markdig": "[1.1.2, )",
           "Microsoft.Extensions.AI.OpenAI": "[10.4.1, )",
           "mu88.Shared": "[8.0.0, )"
         }
@@ -469,9 +469,9 @@
       },
       "Markdig": {
         "type": "CentralTransitive",
-        "requested": "[1.1.1, )",
-        "resolved": "1.1.1",
-        "contentHash": "wACpji8aLjtmghzdancNFRDUH66F2kS8QE0uywUXvLHgfbTD7LPNj7Vx43sTckpEQFtn5YndEoZvGqIHosBzGQ=="
+        "requested": "[1.1.2, )",
+        "resolved": "1.1.2",
+        "contentHash": "mXh6Ah5p/jtryn7o96B2knDDJVgZ775HnFLObcVxuyWcfeHlsI95WUjiJH0m7ZOYGdCLvwRTwMhv023jUZoEAA=="
       },
       "Microsoft.EntityFrameworkCore": {
         "type": "CentralTransitive",
