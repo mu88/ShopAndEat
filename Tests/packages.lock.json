@@ -4,9 +4,9 @@
     "net10.0": {
       "bunit": {
         "type": "Direct",
-        "requested": "[2.6.2, )",
-        "resolved": "2.6.2",
-        "contentHash": "Xx7EFwuSLurxSP/NqzBQWYFsPWPtBOHChDZZwji3bRYhZSnqVfyI4eXmUTMoj3Wb9Xtm1bPoDZTdDQEzgoQDUg==",
+        "requested": "[2.7.2, )",
+        "resolved": "2.7.2",
+        "contentHash": "Oe8AI7KU1tPNM1VHTtfdfcxbC2bWnrTW9rAcrEEuZ7JlvsY2NZHvWRa/I2PvfAQifTJf0moe+wZqt8OLbJRklw==",
         "dependencies": {
           "AngleSharp": "1.4.0",
           "AngleSharp.Css": "1.0.0-beta.157",
@@ -1101,7 +1101,7 @@
           "Microsoft.EntityFrameworkCore.Sqlite": "[10.0.5, )",
           "Microsoft.EntityFrameworkCore.Tools": "[10.0.5, )",
           "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "[10.0.5, )",
-          "Scalar.AspNetCore": "[2.13.17, )",
+          "Scalar.AspNetCore": "[2.13.20, )",
           "ServiceLayer": "[6.0.0, )",
           "ShoppingAgent": "[6.0.0, )",
           "mu88.Shared": "[8.0.0, )"
@@ -1252,9 +1252,9 @@
       },
       "Scalar.AspNetCore": {
         "type": "CentralTransitive",
-        "requested": "[2.13.17, )",
-        "resolved": "2.13.17",
-        "contentHash": "v44WF0m58HBwaUiZVrvuetICcoaf2ZvIYu8JxsaJRRtsrNLlCIqjCcncTTDIy7pUiC2r2EO3eCJqcqGaTKZplQ=="
+        "requested": "[2.13.20, )",
+        "resolved": "2.13.20",
+        "contentHash": "KLWQcH0YisMa0nzv36S5TcKgZ5seAaTHXVcdG8S3H0UFFtAeBYwSOnzme6S9Ch1Tl9trpa0G8aiCjzF9H9khTw=="
       }
     }
   }
