@@ -3,6 +3,7 @@
 bin
 obj
 *.user
+<<<<<<< HEAD
 
 # Build & test artifacts
 TestResults/
@@ -17,9 +18,7 @@ secrets/
 diff_output.txt
 
 # Local SQLite database
-ShopAndEat.db
-ShopAndEat.db-wal
-ShopAndEat.db-shm
+ShopAndEat.db*
 
 # LibMan-managed client-side libraries (restored via `libman restore` in CI)
 ShopAndEat/wwwroot/css/bootstrap/
