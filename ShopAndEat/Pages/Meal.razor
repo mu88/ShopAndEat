@@ -53,7 +53,7 @@ else
         {
             @if (meal.Day.Date == Today)
             {
-                <tr style="background-color:#00FF00" data-testid="meal-row-@meal.MealId.Value">
+                <tr class="table-success" data-testid="meal-row-@meal.MealId.Value">
                     <td>@meal.Day.ToShortDateString() (@meal.Day.ToString("dddd"))</td>
                     <td>@meal.MealType.Name</td>
                     <td>@meal.Recipe.Name</td>
