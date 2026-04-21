@@ -17,12 +17,17 @@
 @inject TimeProvider TimeProvider
 @* TODO mu88: Build translator *@
 
-<select @onchange="SelectedStoreChanged" data-testid="meal-store-select">
-    @foreach (var store in Stores)
-    {
-        <option value="@store.Name">@store.Name</option>
-    }
-</select>
+<div class="mb-3">
+    <label class="form-label">
+        Store:
+        <select class="form-select" @onchange="SelectedStoreChanged" data-testid="meal-store-select">
+            @foreach (var store in Stores)
+        {
+            <option value="@store.Name">@store.Name</option>
+        }
+        </select>
+    </label>
+</div>
 
 @if (SelectedStore == null)
 {
@@ -35,9 +40,9 @@ else
 
 <hr>
 
-<table class="table table-striped">
+<table class="table table-striped table-hover align-middle">
     <caption>Meal plan</caption>
-    <thead>
+    <thead class="table-light">
         <tr>
             <th scope="col">Day</th>
             <th scope="col">Time</th>
@@ -60,10 +65,10 @@ else
                     <td data-testid="meal-has-been-shopped-@meal.MealId.Value">@meal.HasBeenShopped</td>
                     <td>@meal.NumberOfPersons</td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))" data-testid="delete-meal-button-@meal.MealId.Value">❌</button>
+                        <button class="btn btn-danger btn-sm" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))" data-testid="delete-meal-button-@meal.MealId.Value">❌</button>
                     </td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => ToggleAsync(meal.MealId.Value))" data-testid="toggle-meal-button-@meal.MealId.Value">🔃</button>
+                        <button class="btn btn-warning btn-sm" @onclick="@(_ => ToggleAsync(meal.MealId.Value))" data-testid="toggle-meal-button-@meal.MealId.Value">🔃</button>
                     </td>
                 </tr>
             }
@@ -76,10 +81,10 @@ else
                     <td data-testid="meal-has-been-shopped-@meal.MealId.Value">@meal.HasBeenShopped</td>
                     <td>@meal.NumberOfPersons</td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))" data-testid="delete-meal-button-@meal.MealId.Value">❌</button>
+                        <button class="btn btn-danger btn-sm" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))" data-testid="delete-meal-button-@meal.MealId.Value">❌</button>
                     </td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => ToggleAsync(meal.MealId.Value))" data-testid="toggle-meal-button-@meal.MealId.Value">🔃</button>
+                        <button class="btn btn-warning btn-sm" @onclick="@(_ => ToggleAsync(meal.MealId.Value))" data-testid="toggle-meal-button-@meal.MealId.Value">🔃</button>
                     </td>
                 </tr>
             }
@@ -91,10 +96,10 @@ else
     <DataAnnotationsValidator/>
     <ValidationSummary/>
 
-    <p>
-        <label>
+    <div class="mb-3">
+        <label class="form-label">
             Recipe:
-            <select @onchange="SelectedRecipeChanged" data-testid="meal-recipe-select">
+            <select class="form-select" @onchange="SelectedRecipeChanged" data-testid="meal-recipe-select">
                 <option>Choose Recipe...</option>
                 @foreach (var recipe in Recipes.OrderBy(x => x.Name))
                 {
@@ -102,11 +107,11 @@ else
                 }
             </select>
         </label>
-    </p>
-    <p>
-        <label>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">
             Meal type:
-            <InputSelect @bind-Value="_mealModel.MealTypeName" data-testid="meal-type-select">
+            <InputSelect class="form-select" @bind-Value="_mealModel.MealTypeName" data-testid="meal-type-select">
                 <option>Choose Meal Type...</option>
                 @foreach (var mealType in MealTypes.OrderBy(x => x.Name))
                 {
@@ -114,27 +119,27 @@ else
                 }
             </InputSelect>
         </label>
-    </p>
-    <p>
-        <label>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">
             Date:
-            <InputDate @bind-Value="_mealModel.Date" data-testid="meal-date-input"/>
+            <InputDate class="form-control" @bind-Value="_mealModel.Date" data-testid="meal-date-input"/>
         </label>
-    </p>
-    <p>
-        <label>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">
             Number of Persons:
-            <InputNumber @bind-Value="_mealModel.NumberOfPersons" data-testid="meal-persons-input"/>
+            <InputNumber class="form-control" @bind-Value="_mealModel.NumberOfPersons" data-testid="meal-persons-input"/>
         </label>
-    </p>
-    <p>
-        <label>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">
             Number of Days:
-            <InputNumber @bind-Value="_mealModel.NumberOfDays" data-testid="meal-days-input"/>
+            <InputNumber class="form-control" @bind-Value="_mealModel.NumberOfDays" data-testid="meal-days-input"/>
         </label>
-    </p>
+    </div>
 
-    <button type="submit" data-testid="meal-save-button">Save</button>
+    <button type="submit" class="btn btn-primary" data-testid="meal-save-button">Save</button>
 </EditForm>
 
 <hr>
