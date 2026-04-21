@@ -14,16 +14,16 @@
     <DataAnnotationsValidator/>
     <ValidationSummary/>
 
-    <p>
-        <label>
+    <div class="mb-3">
+        <label class="form-label">
             Name:
-            <InputText @bind-Value="_articleModel.ArticleName" data-testid="article-name-input"/>
+            <InputText class="form-control" @bind-Value="_articleModel.ArticleName" data-testid="article-name-input"/>
         </label>
-    </p>
-    <p>
-        <label>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">
             Article Group:
-            <InputSelect @bind-Value="_articleModel.ArticleGroupName" data-testid="article-group-select">
+            <InputSelect class="form-select" @bind-Value="_articleModel.ArticleGroupName" data-testid="article-group-select">
                 <option>Choose Article Group...</option>
                 @foreach (var articleGroup in ArticleGroups.OrderBy(x => x.Name))
                 {
@@ -31,20 +31,20 @@
                 }
             </InputSelect>
         </label>
-    </p>
-    <p>
-        <label>
+    </div>
+    <div class="mb-3 form-check">
+        <label class="form-check-label">
             Is Inventory:
-            <InputCheckbox @bind-Value="_articleModel.IsInventory" data-testid="article-is-inventory-checkbox"/>
+            <InputCheckbox class="form-check-input" @bind-Value="_articleModel.IsInventory" data-testid="article-is-inventory-checkbox"/>
         </label>
-    </p>
+    </div>
 
-    <button type="submit" data-testid="article-save-button">Save</button>
+    <button type="submit" class="btn btn-primary" data-testid="article-save-button">Save</button>
 </EditForm>
 
-<table class="table table-striped">
+<table class="table table-striped table-hover align-middle">
     <caption>Articles</caption>
-    <thead>
+    <thead class="table-light">
         <tr>
             <th scope="col">Name</th>
             <th scope="col">Article Group</th>
@@ -61,10 +61,10 @@
                 <td>@article.ArticleGroup.Name</td>
                 <td>@article.IsInventory</td>
                 <td>
-                    <button class="btn btn-primary" @onclick="@(_ => DeleteArticleAsync(article.ArticleId.Value))" data-testid="delete-article-button-@article.ArticleId.Value">❌</button>
+                    <button class="btn btn-danger btn-sm" @onclick="@(_ => DeleteArticleAsync(article.ArticleId.Value))" data-testid="delete-article-button-@article.ArticleId.Value">❌</button>
                 </td>
                 <td>
-                    <button class="btn btn-primary" @onclick="@(_ => EditArticleAsync(article.ArticleId.Value))" data-testid="edit-article-button-@article.ArticleId.Value">🖊</button>
+                    <button class="btn btn-warning btn-sm" @onclick="@(_ => EditArticleAsync(article.ArticleId.Value))" data-testid="edit-article-button-@article.ArticleId.Value">🖊</button>
                 </td>
             </tr>
         }
