@@ -5,6 +5,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Localization;
 using NSubstitute;
 using NUnit.Framework;
+using ShoppingAgent.Models;
 using ShoppingAgent.Resources;
 using ShoppingAgent.Services;
 using ShoppingAgent.Services.Concrete;
@@ -20,6 +21,7 @@ public class ToolCallDispatcherTests
     private IPreferencesService _preferencesMock;
     private IShoppingListVerifier _verifierMock;
     private IStringLocalizer<Messages> _localizerMock;
+    private IShoppingWorkflowState _workflowStateMock;
     private ToolCallDispatcher _sut;
 
     [SetUp]
@@ -39,7 +41,9 @@ public class ToolCallDispatcherTests
         _localizerMock[Arg.Any<string>(), Arg.Any<object[]>()].Returns(call =>
             new LocalizedString(call.ArgAt<string>(0), call.ArgAt<string>(0)));
 
-        _sut = new ToolCallDispatcher(_factoryMock, _preferencesMock, _verifierMock, _localizerMock);
+        _workflowStateMock = Substitute.For<IShoppingWorkflowState>();
+
+        _sut = new ToolCallDispatcher(_factoryMock, _preferencesMock, _verifierMock, _localizerMock, _workflowStateMock);
     }
 
     [Test]
@@ -405,16 +409,32 @@ public class ToolCallDispatcherTests
         new("call-id", name, args);
 
     [Test]
+    public async Task DispatchAsync_NavigateToCart_ResetsWorkflowState()
+    {
+        // Arrange
+        _executorMock.NavigateToCartAsync(Arg.Any<CancellationToken>()).Returns("Navigated");
+        _preferencesMock.GetAllPreferencesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns([]);
+        var toolCall = CreateToolCall("navigate_to_cart", []);
+
+        // Act
+        await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert — after cart navigation the shopping session ends; state must be reset for the next run
+        _workflowStateMock.Received(1).Reset();
+    }
+
+    [Test]
     public async Task DispatchAsync_NavigateToCart_WithReminders_AppendsReminderGate()
     {
         // Arrange
         _executorMock.NavigateToCartAsync(Arg.Any<CancellationToken>()).Returns("Navigated");
         _preferencesMock.GetAllPreferencesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new List<PreferenceDto>
-            {
+            .Returns(
+            [
                 new() { Scope = "reminder", Key = "Kaffee", Value = "true" },
                 new() { Scope = "reminder", Key = "Bier", Value = "true" },
-            });
+            ]);
         var toolCall = CreateToolCall("navigate_to_cart", []);
 
         // Act
@@ -465,4 +485,129 @@ public class ToolCallDispatcherTests
         result.Should().Contain("Lauch");
         result.Should().Contain("Kartoffeln");
     }
+
+    [Test]
+    public async Task ConfirmCart_ShouldMoveToAwaitingConfirmationAndReturnSentinel()
+    {
+        // Arrange
+        var toolCall = CreateToolCall("confirm_cart", []);
+
+        // Act
+        var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        success.Should().BeTrue();
+        result.Should().StartWith("__phase:");
+        _workflowStateMock.Received(1).MoveToAwaitingConfirmation();
+    }
+
+    [Test]
+    public async Task ProceedToCart_ShouldMoveToFillingCartAndReturnSentinel()
+    {
+        // Arrange
+        var toolCall = CreateToolCall("proceed_to_cart", []);
+
+        // Act
+        var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        success.Should().BeTrue();
+        result.Should().StartWith("__phase:");
+        _workflowStateMock.Received(1).MoveToFillingCart();
+    }
+
+    [Test]
+    public void Phase_ReturnsWorkflowStatePhase()
+    {
+        // Arrange
+        _workflowStateMock.Phase.Returns(WorkflowPhase.FillingCart);
+
+        // Act
+        var phase = _sut.Phase;
+
+        // Assert
+        phase.Should().Be(WorkflowPhase.FillingCart);
+    }
+
+    [Test]
+    public void ResetWorkflow_CallsWorkflowStateReset()
+    {
+        // Arrange & Act
+        _sut.ResetWorkflow();
+
+        // Assert
+        _workflowStateMock.Received(1).Reset();
+    }
+
+    [Test]
+    public void ShouldBreakAfterToolExecution_WhenPhaseIsAwaitingConfirmation_ReturnsTrue()
+    {
+        // Arrange
+        _workflowStateMock.Phase.Returns(WorkflowPhase.AwaitingConfirmation);
+
+        // Act & Assert
+        _sut.ShouldBreakAfterToolExecution.Should().BeTrue();
+    }
+
+    [Test]
+    public void ShouldBreakAfterToolExecution_WhenPhaseIsResearching_ReturnsFalse()
+    {
+        // Arrange
+        _workflowStateMock.Phase.Returns(WorkflowPhase.Researching);
+
+        // Act & Assert
+        _sut.ShouldBreakAfterToolExecution.Should().BeFalse();
+    }
+
+    [Test]
+    public void ShouldBreakAfterToolExecution_WhenPhaseIsAwaitingClarification_ReturnsTrue()
+    {
+        // Arrange
+        _workflowStateMock.Phase.Returns(WorkflowPhase.AwaitingClarification);
+
+        // Act & Assert
+        _sut.ShouldBreakAfterToolExecution.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task DispatchAsync_RequestClarification_TransitionsToAwaitingClarificationAndReturnsInstruction()
+    {
+        // Arrange
+        var toolCall = new FunctionCallContent(
+            "call_clarify",
+            "request_clarification",
+            new Dictionary<string, object>(StringComparer.Ordinal) { ["pending_items"] = "Garlic, Lemon" });
+
+        // Act
+        var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        success.Should().BeTrue();
+        result.Should().Contain("AWAITING CLARIFICATION");
+        result.Should().Contain("Garlic, Lemon");
+        result.Should().Contain("search_products");
+        result.Should().Contain("table");
+        _workflowStateMock.Received(1).MoveToAwaitingClarification(
+            Arg.Is<IEnumerable<string>>(items => items.SequenceEqual(new[] { "Garlic", "Lemon" })));
+    }
+
+    [Test]
+    public async Task DispatchAsync_RequestClarification_WithEmptyPendingItems_UsesGenericFallback()
+    {
+        // Arrange
+        var toolCall = new FunctionCallContent(
+            "call_clarify",
+            "request_clarification",
+            new Dictionary<string, object>(StringComparer.Ordinal) { ["pending_items"] = "   " });
+
+        // Act
+        var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        success.Should().BeTrue();
+        result.Should().Contain("the items above");
+        _workflowStateMock.Received(1).MoveToAwaitingClarification(
+            Arg.Is<IEnumerable<string>>(items => !items.Any()));
+    }
+
 }

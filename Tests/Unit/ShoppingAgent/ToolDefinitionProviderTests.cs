@@ -2,6 +2,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.AI;
 using NUnit.Framework;
+using ShoppingAgent.Models;
 using ShoppingAgent.Services.Concrete;
 
 namespace Tests.Unit.ShoppingAgent;
@@ -19,7 +20,7 @@ public class ToolDefinitionProviderTests
         var shopName = "TestShop";
 
         // Act
-        var tools = _sut.GetToolDefinitions(shopName);
+        var tools = _sut.GetToolDefinitions(shopName, WorkflowPhase.FillingCart);
 
         // Assert
         tools.Should().HaveCount(9);
@@ -32,7 +33,7 @@ public class ToolDefinitionProviderTests
         var shopName = "TestShop";
 
         // Act
-        var tools = _sut.GetToolDefinitions(shopName);
+        var tools = _sut.GetToolDefinitions(shopName, WorkflowPhase.FillingCart);
 
         // Assert
         foreach (var tool in tools)
@@ -55,7 +56,7 @@ public class ToolDefinitionProviderTests
     public void GetToolDefinitions_ContainsTool(string expectedToolName)
     {
         // Arrange & Act
-        var tools = _sut.GetToolDefinitions("AnyShop");
+        var tools = _sut.GetToolDefinitions("AnyShop", WorkflowPhase.FillingCart);
 
         // Assert
         tools.OfType<AIFunction>().Should().Contain(
@@ -69,7 +70,7 @@ public class ToolDefinitionProviderTests
         var shopName = "SuperMarket";
 
         // Act
-        var tools = _sut.GetToolDefinitions(shopName);
+        var tools = _sut.GetToolDefinitions(shopName, WorkflowPhase.FillingCart);
 
         // Assert
         var shopTools = tools.OfType<AIFunction>()
@@ -90,7 +91,7 @@ public class ToolDefinitionProviderTests
         var shopName = "SuperMarket";
 
         // Act
-        var tools = _sut.GetToolDefinitions(shopName);
+        var tools = _sut.GetToolDefinitions(shopName, WorkflowPhase.FillingCart);
 
         // Assert
         var prefTools = tools.OfType<AIFunction>()
@@ -106,7 +107,7 @@ public class ToolDefinitionProviderTests
     public async Task SearchProducts_FunctionReturnsExpectedResult()
     {
         // Arrange
-        var tools = _sut.GetToolDefinitions("TestShop");
+        var tools = _sut.GetToolDefinitions("TestShop", WorkflowPhase.FillingCart);
         var searchTool = FindTool(tools, "search_products");
 
         // Act
@@ -121,7 +122,7 @@ public class ToolDefinitionProviderTests
     public async Task GetProductDetails_FunctionReturnsExpectedResult()
     {
         // Arrange
-        var tools = _sut.GetToolDefinitions("TestShop");
+        var tools = _sut.GetToolDefinitions("TestShop", WorkflowPhase.FillingCart);
         var detailTool = FindTool(tools, "get_product_details");
 
         // Act
@@ -136,7 +137,7 @@ public class ToolDefinitionProviderTests
     public async Task AddToCart_FunctionReturnsExpectedResult()
     {
         // Arrange
-        var tools = _sut.GetToolDefinitions("TestShop");
+        var tools = _sut.GetToolDefinitions("TestShop", WorkflowPhase.FillingCart);
         var cartTool = FindTool(tools, "add_to_cart");
 
         // Act
@@ -151,7 +152,7 @@ public class ToolDefinitionProviderTests
     public async Task RemoveFromCart_FunctionReturnsExpectedResult()
     {
         // Arrange
-        var tools = _sut.GetToolDefinitions("TestShop");
+        var tools = _sut.GetToolDefinitions("TestShop", WorkflowPhase.FillingCart);
         var removeTool = FindTool(tools, "remove_from_cart");
 
         // Act
@@ -166,7 +167,7 @@ public class ToolDefinitionProviderTests
     public async Task GetCartContents_FunctionReturnsExpectedResult()
     {
         // Arrange
-        var tools = _sut.GetToolDefinitions("TestShop");
+        var tools = _sut.GetToolDefinitions("TestShop", WorkflowPhase.FillingCart);
         var cartContentsTool = FindTool(tools, "get_cart_contents");
 
         // Act
@@ -180,7 +181,7 @@ public class ToolDefinitionProviderTests
     public async Task NavigateToCart_FunctionReturnsExpectedResult()
     {
         // Arrange
-        var tools = _sut.GetToolDefinitions("TestShop");
+        var tools = _sut.GetToolDefinitions("TestShop", WorkflowPhase.FillingCart);
         var navTool = FindTool(tools, "navigate_to_cart");
 
         // Act
@@ -194,7 +195,7 @@ public class ToolDefinitionProviderTests
     public async Task SavePreference_FunctionReturnsExpectedResult()
     {
         // Arrange
-        var tools = _sut.GetToolDefinitions("TestShop");
+        var tools = _sut.GetToolDefinitions("TestShop", WorkflowPhase.FillingCart);
         var saveTool = FindTool(tools, "save_preference");
 
         // Act
@@ -209,7 +210,7 @@ public class ToolDefinitionProviderTests
     public async Task DeletePreference_FunctionReturnsExpectedResult()
     {
         // Arrange
-        var tools = _sut.GetToolDefinitions("TestShop");
+        var tools = _sut.GetToolDefinitions("TestShop", WorkflowPhase.FillingCart);
         var deleteTool = FindTool(tools, "delete_preference");
 
         // Act
@@ -226,7 +227,7 @@ public class ToolDefinitionProviderTests
     public void GetToolDefinitions_ToolHasExpectedParameter(string toolName, string expectedParam)
     {
         // Arrange & Act
-        var tools = _sut.GetToolDefinitions("AnyShop");
+        var tools = _sut.GetToolDefinitions("AnyShop", WorkflowPhase.FillingCart);
         var tool = FindTool(tools, toolName);
 
         // Assert
@@ -237,7 +238,7 @@ public class ToolDefinitionProviderTests
     public void GetToolDefinitions_AddToCart_HasQuantityParameter()
     {
         // Arrange & Act
-        var tools = _sut.GetToolDefinitions("AnyShop");
+        var tools = _sut.GetToolDefinitions("AnyShop", WorkflowPhase.FillingCart);
         var tool = FindTool(tools, "add_to_cart");
 
         // Assert
@@ -250,7 +251,7 @@ public class ToolDefinitionProviderTests
     public void GetToolDefinitions_SavePreference_HasAllParameters()
     {
         // Arrange & Act
-        var tools = _sut.GetToolDefinitions("AnyShop");
+        var tools = _sut.GetToolDefinitions("AnyShop", WorkflowPhase.FillingCart);
         var tool = FindTool(tools, "save_preference");
 
         // Assert
@@ -264,7 +265,7 @@ public class ToolDefinitionProviderTests
     public void GetToolDefinitions_DeletePreference_HasParameters()
     {
         // Arrange & Act
-        var tools = _sut.GetToolDefinitions("AnyShop");
+        var tools = _sut.GetToolDefinitions("AnyShop", WorkflowPhase.FillingCart);
         var tool = FindTool(tools, "delete_preference");
 
         // Assert
@@ -277,8 +278,8 @@ public class ToolDefinitionProviderTests
     public void GetToolDefinitions_ReturnsNewListOnEachCall()
     {
         // Arrange & Act
-        var tools1 = _sut.GetToolDefinitions("Shop1");
-        var tools2 = _sut.GetToolDefinitions("Shop2");
+        var tools1 = _sut.GetToolDefinitions("Shop1", WorkflowPhase.FillingCart);
+        var tools2 = _sut.GetToolDefinitions("Shop2", WorkflowPhase.FillingCart);
 
         // Assert
         tools1.Should().NotBeSameAs(tools2);
@@ -292,7 +293,7 @@ public class ToolDefinitionProviderTests
     public async Task VerifyShoppingList_FunctionReturnsExpectedResult()
     {
         // Arrange
-        var tools = _sut.GetToolDefinitions("TestShop");
+        var tools = _sut.GetToolDefinitions("TestShop", WorkflowPhase.FillingCart);
         var verifyTool = FindTool(tools, "verify_shopping_list");
 
         // Act

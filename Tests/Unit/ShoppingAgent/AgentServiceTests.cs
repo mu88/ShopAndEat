@@ -408,11 +408,146 @@ public class AgentServiceTests
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
+    [Test]
+    public async Task InitializeAsync_AlwaysResetsWorkflowState()
+    {
+        // Arrange
+        var conversationManagerMock = Substitute.For<IConversationManager>();
+        var promptBuilderMock = Substitute.For<ISystemPromptBuilder>();
+        promptBuilderMock
+            .BuildSystemPromptAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult("system prompt"));
+        var testee = CreateTestee(
+            Substitute.For<IChatClient>(),
+            systemPromptBuilder: promptBuilderMock,
+            conversationManager: conversationManagerMock);
+
+        await testee.InitializeAsync("coop");
+
+        // Act — second call with the same shop triggers the early-return path
+        await testee.InitializeAsync("coop");
+
+        // Assert — ResetWorkflow() called once per InitializeAsync invocation, even when early-return fires
+        conversationManagerMock.Received(2).ResetWorkflow();
+    }
+
+    [Test]
+    public async Task ProcessMessageAsync_PassesFuncToConversationManager_ThatReturnsPhaseBasedTools()
+    {
+        // Arrange
+        var conversationManagerMock = Substitute.For<IConversationManager>();
+        conversationManagerMock.Phase.Returns(WorkflowPhase.Researching);
+
+        var toolDefinitionProviderMock = Substitute.For<IToolDefinitionProvider>();
+        toolDefinitionProviderMock
+            .GetToolDefinitions(Arg.Any<string>(), Arg.Any<WorkflowPhase>())
+            .Returns([]);
+
+        Func<IReadOnlyList<AITool>> capturedGetTools = null;
+        conversationManagerMock
+            .ProcessAsync(
+                Arg.Any<IList<AiChatMessage>>(),
+                Arg.Any<IChatClient>(),
+                Arg.Do<Func<IReadOnlyList<AITool>>>(func => capturedGetTools = func),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(EmptyAsyncEnumerable());
+
+        var testee = CreateTestee(
+            Substitute.For<IChatClient>(),
+            conversationManager: conversationManagerMock,
+            toolDefinitionProvider: toolDefinitionProviderMock);
+
+        // Act
+        await foreach (var chunk in testee.ProcessMessageAsync("test"))
+        {
+            _ = chunk;
+        }
+
+        // Assert
+        conversationManagerMock.Received(1).ProcessAsync(
+            Arg.Any<IList<AiChatMessage>>(),
+            Arg.Any<IChatClient>(),
+            Arg.Any<Func<IReadOnlyList<AITool>>>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+
+        capturedGetTools.Should().NotBeNull();
+        capturedGetTools!();
+        toolDefinitionProviderMock.Received(1).GetToolDefinitions("Coop", WorkflowPhase.Researching);
+    }
+
+    [Test]
+    public async Task ProcessMessageAsync_ResetsWorkflow_WhenPhaseIsAwaitingClarification()
+    {
+        // Arrange
+        var conversationManagerMock = Substitute.For<IConversationManager>();
+        conversationManagerMock.Phase.Returns(WorkflowPhase.AwaitingClarification);
+        conversationManagerMock
+            .ProcessAsync(
+                Arg.Any<IList<AiChatMessage>>(),
+                Arg.Any<IChatClient>(),
+                Arg.Any<Func<IReadOnlyList<AITool>>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(EmptyAsyncEnumerable());
+
+        var testee = CreateTestee(
+            Substitute.For<IChatClient>(),
+            conversationManager: conversationManagerMock);
+
+        // Act
+        await foreach (var chunk in testee.ProcessMessageAsync("Garlic please"))
+        {
+            _ = chunk;
+        }
+
+        // Assert — ResetWorkflow called once by InitializeAsync, once more for the AwaitingClarification auto-reset
+        conversationManagerMock.Received(2).ResetWorkflow();
+    }
+
+    [Test]
+    public async Task ProcessMessageAsync_DoesNotResetWorkflow_WhenPhaseIsResearching()
+    {
+        // Arrange
+        var conversationManagerMock = Substitute.For<IConversationManager>();
+        conversationManagerMock.Phase.Returns(WorkflowPhase.Researching);
+        conversationManagerMock
+            .ProcessAsync(
+                Arg.Any<IList<AiChatMessage>>(),
+                Arg.Any<IChatClient>(),
+                Arg.Any<Func<IReadOnlyList<AITool>>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(EmptyAsyncEnumerable());
+
+        var testee = CreateTestee(
+            Substitute.For<IChatClient>(),
+            conversationManager: conversationManagerMock);
+
+        // Act
+        await foreach (var chunk in testee.ProcessMessageAsync("test"))
+        {
+            _ = chunk;
+        }
+
+        // Assert — ResetWorkflow called only once by InitializeAsync, NOT a second time for Researching phase
+        conversationManagerMock.Received(1).ResetWorkflow();
+    }
+
+    private static async IAsyncEnumerable<string> EmptyAsyncEnumerable()
+    {
+        await Task.CompletedTask;
+        yield break;
+    }
+
     private static AgentService CreateTestee(
         IChatClient chatClient,
         IShopToolExecutor toolExecutor = null,
         IPreferencesService preferencesService = null,
-        ISystemPromptBuilder systemPromptBuilder = null)
+        ISystemPromptBuilder systemPromptBuilder = null,
+        IConversationManager conversationManager = null,
+        IToolDefinitionProvider toolDefinitionProvider = null)
     {
         toolExecutor ??= Substitute.For<IShopToolExecutor>();
 
@@ -448,11 +583,12 @@ public class AgentServiceTests
         var metrics = new ShoppingAgentMetrics(meterFactory);
 
         var systemPromptBuilderInstance = systemPromptBuilder ?? new SystemPromptBuilder(preferencesMock, sessionMock, localizerMock);
-        var toolDefinitionProvider = new ToolDefinitionProvider();
-        var toolCallDispatcher = new ToolCallDispatcher(factoryMock, preferencesMock, Substitute.For<IShoppingListVerifier>(), localizerMock);
-        var conversationManager = new ConversationManager(toolCallDispatcher, new HtmlToolResultRenderer(localizerMock), localizerMock, NullLogger<ConversationManager>.Instance, metrics, Options.Create(new AgentOptions()), Options.Create(new LlmClientOptions()));
+        var toolDefinitionProviderInstance = toolDefinitionProvider ?? new ToolDefinitionProvider();
+        var workflowStateMock = Substitute.For<IShoppingWorkflowState>();
+        var toolCallDispatcher = new ToolCallDispatcher(factoryMock, preferencesMock, Substitute.For<IShoppingListVerifier>(), localizerMock, workflowStateMock);
+        var conversationManagerInstance = conversationManager ?? new ConversationManager(toolCallDispatcher, new HtmlToolResultRenderer(localizerMock), new ToolResultCompressor(), localizerMock, NullLogger<ConversationManager>.Instance, metrics, Options.Create(new AgentOptions()), Options.Create(new LlmClientOptions()));
         var shopSessionManager = new ShopSessionManager(factoryMock, NullLogger<ShopSessionManager>.Instance);
 
-        return new AgentService(chatClientProviderMock, systemPromptBuilderInstance, toolDefinitionProvider, conversationManager, shopSessionManager, metrics, NullLogger<AgentService>.Instance);
+        return new AgentService(chatClientProviderMock, systemPromptBuilderInstance, toolDefinitionProviderInstance, conversationManagerInstance, shopSessionManager, metrics, NullLogger<AgentService>.Instance);
     }
 }

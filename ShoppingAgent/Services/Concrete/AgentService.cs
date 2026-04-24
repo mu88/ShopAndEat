@@ -36,6 +36,8 @@ public class AgentService(
 
     public async Task InitializeAsync(string shopKey = null, CancellationToken cancellationToken = default)
     {
+        conversationManager.ResetWorkflow();
+
         if (shopSessionManager.IsInitialized && string.Equals(shopKey, shopSessionManager.SelectedShopKey, StringComparison.Ordinal))
         {
             return;
@@ -71,17 +73,28 @@ public class AgentService(
         _isProcessing = true;
         OnStateChanged?.Invoke();
 
+        // When the user responds to clarification questions, reset back to Researching
+        // so search_products becomes available again for the LLM to complete the plan.
+        if (conversationManager.Phase == WorkflowPhase.AwaitingClarification)
+        {
+            conversationManager.ResetWorkflow();
+        }
+
         _conversationHistory.Add(new Microsoft.Extensions.AI.ChatMessage(ChatRole.User, userMessage));
 
         var chatClient = await chatClientProvider.GetChatClientAsync();
-        var tools = toolDefinitionProvider.GetToolDefinitions(shopSessionManager.SelectedShop.Name);
+        var shopName = shopSessionManager.SelectedShop.Name;
 
         metrics.MessagesProcessed.Add(1);
 
         try
         {
             await foreach (var chunk in conversationManager.ProcessAsync(
-                _conversationHistory, chatClient, tools, shopSessionManager.SelectedShopKey, cancellationToken))
+                _conversationHistory,
+                chatClient,
+                () => toolDefinitionProvider.GetToolDefinitions(shopName, conversationManager.Phase),
+                shopSessionManager.SelectedShopKey,
+                cancellationToken))
             {
                 yield return chunk;
             }

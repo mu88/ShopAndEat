@@ -32,6 +32,7 @@ public static class ShoppingAgentExtensions
         services.AddSingleton(TimeProvider.System);
 
         services.AddHttpClient<IMistralChatClientProvider, MistralChatClientProvider>();
+        services.AddScoped<IShoppingWorkflowState, ShoppingWorkflowState>();
         services.AddScoped<IExtensionBridge, ExtensionBridge>();
         services.AddScoped<IShopToolExecutorFactory, ShopToolExecutorFactory>();
         services.AddScoped<ISystemPromptBuilder, SystemPromptBuilder>();
@@ -39,6 +40,7 @@ public static class ShoppingAgentExtensions
         services.AddScoped<IShoppingListVerifier, ShoppingListVerifier>();
         services.AddScoped<IToolCallDispatcher, ToolCallDispatcher>();
         services.AddScoped<IToolResultRenderer, HtmlToolResultRenderer>();
+        services.AddSingleton<IToolResultCompressor, ToolResultCompressor>();
         services.AddScoped<IConversationManager, ConversationManager>();
         services.AddScoped<IShopSessionManager, ShopSessionManager>();
         services.AddScoped<IAgentService, AgentService>();

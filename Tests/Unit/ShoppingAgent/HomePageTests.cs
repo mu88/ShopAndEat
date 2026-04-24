@@ -88,8 +88,10 @@ public class HomePageTests
         ctx.Services.AddSingleton<ISystemPromptBuilder, SystemPromptBuilder>();
         ctx.Services.AddSingleton<IToolDefinitionProvider, ToolDefinitionProvider>();
         ctx.Services.AddSingleton<IShoppingListVerifier, ShoppingListVerifier>();
+        ctx.Services.AddSingleton<IShoppingWorkflowState>(Substitute.For<IShoppingWorkflowState>());
         ctx.Services.AddSingleton<IToolCallDispatcher, ToolCallDispatcher>();
         ctx.Services.AddSingleton<IToolResultRenderer, HtmlToolResultRenderer>();
+        ctx.Services.AddSingleton<IToolResultCompressor, ToolResultCompressor>();
         ctx.Services.AddSingleton<IConversationManager, ConversationManager>();
         ctx.Services.AddSingleton<IShopSessionManager, ShopSessionManager>();
         ctx.Services.AddSingleton<IAgentService, AgentService>();
@@ -107,11 +109,11 @@ public class HomePageTests
         var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
 
         // Act
-        cut.Find("textarea").Input("Hello World");
+        await cut.Find("textarea").InputAsync("Hello World");
         cut.Find(".send-button").Click();
 
         // Assert
-        cut.WaitForAssertion(() =>
+        await cut.WaitForAssertionAsync(() =>
             cut.Find(".chat-message.user .message-text").TextContent.Should().Contain("Hello World"));
     }
 
@@ -125,11 +127,11 @@ public class HomePageTests
         var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
 
         // Act
-        cut.Find("textarea").Input("Find milk");
+        await cut.Find("textarea").InputAsync("Find milk");
         cut.Find(".send-button").Click();
 
         // Assert
-        cut.WaitForAssertion(() =>
+        await cut.WaitForAssertionAsync(() =>
             cut.Find(".chat-message.assistant .message-text").TextContent.Should().Contain("I can help you shop!"));
     }
 
@@ -150,7 +152,7 @@ public class HomePageTests
         await cut.Find("[data-testid='clear-chat']").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() =>
+        await cut.WaitForAssertionAsync(() =>
             cut.FindAll(".chat-message").Should().BeEmpty());
     }
 
@@ -187,11 +189,11 @@ public class HomePageTests
 
         // Act
         var textarea = cut.Find("textarea");
-        textarea.Input("Hello World");
+        await textarea.InputAsync("Hello World");
         await textarea.KeyDownAsync(new KeyboardEventArgs { Key = "Enter", ShiftKey = false });
 
         // Assert
-        cut.WaitForAssertion(() =>
+        await cut.WaitForAssertionAsync(() =>
             cut.Find(".chat-message.user .message-text").TextContent.Should().Contain("Hello World"));
     }
 
@@ -205,7 +207,7 @@ public class HomePageTests
 
         // Act
         var textarea = cut.Find("textarea");
-        textarea.Input("Hello World");
+        await textarea.InputAsync("Hello World");
         await textarea.KeyDownAsync(new KeyboardEventArgs { Key = "Enter", ShiftKey = true });
 
         // Assert
@@ -223,7 +225,7 @@ public class HomePageTests
         await cut.Find("[data-testid='load-meal-plan']").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() =>
+        await cut.WaitForAssertionAsync(() =>
             cut.Find(".chat-message.assistant .message-text").TextContent.Should().Contain("NoIngredientsFound"));
     }
 
@@ -244,7 +246,7 @@ public class HomePageTests
         await cut.Find("[data-testid='load-meal-plan']").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() =>
+        await cut.WaitForAssertionAsync(() =>
         {
             var textarea = cut.Find("textarea");
             textarea.GetAttribute("value").Should().Contain("2 cups flour");
@@ -269,10 +271,10 @@ public class HomePageTests
         var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
 
         // Act
-        cut.Find("select").Change("migros");
+        await cut.Find("select").ChangeAsync("migros");
 
         // Assert
-        cut.WaitForAssertion(() =>
+        await cut.WaitForAssertionAsync(() =>
             agentMock.Received(1).SwitchShopAsync("migros", Arg.Any<CancellationToken>()));
     }
 

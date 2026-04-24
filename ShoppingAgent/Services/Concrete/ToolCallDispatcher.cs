@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Localization;
+using ShoppingAgent.Models;
 using ShoppingAgent.Resources;
 
 namespace ShoppingAgent.Services.Concrete;
@@ -13,43 +14,25 @@ public class ToolCallDispatcher(
     IShopToolExecutorFactory shopToolExecutorFactory,
     IPreferencesService preferencesService,
     IShoppingListVerifier shoppingListVerifier,
-    IStringLocalizer<Messages> localizer) : IToolCallDispatcher
+    IStringLocalizer<Messages> localizer,
+    IShoppingWorkflowState workflowState) : IToolCallDispatcher
 {
+    public WorkflowPhase Phase => workflowState.Phase;
+
+    public bool ShouldBreakAfterToolExecution =>
+        workflowState.Phase is WorkflowPhase.AwaitingConfirmation or WorkflowPhase.AwaitingClarification;
+
     public async Task<(string Result, bool Success)> DispatchAsync(
         FunctionCallContent toolCall, string shopKey, CancellationToken ct = default)
     {
         try
         {
-            var toolExecutor = shopToolExecutorFactory.GetExecutor(shopKey);
             var result = toolCall.Name switch
             {
-                "search_products" => JsonSerializer.Serialize(await toolExecutor.SearchAsync(
-                    GetArg(toolCall.Arguments, "search_term"), ct)),
-
-                "get_product_details" => JsonSerializer.Serialize(await toolExecutor.GetProductDetailsAsync(
-                    GetArg(toolCall.Arguments, "product_url"), ct)),
-
-                "add_to_cart" => await toolExecutor.AddToCartAsync(
-                    GetArg(toolCall.Arguments, "product_url"),
-                    int.TryParse(GetArg(toolCall.Arguments, "quantity"), System.Globalization.CultureInfo.InvariantCulture, out var q) ? q : 1,
-                    ct),
-
-                "remove_from_cart" => await toolExecutor.RemoveFromCartAsync(
-                    GetArg(toolCall.Arguments, "product_name"),
-                    GetArg(toolCall.Arguments, "cart_entry_uid"),
-                    ct),
-
-                "get_cart_contents" => await toolExecutor.GetCartContentsAsync(ct),
-
-                "navigate_to_cart" => await NavigateToCartWithReminderCheckAsync(toolExecutor, shopKey, ct),
-
-                "save_preference" => await SavePreferenceAsync(toolCall, shopKey, ct),
-
-                "delete_preference" => await DeletePreferenceAsync(toolCall, shopKey, ct),
-
-                "verify_shopping_list" => await VerifyShoppingListAsync(toolCall, shopKey, ct),
-
-                _ => localizer["UnknownTool", toolCall.Name].Value
+                "confirm_cart" => HandleConfirmCart(),
+                "proceed_to_cart" => HandleProceedToCart(),
+                "request_clarification" => HandleRequestClarification(toolCall),
+                _ => await DispatchShopToolAsync(toolCall, shopKey, ct),
             };
             return (result, true);
         }
@@ -94,8 +77,82 @@ public class ToolCallDispatcher(
         return string.Join(", ", args.Select(kv => $"{kv.Key}={kv.Value}"));
     }
 
+    public void ResetWorkflow() => workflowState.Reset();
+
     private static string GetArg(IDictionary<string, object> args, string key)
         => args != null && args.TryGetValue(key, out var val) ? val?.ToString() ?? string.Empty : string.Empty;
+
+    private string HandleConfirmCart()
+    {
+        workflowState.MoveToAwaitingConfirmation();
+        return "__phase:awaiting_confirmation__";
+    }
+
+    private string HandleProceedToCart()
+    {
+        workflowState.MoveToFillingCart();
+        return "__phase:filling_cart__";
+    }
+
+    private string HandleRequestClarification(FunctionCallContent toolCall)
+    {
+        var rawItems = GetArg(toolCall.Arguments, "pending_items");
+        var items = string.IsNullOrWhiteSpace(rawItems)
+            ? []
+            : rawItems.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        workflowState.MoveToAwaitingClarification(items);
+
+        var itemList = items.Length > 0
+            ? string.Join(", ", items)
+            : "the items above";
+
+        return $"AWAITING CLARIFICATION. Unresolved items: {itemList}. " +
+               $"INSTRUCTION: Do NOT search for any products NOW. Do NOT call confirm_cart NOW. " +
+               $"Wait for the user to reply. " +
+               $"When the user replies: " +
+               $"(1) Search for every product the user names by calling search_products. " +
+               $"(2) Output the COMPLETE updated plan table as text — ALL rows, not just changed ones. " +
+               $"(3) Below the table, ask about ALL still-open ❓ items in text. " +
+               $"(4) Only THEN call request_clarification for remaining ❓ items. " +
+               $"You MUST output the table and questions as text before calling request_clarification. " +
+               $"NEVER skip the table output, even if most rows are unchanged.";
+    }
+
+    private async Task<string> DispatchShopToolAsync(FunctionCallContent toolCall, string shopKey, CancellationToken ct)
+    {
+        var toolExecutor = shopToolExecutorFactory.GetExecutor(shopKey);
+        return toolCall.Name switch
+        {
+            "search_products" => JsonSerializer.Serialize(await toolExecutor.SearchAsync(
+                GetArg(toolCall.Arguments, "search_term"), ct)),
+
+            "get_product_details" => JsonSerializer.Serialize(await toolExecutor.GetProductDetailsAsync(
+                GetArg(toolCall.Arguments, "product_url"), ct)),
+
+            "add_to_cart" => await toolExecutor.AddToCartAsync(
+                GetArg(toolCall.Arguments, "product_url"),
+                int.TryParse(GetArg(toolCall.Arguments, "quantity"), System.Globalization.CultureInfo.InvariantCulture, out var q) ? q : 1,
+                ct),
+
+            "remove_from_cart" => await toolExecutor.RemoveFromCartAsync(
+                GetArg(toolCall.Arguments, "product_name"),
+                GetArg(toolCall.Arguments, "cart_entry_uid"),
+                ct),
+
+            "get_cart_contents" => await toolExecutor.GetCartContentsAsync(ct),
+
+            "navigate_to_cart" => await NavigateToCartWithReminderCheckAsync(toolExecutor, shopKey, ct),
+
+            "save_preference" => await SavePreferenceAsync(toolCall, shopKey, ct),
+
+            "delete_preference" => await DeletePreferenceAsync(toolCall, shopKey, ct),
+
+            "verify_shopping_list" => await VerifyShoppingListAsync(toolCall, shopKey, ct),
+
+            _ => localizer["UnknownTool", toolCall.Name].Value,
+        };
+    }
 
     private async Task<string> SavePreferenceAsync(FunctionCallContent toolCall, string shopKey, CancellationToken ct)
     {
@@ -136,6 +193,9 @@ public class ToolCallDispatcher(
     private async Task<string> NavigateToCartWithReminderCheckAsync(IShopToolExecutor toolExecutor, string shopKey, CancellationToken ct)
     {
         var navigationResult = await toolExecutor.NavigateToCartAsync(ct);
+
+        // Reset after cart navigation so the next user message starts a fresh research cycle.
+        workflowState.Reset();
 
         var allPreferences = await preferencesService.GetAllPreferencesAsync(shopKey, ct);
         var reminders = allPreferences.Where(pref => string.Equals(pref.Scope, "reminder", StringComparison.OrdinalIgnoreCase)).ToList();

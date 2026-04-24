@@ -7,6 +7,7 @@ using ShoppingAgent.Diagnostics;
 using ShoppingAgent.Logging;
 using ShoppingAgent.Options;
 using ShoppingAgent.Resources;
+using WorkflowPhase = ShoppingAgent.Models.WorkflowPhase;
 
 namespace ShoppingAgent.Services.Concrete;
 
@@ -17,6 +18,7 @@ namespace ShoppingAgent.Services.Concrete;
 public class ConversationManager(
     IToolCallDispatcher dispatcher,
     IToolResultRenderer renderer,
+    IToolResultCompressor compressor,
     IStringLocalizer<Messages> localizer,
     ILogger<ConversationManager> logger,
     ShoppingAgentMetrics metrics,
@@ -25,15 +27,17 @@ public class ConversationManager(
 {
     private bool _toolCallingSupported = true;
 
+    public WorkflowPhase Phase => dispatcher.Phase;
+
+    public void ResetWorkflow() => dispatcher.ResetWorkflow();
+
     public async IAsyncEnumerable<string> ProcessAsync(
         IList<ChatMessage> conversationHistory,
         IChatClient chatClient,
-        IReadOnlyList<AITool> tools,
+        Func<IReadOnlyList<AITool>> getTools,
         string shopKey,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var effectiveTools = _toolCallingSupported ? tools.ToList() : [];
-        var options = new ChatOptions { Tools = effectiveTools.Count > 0 ? effectiveTools : null };
         AgentLogMessages.ProcessingUserMessage(logger, llmOptions.Value.DefaultModel);
         using var processActivity = ShoppingAgentDiagnostics.ActivitySource.StartActivity("ShoppingAgent.ProcessMessage");
         processActivity?.SetTag("agent.shop", shopKey);
@@ -45,9 +49,9 @@ public class ConversationManager(
             for (iteration = 0; iteration < agentOptions.Value.MaxToolCallingIterations; iteration++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var (response, errorMessage, fallbackMessage, updatedOptions) =
+                var options = BuildCurrentOptions(getTools);
+                var (response, errorMessage, fallbackMessage, _) =
                     await GetLlmResponseAsync(chatClient, conversationHistory, options, cancellationToken);
-                options = updatedOptions;
                 if (fallbackMessage != null)
                 {
                     yield return fallbackMessage;
@@ -60,23 +64,14 @@ public class ConversationManager(
                     break;
                 }
 
-                var toolCalls = GetToolCalls(response);
-                if (toolCalls.Count == 0)
-                {
-                    yield return HandleTextOnlyResponse(response, conversationHistory);
-                    break;
-                }
-
-                conversationHistory.Add(BuildAssistantMessage(response));
-                var toolGroups = dispatcher.GroupConsecutiveToolCalls(toolCalls);
-                await foreach (var chunk in ProcessToolGroupsAsync(toolGroups, toolState, conversationHistory, shopKey, cancellationToken))
+                var breakSignal = new BreakSignal();
+                await foreach (var chunk in ProcessResponseAsync(response, toolState, conversationHistory, shopKey, breakSignal, cancellationToken))
                 {
                     yield return chunk;
                 }
 
-                if (toolState.RepeatedFailureTool != null)
+                if (breakSignal.ShouldBreak)
                 {
-                    yield return $"{Environment.NewLine}⚠️ {localizer["RepeatedToolFailure", toolState.RepeatedFailureTool]}{Environment.NewLine}";
                     break;
                 }
             }
@@ -112,6 +107,63 @@ public class ConversationManager(
             && (message.Contains("NOT SUPPORTED", StringComparison.Ordinal)
                 || message.Contains("UNSUPPORTED", StringComparison.Ordinal)
                 || message.Contains("DOES NOT SUPPORT", StringComparison.Ordinal));
+    }
+
+    private async IAsyncEnumerable<string> ProcessResponseAsync(
+        ChatResponse response,
+        ToolExecutionState toolState,
+        IList<ChatMessage> conversationHistory,
+        string shopKey,
+        BreakSignal breakSignal,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var toolCalls = GetToolCalls(response);
+        if (toolCalls.Count == 0)
+        {
+            yield return HandleTextOnlyResponse(response, conversationHistory);
+            breakSignal.ShouldBreak = true;
+            yield break;
+        }
+
+        var inlineText = GetFinalTextContent(response);
+        if (!string.IsNullOrEmpty(inlineText))
+        {
+            yield return inlineText;
+        }
+
+        conversationHistory.Add(BuildAssistantMessage(response));
+        var toolGroups = dispatcher.GroupConsecutiveToolCalls(toolCalls);
+        await foreach (var chunk in ProcessToolGroupsAsync(toolGroups, toolState, conversationHistory, shopKey, cancellationToken))
+        {
+            yield return chunk;
+        }
+
+        if (toolState.RepeatedFailureTool != null)
+        {
+            yield return $"{Environment.NewLine}⚠️ {localizer["RepeatedToolFailure", toolState.RepeatedFailureTool]}{Environment.NewLine}";
+            breakSignal.ShouldBreak = true;
+            yield break;
+        }
+
+        if (dispatcher.ShouldBreakAfterToolExecution)
+        {
+            // If request_clarification was called in a tool-only response (no inline text),
+            // give the LLM one more turn with the AwaitingClarification tool set (no search).
+            // This forces it to produce the updated plan table and questions as text
+            // rather than silently stopping with no output visible to the user.
+            var silentClarification = dispatcher.Phase == WorkflowPhase.AwaitingClarification
+                                      && string.IsNullOrEmpty(inlineText);
+            if (!silentClarification)
+            {
+                breakSignal.ShouldBreak = true;
+            }
+        }
+    }
+
+    private ChatOptions BuildCurrentOptions(Func<IReadOnlyList<AITool>> getTools)
+    {
+        var tools = _toolCallingSupported ? getTools().ToList() : [];
+        return new ChatOptions { Tools = tools.Count > 0 ? tools : null };
     }
 
     private async Task<(ChatResponse Response, string ErrorMessage, string FallbackMessage, ChatOptions UpdatedOptions)> GetLlmResponseAsync(
@@ -218,8 +270,9 @@ public class ConversationManager(
 
                 yield return renderer.RenderToolResult(toolResult);
 
+                var compressedResult = compressor.Compress(toolCall.Name, toolResult);
                 conversationHistory.Add(new ChatMessage(ChatRole.Tool,
-                    [new FunctionResultContent(toolCall.CallId, toolResult)]));
+                    [new FunctionResultContent(toolCall.CallId, compressedResult)]));
 
                 if (state.RepeatedFailureTool != null)
                 {
@@ -258,6 +311,11 @@ public class ConversationManager(
                 state.RepeatedFailureTool = toolCall.Name;
             }
         }
+    }
+
+    private sealed class BreakSignal
+    {
+        public bool ShouldBreak { get; set; }
     }
 
     private sealed class ToolExecutionState

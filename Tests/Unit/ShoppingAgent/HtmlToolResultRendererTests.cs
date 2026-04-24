@@ -99,4 +99,44 @@ public class HtmlToolResultRendererTests
         // Assert
         result.Should().Contain("</details>");
     }
+
+    [Test]
+    public void RenderToolResult_WithPhaseSentinel_ShouldReturnEmpty()
+    {
+        // Arrange & Act
+        var result = _sut.RenderToolResult("__phase:awaiting_confirmation__");
+
+        // Assert
+        result.Should().Be(string.Empty);
+    }
+
+    [Test]
+    public void RenderToolResult_WithFillingCartSentinel_ShouldReturnEmpty()
+    {
+        // Arrange & Act
+        var result = _sut.RenderToolResult("__phase:filling_cart__");
+
+        // Assert
+        result.Should().Be(string.Empty);
+    }
+
+    [Test]
+    public void RenderToolCallStart_WithConfirmCart_ShouldReturnEmpty()
+    {
+        // Arrange & Act
+        var result = _sut.RenderToolCallStart("confirm_cart", string.Empty);
+
+        // Assert
+        result.Should().Be(string.Empty);
+    }
+
+    [Test]
+    public void RenderToolCallStart_WithProceedToCart_ShouldReturnEmpty()
+    {
+        // Arrange & Act
+        var result = _sut.RenderToolCallStart("proceed_to_cart", string.Empty);
+
+        // Assert
+        result.Should().Be(string.Empty);
+    }
 }
