@@ -35,4 +35,19 @@ internal static partial class AgentLogMessages
 
     [LoggerMessage(SkipEnabledCheck = true, Level = LogLevel.Information, Message = "Message processing complete after {Iterations} LLM iterations ({ElapsedMs}ms)")]
     public static partial void MessageProcessingComplete(ILogger logger, int iterations, long elapsedMs);
+
+    [LoggerMessage(SkipEnabledCheck = true, Level = LogLevel.Warning, Message = "Rate limited (HTTP 429), retrying in {DelayMs}ms (attempt {Attempt}/{MaxAttempts})")]
+    public static partial void RateLimitedRetrying(ILogger logger, int delayMs, int attempt, int maxAttempts);
+
+    [LoggerMessage(SkipEnabledCheck = true, Level = LogLevel.Warning, Message = "Retries exhausted after {Attempts} attempts, initiating model fallback")]
+    public static partial void RetriesExhausted(ILogger logger, int attempts);
+
+    [LoggerMessage(SkipEnabledCheck = true, Level = LogLevel.Information, Message = "Switching to fallback model")]
+    public static partial void FallbackStarted(ILogger logger);
+
+    [LoggerMessage(SkipEnabledCheck = true, Level = LogLevel.Information, Message = "Fallback model call succeeded")]
+    public static partial void FallbackSucceeded(ILogger logger);
+
+    [LoggerMessage(SkipEnabledCheck = true, Level = LogLevel.Warning, Message = "Fallback model call failed: {ErrorMessage}")]
+    public static partial void FallbackFailed(ILogger logger, string errorMessage);
 }

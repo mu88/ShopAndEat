@@ -13,6 +13,11 @@ public interface IMistralChatClientProvider
     Task<IChatClient> GetChatClientAsync();
 
     /// <summary>
+    /// Gets the fallback chat client (using FallbackModel), creating one if needed.
+    /// </summary>
+    Task<IChatClient> GetFallbackChatClientAsync();
+
+    /// <summary>
     /// Invalidates the cached client so the next call to <see cref="GetChatClientAsync"/> creates a new one.
     /// </summary>
     void InvalidateClient();

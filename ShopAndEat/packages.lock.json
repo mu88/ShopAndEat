@@ -4,9 +4,9 @@
     "net10.0": {
       "Microsoft.AspNetCore.App.Internal.Assets": {
         "type": "Direct",
-        "requested": "[10.0.5, )",
-        "resolved": "10.0.5",
-        "contentHash": "Oxw9Ps1/nd6c/EMCAI13AeJFEqXezAvCEOshMjUWmL7LeGirHJNzytR2e/3jINYg0j2TmPvNUowGHf+gp8zDSQ=="
+        "requested": "[10.0.8, )",
+        "resolved": "10.0.8",
+        "contentHash": "v6KocthydFtUHBIRI29YsOHKOgsqcQubkNywVOxiYr4GSDSv+XO/AeyMJywlX+1tGUTGdydu/X7V+Tzeq4SsoA=="
       },
       "Microsoft.AspNetCore.OpenApi": {
         "type": "Direct",
@@ -458,6 +458,7 @@
         "dependencies": {
           "Markdig": "[1.1.2, )",
           "Microsoft.Extensions.AI.OpenAI": "[10.5.0, )",
+          "Polly.Core": "[8.6.4, )",
           "mu88.Shared": "[8.1.0, )"
         }
       },
@@ -518,6 +519,12 @@
           "Microsoft.Extensions.AI.Abstractions": "10.5.0",
           "OpenAI": "2.10.0"
         }
+      },
+      "Polly.Core": {
+        "type": "CentralTransitive",
+        "requested": "[8.6.4, )",
+        "resolved": "8.6.4",
+        "contentHash": "4AWqYnQ2TME0E+Mzovt1Uu+VyvpR84ymUldMcPw7Mbj799Phaag14CKrMtlJGx5jsvYP+S3oR1QmysgmXoD5cw=="
       }
     },
     "net10.0/linux-arm64": {

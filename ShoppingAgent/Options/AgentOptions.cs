@@ -13,4 +13,10 @@ public class AgentOptions
     [Required]
     [Range(1, 50)]
     public int ToolFailureThreshold { get; set; } = 3;
+
+    [Required]
+    public bool RetryEnabled { get; set; } = true;
+
+    [Required]
+    public bool ModelFallbackEnabled { get; set; } = false;
 }

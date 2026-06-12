@@ -88,13 +88,76 @@ public class ToolResultCompressorTests
     }
 
     [Test]
+    public void Compress_WhenToolIsGetCartContents_KeepsOnlyNameQtyAndPrice()
+    {
+        // Arrange
+        var json = """
+            [
+              {"name":"Bio Tofu","qty":2,"price":"CHF 7.90","uid":"uid-1","removed":false},
+              {"name":"Pasta","qty":1,"price":"CHF 2.50","uid":"uid-2","removed":false}
+            ]
+            """;
+
+        // Act
+        var result = _sut.Compress("get_cart_contents", json);
+
+        // Assert
+        result.Should().Contain("Bio Tofu");
+        result.Should().Contain("Pasta");
+        result.Should().Contain("CHF 7.90");
+        result.Should().NotContain("uid");
+        result.Should().NotContain("removed");
+    }
+
+    [Test]
+    public void Compress_WhenToolIsAddToCart_KeepsOnlySuccessAndMessage()
+    {
+        // Arrange
+        var json = """
+            {
+              "success":true,"message":"Added to cart","quantity":2,"productUrl":"https://coop.ch/p/123"
+            }
+            """;
+
+        // Act
+        var result = _sut.Compress("add_to_cart", json);
+
+        // Assert
+        result.Should().Contain("success");
+        result.Should().Contain("message");
+        result.Should().Contain("Added to cart");
+        result.Should().NotContain("productUrl");
+    }
+
+    [Test]
+    public void Compress_WhenToolIsRemoveFromCart_KeepsOnlySuccessAndMessage()
+    {
+        // Arrange
+        var json = """
+            {
+              "success":true,"message":"Removed from cart","productName":"Bio Tofu","qty":2
+            }
+            """;
+
+        // Act
+        var result = _sut.Compress("remove_from_cart", json);
+
+        // Assert
+        result.Should().Contain("success");
+        result.Should().Contain("message");
+        result.Should().Contain("Removed from cart");
+        result.Should().NotContain("productName");
+        result.Should().NotContain("qty");
+    }
+
+    [Test]
     public void Compress_WhenToolIsUnknown_ReturnsRawResult()
     {
         // Arrange
         const string raw = "some raw result";
 
         // Act
-        var result = _sut.Compress("add_to_cart", raw);
+        var result = _sut.Compress("verify_shopping_list", raw);
 
         // Assert
         result.Should().Be(raw);
@@ -121,5 +184,18 @@ public class ToolResultCompressorTests
 
         // Assert
         result.Should().BeEmpty();
+    }
+
+    [Test]
+    public void Compress_WhenGetCartContentsIsInvalidJson_ReturnsRawResult()
+    {
+        // Arrange
+        const string notJson = "not valid json at all";
+
+        // Act
+        var result = _sut.Compress("get_cart_contents", notJson);
+
+        // Assert
+        result.Should().Be(notJson);
     }
 }

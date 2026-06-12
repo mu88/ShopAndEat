@@ -1113,6 +1113,7 @@
           "Markdig": "[1.1.2, )",
           "Microsoft.Extensions.AI.OpenAI": "[10.5.0, )",
           "Microsoft.Extensions.Localization": "[10.0.6, )",
+          "Polly.Core": "[8.6.4, )",
           "mu88.Shared": "[8.1.0, )"
         }
       },
@@ -1249,6 +1250,12 @@
           "Microsoft.Extensions.Logging.Abstractions": "10.0.6",
           "Microsoft.Extensions.Options": "10.0.6"
         }
+      },
+      "Polly.Core": {
+        "type": "CentralTransitive",
+        "requested": "[8.6.4, )",
+        "resolved": "8.6.4",
+        "contentHash": "4AWqYnQ2TME0E+Mzovt1Uu+VyvpR84ymUldMcPw7Mbj799Phaag14CKrMtlJGx5jsvYP+S3oR1QmysgmXoD5cw=="
       },
       "Scalar.AspNetCore": {
         "type": "CentralTransitive",

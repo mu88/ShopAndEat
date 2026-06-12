@@ -1,8 +1,11 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ShoppingAgent.Diagnostics;
 using ShoppingAgent.Logging;
 using ShoppingAgent.Models;
+using ShoppingAgent.Options;
+using ShoppingAgent.Services;
 
 namespace ShoppingAgent.Services.Concrete;
 
@@ -16,8 +19,12 @@ public class AgentService(
     IToolDefinitionProvider toolDefinitionProvider,
     IConversationManager conversationManager,
     IShopSessionManager shopSessionManager,
+    ILlmRetryPolicyFactory retryPolicyFactory,
+    IOptions<LlmClientOptions> llmOptions,
+    IOptions<AgentOptions> agentOptions,
     ShoppingAgentMetrics metrics,
-    ILogger<AgentService> logger) : IAgentService
+    ILogger<AgentService> logger,
+    ILogger<ResilientChatClient> resilientLogger) : IAgentService
 {
     private readonly List<Microsoft.Extensions.AI.ChatMessage> _conversationHistory = [];
     private readonly List<Models.ChatMessage> _messages = [];
@@ -82,7 +89,22 @@ public class AgentService(
 
         _conversationHistory.Add(new Microsoft.Extensions.AI.ChatMessage(ChatRole.User, userMessage));
 
-        var chatClient = await chatClientProvider.GetChatClientAsync();
+        var primaryClient = await chatClientProvider.GetChatClientAsync();
+        var fallbackClient = agentOptions.Value.ModelFallbackEnabled
+            ? await chatClientProvider.GetFallbackChatClientAsync()
+            : null;
+
+#pragma warning disable IDISP001 // Dispose created
+        var resilientClient = new ResilientChatClient(
+            primaryClient,
+            fallbackClient,
+            resilientLogger,
+            llmOptions.Value,
+            agentOptions.Value,
+            metrics,
+            retryPolicyFactory);
+#pragma warning restore IDISP001
+
         var shopName = shopSessionManager.SelectedShop.Name;
 
         metrics.MessagesProcessed.Add(1);
@@ -91,7 +113,7 @@ public class AgentService(
         {
             await foreach (var chunk in conversationManager.ProcessAsync(
                 _conversationHistory,
-                chatClient,
+                resilientClient,
                 () => toolDefinitionProvider.GetToolDefinitions(shopName, conversationManager.Phase),
                 shopSessionManager.SelectedShopKey,
                 cancellationToken))

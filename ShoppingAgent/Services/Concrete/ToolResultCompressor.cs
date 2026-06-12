@@ -30,6 +30,9 @@ public class ToolResultCompressor : IToolResultCompressor
         {
             "search_products" => CompressSearchResults(rawResult),
             "get_product_details" => CompressProductDetails(rawResult),
+            "get_cart_contents" => CompressCartContents(rawResult),
+            "add_to_cart" => CompressAddToCart(rawResult),
+            "remove_from_cart" => CompressRemoveFromCart(rawResult),
             _ => rawResult,
         };
     }
@@ -69,6 +72,111 @@ public class ToolResultCompressor : IToolResultCompressor
 
             var slim = new { details.Name, details.Price, details.UnitSize, details.Url };
             return JsonSerializer.Serialize(slim, WriteOptions);
+        }
+        catch (JsonException)
+        {
+            return rawResult;
+        }
+    }
+
+    private static string CompressCartContents(string rawResult)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(rawResult))
+            {
+                return rawResult;
+            }
+
+            if (rawResult.StartsWith("[", StringComparison.Ordinal))
+            {
+                var items = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(rawResult, ReadOptions);
+                if (items is null)
+                {
+                    return rawResult;
+                }
+
+                var slim = items
+                    .Select(item => new
+                    {
+                        name = item.TryGetValue("name", out var name) ? name?.ToString() : null,
+                        qty = item.TryGetValue("qty", out var qty) ? qty?.ToString() : null,
+                        price = item.TryGetValue("price", out var price) ? price?.ToString() : null,
+                    })
+                    .ToList();
+
+                return JsonSerializer.Serialize(slim, WriteOptions);
+            }
+
+            return rawResult;
+        }
+        catch (JsonException)
+        {
+            return rawResult;
+        }
+    }
+
+    private static string CompressAddToCart(string rawResult)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(rawResult))
+            {
+                return rawResult;
+            }
+
+            if (rawResult.StartsWith("{", StringComparison.Ordinal))
+            {
+                var result = JsonSerializer.Deserialize<Dictionary<string, object>>(rawResult, ReadOptions);
+                if (result is null)
+                {
+                    return rawResult;
+                }
+
+                var slim = new
+                {
+                    success = result.TryGetValue("success", out var success) ? success?.ToString() : null,
+                    message = result.TryGetValue("message", out var message) ? message?.ToString() : null,
+                };
+
+                return JsonSerializer.Serialize(slim, WriteOptions);
+            }
+
+            return rawResult;
+        }
+        catch (JsonException)
+        {
+            return rawResult;
+        }
+    }
+
+    private static string CompressRemoveFromCart(string rawResult)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(rawResult))
+            {
+                return rawResult;
+            }
+
+            if (rawResult.StartsWith("{", StringComparison.Ordinal))
+            {
+                var result = JsonSerializer.Deserialize<Dictionary<string, object>>(rawResult, ReadOptions);
+                if (result is null)
+                {
+                    return rawResult;
+                }
+
+                var slim = new
+                {
+                    success = result.TryGetValue("success", out var success) ? success?.ToString() : null,
+                    message = result.TryGetValue("message", out var message) ? message?.ToString() : null,
+                };
+
+                return JsonSerializer.Serialize(slim, WriteOptions);
+            }
+
+            return rawResult;
         }
         catch (JsonException)
         {

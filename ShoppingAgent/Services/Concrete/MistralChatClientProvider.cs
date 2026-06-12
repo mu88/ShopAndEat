@@ -19,6 +19,7 @@ public sealed class MistralChatClientProvider : IMistralChatClientProvider, IDis
     private readonly ILogger<MistralChatClientProvider> _logger;
     private readonly LlmClientOptions _llmOptions;
     private IChatClient _cachedClient;
+    private IChatClient _cachedFallbackClient;
 
     public MistralChatClientProvider(HttpClient http, ILogger<MistralChatClientProvider> logger, IOptions<LlmClientOptions> llmOptions)
     {
@@ -44,11 +45,31 @@ public sealed class MistralChatClientProvider : IMistralChatClientProvider, IDis
         return Task.FromResult(_cachedClient);
     }
 
+    public Task<IChatClient> GetFallbackChatClientAsync()
+    {
+        if (_cachedFallbackClient is not null)
+        {
+            return Task.FromResult(_cachedFallbackClient);
+        }
+
+        ServiceLogMessages.CreatingChatClient(_logger, _llmOptions.FallbackModel);
+        var options = new OpenAIClientOptions { Endpoint = new Uri(_llmOptions.Endpoint) };
+        var client = new OpenAIClient(new ApiKeyCredential(_llmOptions.ApiKey), options);
+#pragma warning disable IDISP003 // _cachedFallbackClient is null at this point (early return above)
+        _cachedFallbackClient = client.GetChatClient(_llmOptions.FallbackModel).AsIChatClient();
+#pragma warning restore IDISP003
+
+        return Task.FromResult(_cachedFallbackClient);
+    }
+
     public void InvalidateClient()
     {
         var wasInitialized = _cachedClient is not null;
         (_cachedClient as IDisposable)?.Dispose();
         _cachedClient = null;
+
+        (_cachedFallbackClient as IDisposable)?.Dispose();
+        _cachedFallbackClient = null;
 
         if (wasInitialized)
         {
@@ -76,5 +97,8 @@ public sealed class MistralChatClientProvider : IMistralChatClientProvider, IDis
     {
         (_cachedClient as IDisposable)?.Dispose();
         _cachedClient = null;
+
+        (_cachedFallbackClient as IDisposable)?.Dispose();
+        _cachedFallbackClient = null;
     }
 }

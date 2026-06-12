@@ -53,6 +53,51 @@ public class ChatClientProviderTests
         first.Should().NotBeSameAs(second);
     }
 
+    [Test]
+    public async Task GetFallbackChatClientAsync_ReturnsFallbackClient_WhenApiKeyConfigured()
+    {
+        // Arrange
+        var testee = CreateTestee();
+
+        // Act
+        var client = await testee.GetFallbackChatClientAsync();
+
+        // Assert
+        client.Should().NotBeNull();
+    }
+
+    [Test]
+    public async Task GetFallbackChatClientAsync_ReturnsCachedInstance_OnSecondCall()
+    {
+        // Arrange
+        var testee = CreateTestee();
+
+        // Act
+        var first = await testee.GetFallbackChatClientAsync();
+        var second = await testee.GetFallbackChatClientAsync();
+
+        // Assert
+        first.Should().BeSameAs(second);
+    }
+
+    [Test]
+    public async Task InvalidateClient_ClearsPrimaryAndFallbackCaches()
+    {
+        // Arrange
+        var testee = CreateTestee();
+        var primaryFirst = await testee.GetChatClientAsync();
+        var fallbackFirst = await testee.GetFallbackChatClientAsync();
+
+        // Act
+        testee.InvalidateClient();
+        var primarySecond = await testee.GetChatClientAsync();
+        var fallbackSecond = await testee.GetFallbackChatClientAsync();
+
+        // Assert
+        primaryFirst.Should().NotBeSameAs(primarySecond);
+        fallbackFirst.Should().NotBeSameAs(fallbackSecond);
+    }
+
     private static MistralChatClientProvider CreateTestee() =>
         new(new HttpClient(),
             NullLogger<MistralChatClientProvider>.Instance,

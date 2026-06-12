@@ -41,6 +41,7 @@ public static class ShoppingAgentExtensions
         services.AddScoped<IToolCallDispatcher, ToolCallDispatcher>();
         services.AddScoped<IToolResultRenderer, HtmlToolResultRenderer>();
         services.AddSingleton<IToolResultCompressor, ToolResultCompressor>();
+        services.AddSingleton<ILlmRetryPolicyFactory, LlmRetryPolicyFactory>();
         services.AddScoped<IConversationManager, ConversationManager>();
         services.AddScoped<IShopSessionManager, ShopSessionManager>();
         services.AddScoped<IAgentService, AgentService>();

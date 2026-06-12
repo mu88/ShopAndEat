@@ -32,6 +32,12 @@ public sealed class ShoppingAgentMetrics
             "shopping_agent.tool.execution_time_ms",
             unit: "ms",
             description: "Tool execution time in milliseconds");
+        RetriesTotal = meter.CreateCounter<int>(
+            "shopping_agent.llm.retries_total",
+            description: "Total number of LLM retries due to rate limiting");
+        ModelFallbacksTotal = meter.CreateCounter<int>(
+            "shopping_agent.llm.model_fallbacks_total",
+            description: "Total number of model fallback attempts");
     }
 
     public Counter<int> SessionsCreated { get; }
@@ -47,4 +53,8 @@ public sealed class ShoppingAgentMetrics
     public Histogram<double> LlmResponseTimeMs { get; }
 
     public Histogram<double> ToolExecutionTimeMs { get; }
+
+    public Counter<int> RetriesTotal { get; }
+
+    public Counter<int> ModelFallbacksTotal { get; }
 }

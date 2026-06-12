@@ -559,6 +559,7 @@ public class AgentServiceTests
 
         var chatClientProviderMock = Substitute.For<IMistralChatClientProvider>();
         chatClientProviderMock.GetChatClientAsync().Returns(Task.FromResult(chatClient));
+        chatClientProviderMock.GetFallbackChatClientAsync().Returns(Task.FromResult(chatClient));
 
         var localizerMock = Substitute.For<IStringLocalizer<Messages>>();
         localizerMock[Arg.Any<string>()].Returns(call =>
@@ -582,13 +583,28 @@ public class AgentServiceTests
         meterFactory.Create(Arg.Any<MeterOptions>()).Returns(callInfo => new Meter(callInfo.Arg<MeterOptions>()));
         var metrics = new ShoppingAgentMetrics(meterFactory);
 
+        var llmOptions = Options.Create(new LlmClientOptions { ApiKey = "test-key" });
+        var agentOptions = Options.Create(new AgentOptions());
+
         var systemPromptBuilderInstance = systemPromptBuilder ?? new SystemPromptBuilder(preferencesMock, sessionMock, localizerMock);
         var toolDefinitionProviderInstance = toolDefinitionProvider ?? new ToolDefinitionProvider();
         var workflowStateMock = Substitute.For<IShoppingWorkflowState>();
         var toolCallDispatcher = new ToolCallDispatcher(factoryMock, preferencesMock, Substitute.For<IShoppingListVerifier>(), localizerMock, workflowStateMock);
-        var conversationManagerInstance = conversationManager ?? new ConversationManager(toolCallDispatcher, new HtmlToolResultRenderer(localizerMock), new ToolResultCompressor(), localizerMock, NullLogger<ConversationManager>.Instance, metrics, Options.Create(new AgentOptions()), Options.Create(new LlmClientOptions()));
+        var conversationManagerInstance = conversationManager ?? new ConversationManager(toolCallDispatcher, new HtmlToolResultRenderer(localizerMock), new ToolResultCompressor(), localizerMock, NullLogger<ConversationManager>.Instance, metrics, agentOptions, llmOptions);
         var shopSessionManager = new ShopSessionManager(factoryMock, NullLogger<ShopSessionManager>.Instance);
+        var retryPolicyFactory = new LlmRetryPolicyFactory(llmOptions, metrics, NullLogger<LlmRetryPolicyFactory>.Instance);
 
-        return new AgentService(chatClientProviderMock, systemPromptBuilderInstance, toolDefinitionProviderInstance, conversationManagerInstance, shopSessionManager, metrics, NullLogger<AgentService>.Instance);
+        return new AgentService(
+            chatClientProviderMock,
+            systemPromptBuilderInstance,
+            toolDefinitionProviderInstance,
+            conversationManagerInstance,
+            shopSessionManager,
+            retryPolicyFactory,
+            llmOptions,
+            agentOptions,
+            metrics,
+            NullLogger<AgentService>.Instance,
+            NullLogger<ResilientChatClient>.Instance);
     }
 }

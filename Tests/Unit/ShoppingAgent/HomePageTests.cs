@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using NUnit.Framework;
@@ -85,6 +86,11 @@ public class HomePageTests
         ctx.Services.AddSingleton(Options.Create(new LlmClientOptions { ApiKey = "test-key" }));
         ctx.Services.AddSingleton(Options.Create(new AgentOptions()));
         ctx.Services.AddSingleton(Options.Create(new ExtensionOptions()));
+        ctx.Services.AddSingleton<ILlmRetryPolicyFactory>(serviceProvider =>
+            new LlmRetryPolicyFactory(
+                serviceProvider.GetRequiredService<IOptions<LlmClientOptions>>(),
+                serviceProvider.GetRequiredService<ShoppingAgentMetrics>(),
+                NullLogger<LlmRetryPolicyFactory>.Instance));
         ctx.Services.AddSingleton<ISystemPromptBuilder, SystemPromptBuilder>();
         ctx.Services.AddSingleton<IToolDefinitionProvider, ToolDefinitionProvider>();
         ctx.Services.AddSingleton<IShoppingListVerifier, ShoppingListVerifier>();
