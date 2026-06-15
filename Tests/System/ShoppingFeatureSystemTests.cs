@@ -25,7 +25,7 @@ public class ShoppingFeatureSystemTests
     {
         _cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(5));
         _cancellationToken = _cancellationTokenSource.Token;
-        _dockerClient = new DockerClientConfiguration().CreateClient();
+        _dockerClient = new DockerClientBuilder().Build();
 
         var containerImageTag = DockerTestInfrastructure.GenerateContainerImageTag();
         await DockerTestInfrastructure.BuildDockerImageOfAppAsync(containerImageTag, _cancellationToken);
