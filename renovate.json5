@@ -10,6 +10,29 @@
         "mcr.microsoft.com/dotnet/aspire-dashboard"
       ],
       "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "Temporarily keep SQLitePCLRaw pin updates immediate while GHSA-2m69-gcr7-jv3q mitigation is active",
+      "matchPackageNames": [
+        "SQLitePCLRaw.bundle_e_sqlite3",
+        "SQLitePCLRaw.core"
+      ],
+      "minimumReleaseAge": "0 minutes",
+      "schedule": [
+        "at any time"
+      ],
+      "automergeSchedule": [
+        "at any time"
+      ]
+    },
+    {
+      "description": "Flag Microsoft.EntityFrameworkCore.Sqlite updates to review and remove temporary SQLite pins",
+      "matchPackageNames": [
+        "Microsoft.EntityFrameworkCore.Sqlite"
+      ],
+      "addLabels": [
+        "remove-temp-pin"
+      ]
     }
   ]
 }
