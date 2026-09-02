@@ -28,8 +28,8 @@ internal static class DockerTestInfrastructure
                 "/p:DoNotApplyGitHubScope=true"
             ])
             .ExecuteBufferedAsync(cancellationToken);
-        buildResult.IsSuccess.Should().BeTrue();
         Console.WriteLine(buildResult.StandardOutput);
+        buildResult.IsSuccess.Should().BeTrue();
     }
 
     internal static async Task<IContainer> StartAppInContainersAsync(string containerImageTag, CancellationToken cancellationToken)
@@ -50,7 +50,7 @@ internal static class DockerTestInfrastructure
     internal static Uri GetAppBaseAddress(IContainer container) => new($"http://{container.Hostname}:{container.GetMappedPublicPort(8080)}/shopAndEat");
 
     [SuppressMessage("Design", "MA0076:Do not use implicit culture-sensitive ToString in interpolated strings", Justification = "Okay for me")]
-    internal static string GenerateContainerImageTag() => $"system-test-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+    internal static string GenerateContainerImageTag() => $"0.0.0-system-test-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
 
     private static IContainer BuildAppContainer(INetwork network, string containerImageTag)
         => new ContainerBuilder($"shopandeat:{containerImageTag}-chiseled")
