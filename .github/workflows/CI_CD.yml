@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Enforce temporary package pins
-        uses: mu88/common/.github/actions/check-temporary-package-pins@10f96e34f55796997ce898228c5a4d41b5d3db5e
+        uses: mu88/common/.github/actions/check-temporary-package-pins@10f96e34f55796997ce898228c5a4d41b5d3db5e # main
         with:
           solution-path: ShopAndEat.slnx
 
@@ -31,7 +31,7 @@ jobs:
 
     needs: temporary_security_pin_guard
 
-    uses: mu88/common/.github/workflows/ci-cd.yml@c3151abbbc54339ed387ea16ba3eaaddfa0246e1
+    uses: mu88/common/.github/workflows/ci-cd.yml@c3151abbbc54339ed387ea16ba3eaaddfa0246e1 # main
     with:
       docker-attest-provenance-and-sbom: true
       docker-publish-project: ShopAndEat/ShopAndEat.csproj
