@@ -11,7 +11,7 @@ window.extensionBridge = {
 
         // Listen for messages from the extension's content script
         window.addEventListener('message', (event) => {
-            if (event.source !== window) return;
+            if (event.source !== window || event.origin !== window.location.origin) return;
 
             if (event.data?.type === 'SHOP_TOOL_RESULT') {
                 dotNetRef.invokeMethodAsync('OnToolResult', JSON.stringify(event.data.result));
@@ -27,7 +27,7 @@ window.extensionBridge = {
         });
 
         // Announce that the WASM app is ready
-        window.postMessage({ type: 'SHOPPING_AGENT_READY' }, '*');
+        window.postMessage({ type: 'SHOPPING_AGENT_READY' }, window.location.origin);
         console.log('[ShoppingAgent] Extension bridge initialized');
     },
 
@@ -35,7 +35,7 @@ window.extensionBridge = {
         window.postMessage({
             type: 'SHOP_TOOL_REQUEST',
             request: JSON.parse(requestJson)
-        }, '*');
+        }, window.location.origin);
     },
 
     dispose: function () {
