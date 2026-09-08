@@ -28,7 +28,7 @@ jobs:
 
     needs: temporary_security_pin_guard
 
-    uses: mu88/common/.github/workflows/ci-cd.yml@b2b64ff794f717b127ca29a51803998e25453854
+    uses: mu88/common/.github/workflows/ci-cd.yml@c3151abbbc54339ed387ea16ba3eaaddfa0246e1
     with:
       docker-attest-provenance-and-sbom: true
       docker-publish-project: ShopAndEat/ShopAndEat.csproj
