@@ -1,10 +1,12 @@
 ﻿using BizLogic;
+using BizLogic.Concrete;
 using DataLayer.EF;
 using DataLayer.EfClasses;
 using DTO.Ingredient;
 using DTO.Meal;
 using DTO.MealType;
 using DTO.Recipe;
+using DTO.Store;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using NSubstitute;
@@ -100,13 +102,58 @@ public class MealServiceTests
             .BeEquivalentTo(new[] { 4.November(2023), 5.November(2023) });
     }
 
+    [Test]
+    public void GetOrderedPurchaseItems_ShouldIgnorePastMeals()
+    {
+        // Arrange
+        using var context = new InMemoryDbContext();
+        var today = new DateTime(2026, 9, 15);
+        var vegetables = new ArticleGroup("Vegetables");
+        var store = new Store("Test Store", new[] { new ShoppingOrder(vegetables, 1) });
+        var unit = new global::DataLayer.EfClasses.Unit("Piece");
+        var pastArticle = new Article { Name = "Past Tomato", ArticleGroup = vegetables };
+        var futureArticle = new Article { Name = "Future Salad", ArticleGroup = vegetables };
+        var mealType = new MealType("Lunch", 1);
+        var pastMeal = new Meal(today.AddDays(-1), mealType, new Recipe("Past Recipe", 1, 1, new[] { new Ingredient(pastArticle, 1, unit) }), 1);
+        var futureMeal = new Meal(today, mealType, new Recipe("Future Recipe", 1, 1, new[] { new Ingredient(futureArticle, 2, unit) }), 1);
+        context.Stores.Add(store);
+        context.Meals.AddRange(pastMeal, futureMeal);
+        context.SaveChanges();
+        var testee = CreateTesteeWithRealPurchaseItemActions(context, new FixedTimeProvider(today));
+
+        // Act
+        var results = testee.GetOrderedPurchaseItems(new ExistingStoreDto(store.StoreId, store.Name)).ToList();
+
+        // Assert
+        results.Should().ContainSingle();
+        results.Single().Article.Name.Should().Be("Future Salad");
+        pastMeal.HasBeenShopped.Should().BeFalse();
+        futureMeal.HasBeenShopped.Should().BeTrue();
+    }
+
     private static MealService CreateTestee(EfCoreContext context)
     {
         var testee = new MealService(Substitute.For<IGeneratePurchaseItemsForRecipesAction>(),
             Substitute.For<IOrderPurchaseItemsByStoreAction>(),
             Substitute.For<IGetRecipesForMealsAction>(),
             context,
-            new SimpleCrudHelper(context));
+            new SimpleCrudHelper(context),
+            TimeProvider.System);
         return testee;
+    }
+
+    private static MealService CreateTesteeWithRealPurchaseItemActions(EfCoreContext context, TimeProvider timeProvider)
+        => new(new GeneratePurchaseItemsForRecipesAction(),
+            new OrderPurchaseItemsByStoreAction(),
+            new GetRecipesForMealsAction(),
+            context,
+            new SimpleCrudHelper(context),
+            timeProvider);
+
+    private sealed class FixedTimeProvider(DateTime today) : TimeProvider
+    {
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
+
+        public override DateTimeOffset GetUtcNow() => new(today, TimeSpan.Zero);
     }
 }

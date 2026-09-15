@@ -12,7 +12,8 @@ public class MealService(
     IOrderPurchaseItemsByStoreAction orderPurchaseItemsByStoreAction,
     IGetRecipesForMealsAction getRecipesForMealsAction,
     EfCoreContext context,
-    SimpleCrudHelper simpleCrudHelper)
+    SimpleCrudHelper simpleCrudHelper,
+    TimeProvider timeProvider)
     : IMealService
 {
     /// <inheritdoc />
@@ -46,7 +47,8 @@ public class MealService(
     /// <inheritdoc />
     public IEnumerable<NewPurchaseItemDto> GetOrderedPurchaseItems(ExistingStoreDto existingStoreDto)
     {
-        var meals = context.Meals.Where(meal => !meal.HasBeenShopped);
+        var today = GetToday();
+        var meals = context.Meals.Where(meal => !meal.HasBeenShopped && meal.Day >= today);
         var recipes = getRecipesForMealsAction.GetRecipesForMeals(meals);
         var store = simpleCrudHelper.Find<Store>(existingStoreDto.StoreId);
 
@@ -83,7 +85,9 @@ public class MealService(
         context.SaveChanges();
     }
 
-    private static bool IsToday(ExistingMealDto meal) => DateOnly.FromDateTime(meal.Day) == DateOnly.FromDateTime(DateTime.Today);
+    private DateTime GetToday() => timeProvider.GetLocalNow().DateTime.Date;
 
-    private static bool IsInFuture(ExistingMealDto meal) => DateOnly.FromDateTime(meal.Day) >= DateOnly.FromDateTime(DateTime.Today);
+    private bool IsToday(ExistingMealDto meal) => DateOnly.FromDateTime(meal.Day) == DateOnly.FromDateTime(GetToday());
+
+    private bool IsInFuture(ExistingMealDto meal) => DateOnly.FromDateTime(meal.Day) >= DateOnly.FromDateTime(GetToday());
 }
