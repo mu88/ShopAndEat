@@ -1,0 +1,37 @@
+{
+  "version": "3.0",
+  "defaultProvider": "jsDelivr",
+  "defaultDestination": "wwwroot",
+  "libraries": [
+    {
+      "library": "bootstrap@4.3.1",
+      "destination": "ShopAndEat/wwwroot/css/bootstrap",
+      "fileMappings": [
+        {
+          "root": "dist/css",
+          "destination": "ShopAndEat/wwwroot/css/bootstrap",
+          "files": [
+            "bootstrap.min.css",
+            "bootstrap.min.css.map"
+          ]
+        }
+      ]
+    },
+    {
+      "library": "open-iconic@1.1.1",
+      "provider": "jsdelivr",
+      "destination": "ShopAndEat/wwwroot/css/open-iconic",
+      "files": [
+        "font/css/open-iconic-bootstrap.min.css",
+        "font/fonts/open-iconic.eot",
+        "font/fonts/open-iconic.otf",
+        "font/fonts/open-iconic.svg",
+        "font/fonts/open-iconic.ttf",
+        "font/fonts/open-iconic.woff",
+        "README.md",
+        "FONT-LICENSE",
+        "ICON-LICENSE"
+      ]
+    }
+  ]
+}

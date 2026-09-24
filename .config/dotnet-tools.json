@@ -29,6 +29,13 @@
         "dotnet-coverage"
       ],
       "rollForward": false
+    },
+    "microsoft.web.librarymanager.cli": {
+      "version": "3.0.114",
+      "commands": [
+        "libman"
+      ],
+      "rollForward": false
     }
   }
 }

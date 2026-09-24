@@ -17,3 +17,7 @@ diff_output.txt
 ShopAndEat.db
 ShopAndEat.db-wal
 ShopAndEat.db-shm
+
+# LibMan-managed client-side libraries (restored via `libman restore` in CI)
+ShopAndEat/wwwroot/css/bootstrap/
+ShopAndEat/wwwroot/css/open-iconic/
