@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using DTO.Meal;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -12,5 +12,6 @@ public class MealsController(IMealService mealService) : ControllerBase
 {
     [HttpGet("mealsForToday")]
     [SuppressMessage("AspNetCoreAnalyzers.Routing", "ASP009:Use kebab-cased urls.", Justification = "Okay for me here, I'm happy")]
-    public Ok<IEnumerable<ExistingMealDto>> GetMealsForToday() => TypedResults.Ok(mealService.GetMealsForToday());
+    public async Task<Ok<IReadOnlyList<ExistingMealDto>>> GetMealsForToday(CancellationToken cancellationToken = default)
+        => TypedResults.Ok(await mealService.GetMealsForTodayAsync(cancellationToken));
 }

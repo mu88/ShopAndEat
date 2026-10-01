@@ -1,18 +1,10 @@
-﻿using DTO.ArticleGroup;
+using DataLayer.EfClasses;
+using DTO.ArticleGroup;
 
 namespace DTO.Article;
 
-public class ExistingArticleDto(
-    int articleId,
-    string name,
-    ExistingArticleGroupDto articleGroup,
-    bool isInventory)
-{
-    public int ArticleId { get; } = articleId;
-
-    public string Name { get; } = name;
-
-    public ExistingArticleGroupDto ArticleGroup { get; } = articleGroup;
-
-    public bool IsInventory { get; } = isInventory;
-}
+public record ExistingArticleDto(
+    ArticleId ArticleId,
+    string Name,
+    ExistingArticleGroupDto ArticleGroup,
+    bool IsInventory);

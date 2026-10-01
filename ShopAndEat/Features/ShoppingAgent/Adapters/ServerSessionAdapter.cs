@@ -52,7 +52,19 @@ public partial class ServerSessionAdapter(
             return;
         }
 
-        var sessionItem = new ShoppingSessionItem(item.OriginalIngredient, typedId, timeProvider.GetUtcNow());
+        // Mirrors SessionsController.AddItem: all DTO fields must be forwarded, since Status/Quantity/
+        // Price/SelectedProduct* are private-set with no business method to update them afterwards —
+        // whatever isn't passed here is permanently stuck at its constructor default. Status itself is
+        // intentionally NOT taken from the DTO: a freshly added item always starts as SessionItemStatus.Added
+        // (the entity's own default), and ShoppingAgent must not take a project reference on DataLayer.
+        var sessionItem = new ShoppingSessionItem(
+            item.OriginalIngredient,
+            typedId,
+            timeProvider.GetUtcNow(),
+            item.SelectedProductName,
+            item.SelectedProductUrl,
+            item.Quantity,
+            item.Price);
         await sessionRepository.AddItemToSessionAsync(sessionItem, cancellationToken);
     }
 
@@ -80,14 +92,14 @@ public partial class ServerSessionAdapter(
         }
 
         var storeDto = new ExistingStoreDto(store.StoreId, store.Name);
-        var purchaseItems = mealService.GetOrderedPurchaseItems(storeDto);
+        var purchaseItems = await mealService.GetOrderedPurchaseItemsAsync(storeDto, cancellationToken);
 
         return purchaseItems.Select(purchaseItem => new IngredientItem
         {
             Text = purchaseItem.ToString(),
-            Article = purchaseItem.Article?.Name ?? string.Empty,
+            Article = purchaseItem.Article.Name,
             Quantity = purchaseItem.Quantity,
-            Unit = purchaseItem.Unit?.Name ?? string.Empty,
+            Unit = purchaseItem.Unit.Name,
         }).ToList();
     }
 

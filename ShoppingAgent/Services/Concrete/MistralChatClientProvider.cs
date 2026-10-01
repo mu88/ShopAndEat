@@ -18,8 +18,8 @@ public sealed class MistralChatClientProvider : IMistralChatClientProvider, IDis
     private readonly HttpClient _http;
     private readonly ILogger<MistralChatClientProvider> _logger;
     private readonly LlmClientOptions _llmOptions;
-    private IChatClient _cachedClient;
-    private IChatClient _cachedFallbackClient;
+    private IChatClient? _cachedClient;
+    private IChatClient? _cachedFallbackClient;
 
     public MistralChatClientProvider(HttpClient http, ILogger<MistralChatClientProvider> logger, IOptions<LlmClientOptions> llmOptions)
     {

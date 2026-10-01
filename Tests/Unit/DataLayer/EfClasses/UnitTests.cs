@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace Tests.Unit.DataLayer.EfClasses;
@@ -18,5 +18,15 @@ public class UnitTests
 
         // Assert
         testee.Name.Should().Be(name);
+    }
+
+    [Test]
+    public void DefaultConstructor_SetsNameToEmptyString()
+    {
+        // Act
+        var testee = new global::DataLayer.EfClasses.Unit();
+
+        // Assert
+        testee.Name.Should().Be(string.Empty);
     }
 }

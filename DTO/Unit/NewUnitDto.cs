@@ -1,6 +1,3 @@
-﻿namespace DTO.Unit;
+namespace DTO.Unit;
 
-public class NewUnitDto(string name)
-{
-    public string Name { get; } = name;
-}
+public record NewUnitDto(string Name);

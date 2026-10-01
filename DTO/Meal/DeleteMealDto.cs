@@ -1,6 +1,5 @@
-﻿namespace DTO.Meal;
+using DataLayer.EfClasses;
 
-public class DeleteMealDto(int mealId)
-{
-    public int MealId { get; } = mealId;
-}
+namespace DTO.Meal;
+
+public record DeleteMealDto(MealId MealId);

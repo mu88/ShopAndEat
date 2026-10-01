@@ -1,12 +1,12 @@
-﻿using DTO.ArticleGroup;
+using DTO.ArticleGroup;
 
 namespace ServiceLayer;
 
 public interface IArticleGroupService
 {
-    ExistingArticleGroupDto CreateArticleGroup(NewArticleGroupDto newArticleGroupDto);
+    Task<ExistingArticleGroupDto> CreateArticleGroupAsync(NewArticleGroupDto newArticleGroupDto, CancellationToken cancellationToken = default);
 
-    void DeleteArticleGroup(DeleteArticleGroupDto deleteArticleGroupDto);
+    Task DeleteArticleGroupAsync(DeleteArticleGroupDto deleteArticleGroupDto, CancellationToken cancellationToken = default);
 
-    IEnumerable<ExistingArticleGroupDto> GetAllArticleGroups();
+    Task<IReadOnlyList<ExistingArticleGroupDto>> GetAllArticleGroupsAsync(CancellationToken cancellationToken = default);
 }

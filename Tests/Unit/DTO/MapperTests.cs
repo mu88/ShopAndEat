@@ -1,10 +1,13 @@
+using DataLayer.EfClasses;
 using DTO.Article;
 using DTO.ArticleGroup;
 using DTO.Ingredient;
 using DTO.Meal;
 using DTO.MealType;
+using DTO.OnlineArticleMapping;
 using DTO.PurchaseItem;
 using DTO.Recipe;
+using DTO.ShoppingPreference;
 using DTO.ShoppingSession;
 using DTO.Store;
 using DTO.Unit;
@@ -62,7 +65,7 @@ public class MapperTests
     public void ArticleGroupMapper_ToEntity_MapsExistingDto()
     {
         // Arrange
-        var dto = new ExistingArticleGroupDto(5, "Vegetables");
+        var dto = new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(5), "Vegetables");
 
         // Act
         var entity = dto.ToEntity();
@@ -104,7 +107,7 @@ public class MapperTests
     public void UnitMapper_ToEntity_MapsExistingDto()
     {
         // Arrange
-        var dto = new ExistingUnitDto(6, "Piece");
+        var dto = new ExistingUnitDto(new global::DataLayer.EfClasses.UnitId(6), "Piece");
 
         // Act
         var entity = dto.ToEntity();
@@ -163,7 +166,7 @@ public class MapperTests
         // Arrange
         using var context = new InMemoryDbContext();
         var articleGroup = context.ArticleGroups.Add(new EfArticleGroup("Vegetables")).Entity;
-        var entity = context.Articles.Add(new EfArticle { Name = "Tomato", ArticleGroup = articleGroup, IsInventory = true }).Entity;
+        var entity = context.Articles.Add(new EfArticle("Tomato", articleGroup, isInventory: true)).Entity;
         context.SaveChanges();
 
         // Act
@@ -181,7 +184,7 @@ public class MapperTests
     public void ArticleMapper_ToEntity_MapsNewDto()
     {
         // Arrange
-        var dto = new NewArticleDto("Tomato", new ExistingArticleGroupDto(8, "Vegetables"), true);
+        var dto = new NewArticleDto("Tomato", new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(8), "Vegetables"), true);
 
         // Act
         var entity = dto.ToEntity();
@@ -196,7 +199,7 @@ public class MapperTests
     public void ArticleMapper_ToEntity_MapsExistingDto()
     {
         // Arrange
-        var dto = new ExistingArticleDto(9, "Tomato", new ExistingArticleGroupDto(8, "Vegetables"), true);
+        var dto = new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(9), "Tomato", new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(8), "Vegetables"), true);
 
         // Act
         var entity = dto.ToEntity();
@@ -213,7 +216,7 @@ public class MapperTests
         // Arrange
         using var context = new InMemoryDbContext();
         var articleGroup = context.ArticleGroups.Add(new EfArticleGroup("Vegetables")).Entity;
-        var article = context.Articles.Add(new EfArticle { Name = "Tomato", ArticleGroup = articleGroup, IsInventory = false }).Entity;
+        var article = context.Articles.Add(new EfArticle("Tomato", articleGroup, isInventory: false)).Entity;
         var unit = context.Units.Add(new EfUnit("Piece")).Entity;
         var entity = context.Ingredients.Add(new EfIngredient(article, 2.5, unit)).Entity;
         context.SaveChanges();
@@ -234,9 +237,9 @@ public class MapperTests
     public void IngredientMapper_ToEntity_MapsNewDto()
     {
         // Arrange
-        var dto = new NewIngredientDto(new ExistingArticleDto(10, "Tomato", new ExistingArticleGroupDto(8, "Vegetables"), false),
+        var dto = new NewIngredientDto(new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(10), "Tomato", new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(8), "Vegetables"), false),
             2.5,
-            new ExistingUnitDto(11, "Piece"));
+            new ExistingUnitDto(new global::DataLayer.EfClasses.UnitId(11), "Piece"));
 
         // Act
         var entity = dto.ToEntity();
@@ -251,10 +254,7 @@ public class MapperTests
     public void IngredientMapper_ToEntity_MapsExistingDto()
     {
         // Arrange
-        var dto = new ExistingIngredientDto(new ExistingArticleDto(10, "Tomato", new ExistingArticleGroupDto(8, "Vegetables"), false),
-            2.5,
-            new ExistingUnitDto(11, "Piece"),
-            12);
+        var dto = new ExistingIngredientDto(new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(10), "Tomato", new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(8), "Vegetables"), false), 2.5, new ExistingUnitDto(new global::DataLayer.EfClasses.UnitId(11), "Piece"), 12);
 
         // Act
         var entity = dto.ToEntity();
@@ -271,7 +271,7 @@ public class MapperTests
         // Arrange
         using var context = new InMemoryDbContext();
         var articleGroup = context.ArticleGroups.Add(new EfArticleGroup("Vegetables")).Entity;
-        var article = context.Articles.Add(new EfArticle { Name = "Tomato", ArticleGroup = articleGroup, IsInventory = false }).Entity;
+        var article = context.Articles.Add(new EfArticle("Tomato", articleGroup, isInventory: false)).Entity;
         var unit = context.Units.Add(new EfUnit("Piece")).Entity;
         var entity = context.PurchaseItems.Add(new EfPurchaseItem(article, 4, unit)).Entity;
         context.SaveChanges();
@@ -292,7 +292,7 @@ public class MapperTests
         // Arrange
         using var context = new InMemoryDbContext();
         var articleGroup = context.ArticleGroups.Add(new EfArticleGroup("Vegetables")).Entity;
-        var article = context.Articles.Add(new EfArticle { Name = "Tomato", ArticleGroup = articleGroup, IsInventory = false }).Entity;
+        var article = context.Articles.Add(new EfArticle("Tomato", articleGroup, isInventory: false)).Entity;
         var unit = context.Units.Add(new EfUnit("Piece")).Entity;
         var entity = context.PurchaseItems.Add(new EfPurchaseItem(article, 4, unit)).Entity;
         context.SaveChanges();
@@ -310,8 +310,8 @@ public class MapperTests
     public void PurchaseItemMapper_ToEntity_MapsNewDto()
     {
         // Arrange
-        var dto = new NewPurchaseItemDto(new ExistingArticleDto(10, "Tomato", new ExistingArticleGroupDto(8, "Vegetables"), false),
-            new ExistingUnitDto(11, "Piece"),
+        var dto = new NewPurchaseItemDto(new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(10), "Tomato", new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(8), "Vegetables"), false),
+            new ExistingUnitDto(new global::DataLayer.EfClasses.UnitId(11), "Piece"),
             4);
 
         // Act
@@ -327,10 +327,7 @@ public class MapperTests
     public void PurchaseItemMapper_ToEntity_MapsExistingDto()
     {
         // Arrange
-        var dto = new ExistingPurchaseItemDto(new ExistingArticleDto(10, "Tomato", new ExistingArticleGroupDto(8, "Vegetables"), false),
-            new ExistingUnitDto(11, "Piece"),
-            4,
-            13);
+        var dto = new ExistingPurchaseItemDto(new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(10), "Tomato", new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(8), "Vegetables"), false), new ExistingUnitDto(new global::DataLayer.EfClasses.UnitId(11), "Piece"), 4, 13);
 
         // Act
         var entity = dto.ToEntity();
@@ -342,12 +339,113 @@ public class MapperTests
     }
 
     [Test]
+    public void NewPurchaseItemDto_ToString_UsesQuantityAndArticleName_WhenUnitIsPiece()
+    {
+        // Arrange
+        var dto = new NewPurchaseItemDto(new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(10), "Tomato", new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(8), "Vegetables"), false),
+            new ExistingUnitDto(new global::DataLayer.EfClasses.UnitId(11), "piece"),
+            4);
+
+        // Act
+        var result = dto.ToString();
+
+        // Assert
+        result.Should().Be("4 Tomato");
+    }
+
+    [Test]
+    public void NewPurchaseItemDto_ToString_IncludesUnitName_WhenUnitIsNotPiece()
+    {
+        // Arrange
+        var dto = new NewPurchaseItemDto(new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(10), "Milk", new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(8), "Diary"), false),
+            new ExistingUnitDto(new global::DataLayer.EfClasses.UnitId(11), "Liter"),
+            2);
+
+        // Act
+        var result = dto.ToString();
+
+        // Assert
+        result.Should().Be("2 Liter Milk");
+    }
+
+    [Test]
+    public void ShoppingPreferenceMapper_ToPreferenceResponse_MapsNonNullValue()
+    {
+        // Arrange
+        var preference = new global::DataLayer.EfClasses.ShoppingPreference("global", "favoriteStore", global::DataLayer.EfClasses.PreferenceSource.UserConfirmed, "coop") { Value = "Coop", UsageCount = 3 };
+
+        // Act
+        var response = preference.ToPreferenceResponse();
+
+        // Assert
+        response.Value.Should().Be("Coop");
+    }
+
+    [Test]
+    public void ShoppingPreferenceMapper_ToPreferenceResponse_MapsNullValueToEmptyString()
+    {
+        // Arrange
+        var preference = new global::DataLayer.EfClasses.ShoppingPreference("global", "favoriteStore", global::DataLayer.EfClasses.PreferenceSource.UserConfirmed, storeKey: null) { Value = null };
+
+        // Act
+        var response = preference.ToPreferenceResponse();
+
+        // Assert
+        response.Value.Should().BeEmpty();
+    }
+
+    [Test]
+    public void OnlineArticleMappingMapper_ToEntity_MapsOptionalFieldsWhenPresent()
+    {
+        // Arrange
+        var dto = new NewOnlineArticleMappingDto
+        {
+            ArticleName = "Tomato",
+            StoreProductCode = "12345",
+            StoreProductName = "Fresh Tomato",
+            StoreProductPrice = 2.5m,
+            Confidence = 90,
+            MatchMethod = MatchMethod.UserChosen,
+            QuantityPerUnit = 6,
+        };
+
+        // Act
+        var entity = dto.ToEntity("coop");
+
+        // Assert
+        entity.StoreProductCode.Should().Be("12345");
+        entity.StoreProductName.Should().Be("Fresh Tomato");
+        entity.MatchMethod.Should().Be(MatchMethod.UserChosen);
+    }
+
+    [Test]
+    public void OnlineArticleMappingMapper_ToEntity_MapsDefaultsWhenOptionalFieldsAreNull()
+    {
+        // Arrange
+        var dto = new NewOnlineArticleMappingDto
+        {
+            ArticleName = "Tomato",
+            StoreProductCode = null,
+            StoreProductName = null,
+            MatchMethod = null,
+        };
+
+        // Act
+        var entity = dto.ToEntity("coop");
+
+        // Assert
+        entity.StoreProductCode.Should().Be(string.Empty);
+        entity.StoreProductName.Should().Be(string.Empty);
+        entity.MatchMethod.Should().Be(default(MatchMethod));
+    }
+
+    [Test]
     public void RecipeMapper_ToDto_MapsNestedIngredients()
     {
         // Arrange
         using var context = new InMemoryDbContext();
         var articleGroup = context.ArticleGroups.Add(new EfArticleGroup("Vegetables")).Entity;
-        var article = context.Articles.Add(new EfArticle { Name = "Tomato", ArticleGroup = articleGroup, IsInventory = false }).Entity;
+        var article = context.Articles.Add(new EfArticle("Tomato", articleGroup, isInventory: false)).Entity;
         var unit = context.Units.Add(new EfUnit("Piece")).Entity;
         var ingredient = context.Ingredients.Add(new EfIngredient(article, 2, unit)).Entity;
         var ingredients = new List<EfIngredient> { ingredient };
@@ -375,7 +473,7 @@ public class MapperTests
         var ingredients = new List<EfIngredient>();
         var recipe = context.Recipes.Add(new EfRecipe("Soup", 2, 4, ingredients)).Entity;
         var entity = context.Meals.Add(new EfMeal(DateTime.Today, mealType, recipe, 4)).Entity;
-        entity.HasBeenShopped = true;
+        entity.MarkAsShopped();
         context.SaveChanges();
 
         // Act
@@ -440,14 +538,15 @@ public class MapperTests
         context.ShoppingSessions.Add(session);
         context.SaveChanges();
 
-        var item = new EfShoppingSessionItem("500g Tofu", session.ShoppingSessionId, now)
-        {
-            SelectedProductName = "Bio Tofu Natur",
-            SelectedProductUrl = "https://coop.ch/p/123",
-            Quantity = 2,
-            Price = "2.95",
-            Status = global::DataLayer.EfClasses.SessionItemStatus.Added,
-        };
+        var item = new EfShoppingSessionItem(
+            "500g Tofu",
+            session.ShoppingSessionId,
+            now,
+            "Bio Tofu Natur",
+            "https://coop.ch/p/123",
+            2,
+            "2.95",
+            global::DataLayer.EfClasses.SessionItemStatus.Added);
         context.ShoppingSessionItems.Add(item);
         context.SaveChanges();
 
@@ -474,20 +573,22 @@ public class MapperTests
         context.ShoppingSessions.Add(session);
         context.SaveChanges();
 
-        var item1 = new EfShoppingSessionItem("500g Tofu", session.ShoppingSessionId, now)
-        {
-            SelectedProductName = "Bio Tofu",
-            SelectedProductUrl = "https://coop.ch/p/1",
-            Quantity = 1,
-            Price = "2.95",
-        };
-        var item2 = new EfShoppingSessionItem("1kg Reis", session.ShoppingSessionId, now)
-        {
-            SelectedProductName = "Jasmin Reis",
-            SelectedProductUrl = "https://coop.ch/p/2",
-            Quantity = 1,
-            Price = "4.50",
-        };
+        var item1 = new EfShoppingSessionItem(
+            "500g Tofu",
+            session.ShoppingSessionId,
+            now,
+            "Bio Tofu",
+            "https://coop.ch/p/1",
+            1,
+            "2.95");
+        var item2 = new EfShoppingSessionItem(
+            "1kg Reis",
+            session.ShoppingSessionId,
+            now,
+            "Jasmin Reis",
+            "https://coop.ch/p/2",
+            1,
+            "4.50");
         session.Items.Add(item1);
         session.Items.Add(item2);
         context.SaveChanges();

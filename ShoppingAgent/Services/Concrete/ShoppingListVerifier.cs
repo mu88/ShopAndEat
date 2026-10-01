@@ -24,6 +24,8 @@ public partial class ShoppingListVerifier : IShoppingListVerifier
         foreach (var line in shoppingList.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries))
         {
             var trimmed = line.Trim();
+
+            // Stryker disable once all: the empty-keyword guard below skips the same input, so removing this whole block does not change observable behaviour.
             if (string.IsNullOrEmpty(trimmed))
             {
                 continue;
@@ -56,7 +58,7 @@ public partial class ShoppingListVerifier : IShoppingListVerifier
     }
 
     // Matches leading patterns like "3 Packungen", "75 Gramm", "1 Stück (klein)", "2x", etc.
-    // MA0009 suppressed: [GeneratedRegex] produces source-generated, non-backtracking code that cannot exhibit ReDoS.
+    // MA0009 suppressed: Pattern \d+[\.,]?\d* is optional (the optional units and trailing content never backtrack), so matching always succeeds immediately.
 #pragma warning disable MA0009
     [GeneratedRegex(
         @"^\d+[\.,]?\d*\s*(?:x\s*)?(?:Packung(?:en)?|Stück|Pack|Dosen?|Flaschen?|Glas|Gläser|Gramm|Kilogramm|kg|g|Liter|Milliliter|ml|l|Bund|Blatt|Scheiben?|Portion(?:en)?|St\b)?\.?\s*(?:\([^)]*\))?\s*",

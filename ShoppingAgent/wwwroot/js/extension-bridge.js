@@ -4,13 +4,19 @@
 window.extensionBridge = {
     _dotNetRef: null,
     _initialized: false,
+    _messageListener: null,
 
     initialize: function (dotNetRef) {
         this._dotNetRef = dotNetRef;
         this._initialized = true;
 
-        // Listen for messages from the extension's content script
-        window.addEventListener('message', (event) => {
+        // Remove previous listener if it exists (idempotent: safe to call initialize multiple times)
+        if (this._messageListener !== null) {
+            window.removeEventListener('message', this._messageListener);
+        }
+
+        // Create a new listener that captures the current dotNetRef
+        this._messageListener = (event) => {
             if (event.source !== window || event.origin !== window.location.origin) return;
 
             if (event.data?.type === 'SHOP_TOOL_RESULT') {
@@ -24,7 +30,10 @@ window.extensionBridge = {
             if (event.data?.type === 'SHOP_EXTENSION_DISCONNECTED') {
                 dotNetRef.invokeMethodAsync('OnExtensionDisconnected');
             }
-        });
+        };
+
+        // Listen for messages from the extension's content script
+        window.addEventListener('message', this._messageListener);
 
         // Announce that the WASM app is ready
         window.postMessage({ type: 'SHOPPING_AGENT_READY' }, window.location.origin);
@@ -39,6 +48,12 @@ window.extensionBridge = {
     },
 
     dispose: function () {
+        // Remove the message listener to prevent stale callbacks
+        if (this._messageListener !== null) {
+            window.removeEventListener('message', this._messageListener);
+            this._messageListener = null;
+        }
+
         this._dotNetRef = null;
         this._initialized = false;
     }

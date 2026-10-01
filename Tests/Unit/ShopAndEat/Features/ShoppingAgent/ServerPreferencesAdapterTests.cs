@@ -60,6 +60,7 @@ public class ServerPreferencesAdapterTests
         repo.GetAllPreferencesAsync("article:Tofu", null, default).Returns(
         [
             new ShoppingPreference("article:Tofu", "confirmed_product", PreferenceSource.AgentLearned, null) { Value = "Karma Tofu" },
+            new ShoppingPreference("article:Tofu", "preferred_unit", PreferenceSource.AgentLearned, null) { Value = "piece" },
         ]);
         var testee = CreateTestee(repo);
 
@@ -67,7 +68,7 @@ public class ServerPreferencesAdapterTests
         var result = await testee.GetPreferencesForArticleAsync("Tofu");
 
         // Assert
-        result.Should().HaveCount(1);
+        result.Should().HaveCount(2);
         result[0].Key.Should().Be("confirmed_product");
         await repo.Received(1).GetAllPreferencesAsync("article:Tofu", null, default);
     }

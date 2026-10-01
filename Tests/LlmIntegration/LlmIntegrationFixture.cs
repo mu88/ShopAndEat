@@ -24,8 +24,8 @@ namespace Tests.LlmIntegration;
 public sealed class LlmIntegrationFixture : IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
-    private ScriptedShopToolExecutor _scriptedToolExecutor;
-    private IShoppingWorkflowState _workflowState;
+    private ScriptedShopToolExecutor _scriptedToolExecutor = null!;
+    private IShoppingWorkflowState _workflowState = null!;
 
     public IAgentService AgentService { get; }
 
@@ -84,7 +84,7 @@ public sealed class LlmIntegrationFixture : IDisposable
     private static IConfiguration BuildConfiguration()
     {
         return new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string>
+            .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 { "LlmClient:Endpoint", "https://api.mistral.ai/v1" },
                 { "LlmClient:DefaultModel", "mistral-small-2506" },
@@ -160,7 +160,7 @@ public sealed class ScriptedShopToolExecutor : IShopToolExecutor
     /// <summary>
     /// Record a workflow-level tool call directly (for testing).
     /// </summary>
-    public void RecordWorkflowToolCall(string toolName, IDictionary<string, object> arguments = null)
+    public void RecordWorkflowToolCall(string toolName, IDictionary<string, object>? arguments = null)
     {
         _recordedCalls.Add(new ToolCall { ToolName = toolName, Arguments = arguments ?? new Dictionary<string, object>() });
     }
@@ -218,7 +218,7 @@ public sealed class ScriptedShopToolExecutor : IShopToolExecutor
         return Task.FromResult($"added:{quantity}");
     }
 
-    public Task<string> RemoveFromCartAsync(string productName, string cartEntryUid = null, CancellationToken ct = default)
+    public Task<string> RemoveFromCartAsync(string productName, string? cartEntryUid = null, CancellationToken ct = default)
     {
         _recordedCalls.Add(new ToolCall
         {
@@ -253,7 +253,7 @@ public sealed class ScriptedShopToolExecutor : IShopToolExecutor
 
     public record ToolCall
     {
-        public string ToolName { get; set; }
-        public object Arguments { get; set; }
+        public string ToolName { get; set; } = null!;
+        public object Arguments { get; set; } = null!;
     }
 }

@@ -19,12 +19,19 @@ public class ShoppingSession
 
     public DateTimeOffset StartedAt { get; private set; }
 
-    public DateTimeOffset? CompletedAt { get; set; }
+    public DateTimeOffset? CompletedAt { get; private set; }
 
-    public SessionStatus Status { get; set; } = SessionStatus.InProgress;
+    public SessionStatus Status { get; private set; } = SessionStatus.InProgress;
 
     /// <summary>The original ingredient list provided by the user.</summary>
     public string IngredientList { get; private set; } = string.Empty;
 
     public virtual ICollection<ShoppingSessionItem> Items { get; set; } = new List<ShoppingSessionItem>();
+
+    /// <summary>Marks this session as completed, stamping <see cref="CompletedAt"/> atomically with <see cref="Status"/> so they can never drift out of sync.</summary>
+    public void Complete(DateTimeOffset completedAt)
+    {
+        Status = SessionStatus.Completed;
+        CompletedAt = completedAt;
+    }
 }

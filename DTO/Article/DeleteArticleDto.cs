@@ -1,6 +1,5 @@
-﻿namespace DTO.Article;
+using DataLayer.EfClasses;
 
-public class DeleteArticleDto(in int articleId)
-{
-    public int ArticleId { get; } = articleId;
-}
+namespace DTO.Article;
+
+public record DeleteArticleDto(ArticleId ArticleId);

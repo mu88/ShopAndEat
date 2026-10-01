@@ -1,6 +1,5 @@
-﻿namespace DTO.Unit;
+using DataLayer.EfClasses;
 
-public class DeleteUnitDto(int unitId)
-{
-    public int UnitId { get; } = unitId;
-}
+namespace DTO.Unit;
+
+public record DeleteUnitDto(UnitId UnitId);

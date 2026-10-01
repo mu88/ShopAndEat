@@ -1,4 +1,4 @@
-﻿using DataLayer.EfClasses;
+using DataLayer.EfClasses;
 
 namespace BizDbAccess;
 
@@ -8,7 +8,7 @@ public interface IIngredientDbAccess
 
     void DeleteIngredient(Ingredient ingredient);
 
-    Ingredient GetIngredient(int ingredientId);
+    Task<Ingredient> GetIngredientAsync(int ingredientId, CancellationToken cancellationToken = default);
 
-    IEnumerable<Ingredient> GetIngredients();
+    Task<IEnumerable<Ingredient>> GetIngredientsAsync(CancellationToken cancellationToken = default);
 }

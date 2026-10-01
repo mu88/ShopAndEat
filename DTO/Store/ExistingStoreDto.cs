@@ -1,8 +1,5 @@
-﻿namespace DTO.Store;
+using DataLayer.EfClasses;
 
-public class ExistingStoreDto(int storeId, string name)
-{
-    public int StoreId { get; } = storeId;
+namespace DTO.Store;
 
-    public string Name { get; } = name;
-}
+public record ExistingStoreDto(StoreId StoreId, string Name);

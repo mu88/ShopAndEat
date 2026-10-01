@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Nullable>disable</Nullable>
     <IsPackable>false</IsPackable>
     <NoWarn>$(NoWarn);IDISP001;IDISP004;MA0012;SA1201;SA1202;SA1211;SA1512;SA1515;MA0002;MA0134</NoWarn>
   </PropertyGroup>

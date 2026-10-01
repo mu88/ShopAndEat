@@ -1,13 +1,14 @@
-﻿using JetBrains.Annotations;
+using JetBrains.Annotations;
 
 namespace DataLayer.EfClasses;
 
-public class Unit
+public class Unit : IHasId<UnitId>
 {
     public Unit(string name) => Name = name;
 
     public Unit()
     {
+        Name = string.Empty;
     }
 
     public string Name
@@ -17,7 +18,7 @@ public class Unit
         private set;
     }
 
-    public int UnitId
+    public UnitId UnitId
     {
         get;
         [UsedImplicitly]

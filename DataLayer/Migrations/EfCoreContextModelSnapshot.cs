@@ -16,7 +16,7 @@ namespace DataLayer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true);
@@ -27,13 +27,14 @@ namespace DataLayer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ArticleGroupId")
+                    b.Property<int>("ArticleGroupId")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsInventory")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("ArticleId");
@@ -50,6 +51,7 @@ namespace DataLayer.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("ArticleGroupId");
@@ -63,7 +65,7 @@ namespace DataLayer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ArticleId")
+                    b.Property<int>("ArticleId")
                         .HasColumnType("INTEGER");
 
                     b.Property<double>("Quantity")
@@ -72,7 +74,7 @@ namespace DataLayer.Migrations
                     b.Property<int?>("RecipeId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("UnitId")
+                    b.Property<int>("UnitId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("IngredientId");
@@ -98,13 +100,13 @@ namespace DataLayer.Migrations
                     b.Property<bool>("HasBeenShopped")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("MealTypeId")
+                    b.Property<int>("MealTypeId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("NumberOfPersons")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("RecipeId")
+                    b.Property<int>("RecipeId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("MealId");
@@ -123,6 +125,7 @@ namespace DataLayer.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Order")
@@ -136,6 +139,7 @@ namespace DataLayer.Migrations
             modelBuilder.Entity("DataLayer.EfClasses.OnlineArticleMapping", b =>
                 {
                     b.Property<int>("OnlineArticleMappingId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ArticleName")
@@ -216,7 +220,7 @@ namespace DataLayer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ArticleId")
+                    b.Property<int>("ArticleId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("PurchaseId")
@@ -225,7 +229,7 @@ namespace DataLayer.Migrations
                     b.Property<double>("Quantity")
                         .HasColumnType("REAL");
 
-                    b.Property<int?>("UnitId")
+                    b.Property<int>("UnitId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("PurchaseItemId");
@@ -246,6 +250,7 @@ namespace DataLayer.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("NumberOfDays")
@@ -265,7 +270,7 @@ namespace DataLayer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ArticleGroupId")
+                    b.Property<int>("ArticleGroupId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Order")
@@ -286,6 +291,7 @@ namespace DataLayer.Migrations
             modelBuilder.Entity("DataLayer.EfClasses.ShoppingPreference", b =>
                 {
                     b.Property<int>("ShoppingPreferenceId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Key")
@@ -326,12 +332,14 @@ namespace DataLayer.Migrations
             modelBuilder.Entity("DataLayer.EfClasses.ShoppingSession", b =>
                 {
                     b.Property<int>("ShoppingSessionId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("CompletedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("IngredientList")
+                        .IsRequired()
                         .HasMaxLength(50000)
                         .HasColumnType("TEXT");
 
@@ -354,6 +362,7 @@ namespace DataLayer.Migrations
             modelBuilder.Entity("DataLayer.EfClasses.ShoppingSessionItem", b =>
                 {
                     b.Property<int>("ShoppingSessionItemId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AddedAt")
@@ -366,6 +375,7 @@ namespace DataLayer.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Price")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
@@ -405,6 +415,7 @@ namespace DataLayer.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("StoreId");
@@ -419,6 +430,7 @@ namespace DataLayer.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("UnitId");
@@ -430,7 +442,9 @@ namespace DataLayer.Migrations
                 {
                     b.HasOne("DataLayer.EfClasses.ArticleGroup", "ArticleGroup")
                         .WithMany()
-                        .HasForeignKey("ArticleGroupId");
+                        .HasForeignKey("ArticleGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("ArticleGroup");
                 });
@@ -439,7 +453,9 @@ namespace DataLayer.Migrations
                 {
                     b.HasOne("DataLayer.EfClasses.Article", "Article")
                         .WithMany()
-                        .HasForeignKey("ArticleId");
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("DataLayer.EfClasses.Recipe", null)
                         .WithMany("Ingredients")
@@ -447,7 +463,9 @@ namespace DataLayer.Migrations
 
                     b.HasOne("DataLayer.EfClasses.Unit", "Unit")
                         .WithMany()
-                        .HasForeignKey("UnitId");
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Article");
 
@@ -458,11 +476,15 @@ namespace DataLayer.Migrations
                 {
                     b.HasOne("DataLayer.EfClasses.MealType", "MealType")
                         .WithMany()
-                        .HasForeignKey("MealTypeId");
+                        .HasForeignKey("MealTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("DataLayer.EfClasses.Recipe", "Recipe")
                         .WithMany()
-                        .HasForeignKey("RecipeId");
+                        .HasForeignKey("RecipeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("MealType");
 
@@ -473,7 +495,9 @@ namespace DataLayer.Migrations
                 {
                     b.HasOne("DataLayer.EfClasses.Article", "Article")
                         .WithMany()
-                        .HasForeignKey("ArticleId");
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("DataLayer.EfClasses.Purchase", null)
                         .WithMany("PurchaseItems")
@@ -481,7 +505,9 @@ namespace DataLayer.Migrations
 
                     b.HasOne("DataLayer.EfClasses.Unit", "Unit")
                         .WithMany()
-                        .HasForeignKey("UnitId");
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Article");
 
@@ -492,7 +518,9 @@ namespace DataLayer.Migrations
                 {
                     b.HasOne("DataLayer.EfClasses.ArticleGroup", "ArticleGroup")
                         .WithMany()
-                        .HasForeignKey("ArticleGroupId");
+                        .HasForeignKey("ArticleGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("DataLayer.EfClasses.Store", null)
                         .WithMany("Compartments")

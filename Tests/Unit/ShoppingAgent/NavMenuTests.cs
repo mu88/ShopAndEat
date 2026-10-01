@@ -12,8 +12,8 @@ namespace Tests.Unit.ShoppingAgent;
 [Category("Unit")]
 public class NavMenuTests
 {
-    private BunitContext _ctx;
-    private IStringLocalizer<global::ShopAndEat.Shared.NavMenu> _localizerMock;
+    private BunitContext _ctx = null!;
+    private IStringLocalizer<global::ShopAndEat.Shared.NavMenu> _localizerMock = null!;
 
     [SetUp]
     public void SetUp()

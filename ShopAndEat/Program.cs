@@ -6,11 +6,15 @@ using BizLogic.Concrete;
 using DataLayer.EF;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using mu88.Shared.OpenTelemetry;
 using OpenTelemetry;
 using Scalar.AspNetCore;
 using ServiceLayer;
 using ServiceLayer.Concrete;
+using ServiceLayer.Diagnostics;
+using ShopAndEat;
 using ShopAndEat.Components;
 using ShopAndEat.Features.ShoppingAgent;
 using ShoppingAgent;
@@ -18,12 +22,7 @@ using ShoppingAgent;
 var builder = WebApplication.CreateBuilder(args);
 
 // Load Docker secrets — explicitly map known secret files to config keys.
-// Values are trimmed to avoid trailing newlines.
-var llmApiKeyFile = "/run/secrets/llm_api_key";
-if (File.Exists(llmApiKeyFile))
-{
-    builder.Configuration["LlmClient:ApiKey"] = File.ReadAllText(llmApiKeyFile).Trim();
-}
+DockerSecretsLoader.ApplyLlmApiKeySecret(builder.Configuration, "/run/secrets/llm_api_key");
 
 // Persist Data Protection keys to tmpfs so they survive within a container session but are never written to disk.
 // Keys are lost on container restart — which is acceptable since a restart disconnects all Blazor circuits anyway.
@@ -31,6 +30,8 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo("/home/app/dataprotection-keys"));
 
 builder.Services.ConfigureOpenTelemetry("shopandeat", builder.Configuration);
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddSource(ServiceLayerDiagnostics.ActivitySourceName));
 
 ConfigureShopAndEatServices(builder.Services, builder.Configuration);
 
@@ -92,29 +93,42 @@ void CreateDbIfNotExists(WebApplication webApp)
     try
     {
         var database = services.GetRequiredService<EfCoreContext>().Database;
-        var connectionString = database.GetConnectionString();
-        var databasePath = connectionString?.Replace("Data Source=", string.Empty);
-        var parentDirectoryOfDatabase = Directory.GetParent(databasePath);
-        if (!parentDirectoryOfDatabase.Exists)
+        var databasePath = DatabaseInitializer.GetDatabasePath(database.GetConnectionString());
+        if (databasePath is null)
         {
-            Directory.CreateDirectory(parentDirectoryOfDatabase.FullName);
+            return;
         }
+
+        DatabaseInitializer.EnsureDatabaseDirectoryExists(databasePath);
 
         database.Migrate();
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred migrating the DB");
+        logger.LogCritical(ex, "An error occurred migrating the DB; failing startup fast because this app cannot function correctly against an incompatible schema");
+        throw;
     }
 }
 
 void ConfigureShopAndEatServices(IServiceCollection services, IConfiguration configuration)
 {
-    services.AddSingleton(TimeProvider.System);
+    services.TryAddSingleton(TimeProvider.System);
+    AddDataRepositories(services);
+    AddDomainServices(services);
+    AddDatabaseContext(services, configuration);
+}
+
+void AddDataRepositories(IServiceCollection services)
+{
     services.AddScoped<ISessionRepository, SessionRepository>();
     services.AddScoped<IPreferencesRepository, PreferencesRepository>();
     services.AddScoped<IArticleMappingRepository, ArticleMappingRepository>();
+    services.AddTransient<IArticleDbAccess, ArticleDbAccess>();
+}
+
+void AddDomainServices(IServiceCollection services)
+{
     services.AddTransient<SimpleCrudHelper>();
     services.AddTransient<IMealService, MealService>();
     services.AddTransient<IStoreService, StoreService>();
@@ -124,12 +138,26 @@ void ConfigureShopAndEatServices(IServiceCollection services, IConfiguration con
     services.AddTransient<IArticleService, ArticleService>();
     services.AddTransient<IArticleGroupService, ArticleGroupService>();
     services.AddTransient<IArticleAction, ArticleAction>();
-    services.AddTransient<IArticleDbAccess, ArticleDbAccess>();
     services.AddTransient<IGeneratePurchaseItemsForRecipesAction, GeneratePurchaseItemsForRecipesAction>();
     services.AddTransient<IOrderPurchaseItemsByStoreAction, OrderPurchaseItemsByStoreAction>();
     services.AddTransient<IGetRecipesForMealsAction, GetRecipesForMealsAction>();
+}
 
-    services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies().UseSqlite(configuration.GetConnectionString("SQLite")));
+void AddDatabaseContext(IServiceCollection services, IConfiguration configuration)
+{
+    // ConfigureWarnings: dotnet-ef 10.0.10 produces a non-convergent Sqlite:Autoincrement annotation
+    // diff for the value-converted (strongly-typed) primary keys on every migration scaffold, causing
+    // a false-positive PendingModelChangesWarning even though the checked-in model snapshot is up to
+    // date (verified by re-scaffolding twice in a row: identical diff both times, unrelated to any
+    // actual entity change). Suppressed here instead of chasing further non-convergent migrations.
+    // NonTransactionalMigrationOperationWarning is expected and benign here: SQLite has no native
+    // ALTER COLUMN, so EF Core emulates it via a full table rebuild wrapped in
+    // "PRAGMA foreign_keys = 0/1", which cannot run inside a transaction by design.
+    services.AddDbContext<EfCoreContext>(options => options.UseLazyLoadingProxies()
+                                                            .UseSqlite(configuration.GetConnectionString("SQLite"))
+                                                            .ConfigureWarnings(warnings => warnings
+                                                                .Ignore(RelationalEventId.PendingModelChangesWarning)
+                                                                .Ignore(RelationalEventId.NonTransactionalMigrationOperationWarning)));
 
     services.AddHealthChecks().AddDbContextCheck<EfCoreContext>();
 }

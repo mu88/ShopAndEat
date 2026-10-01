@@ -17,7 +17,7 @@ namespace Tests.LlmIntegration;
 [Explicit("Requires live Mistral API key; run manually only")]
 public sealed class ShoppingAgentLlmTests : IDisposable
 {
-    private LlmIntegrationFixture _fixture;
+    private LlmIntegrationFixture _fixture = null!;
 
     [SetUp]
     public void Setup()

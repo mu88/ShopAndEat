@@ -1,5 +1,6 @@
 using System.ClientModel;
 using System.Net;
+using System.Runtime.ExceptionServices;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Polly;
@@ -17,7 +18,7 @@ namespace ShoppingAgent.Services.Concrete;
 public sealed class ResilientChatClient : IChatClient
 {
     private readonly IChatClient _primaryClient;
-    private readonly IChatClient _fallbackClient;
+    private readonly IChatClient? _fallbackClient;
     private readonly ILogger<ResilientChatClient> _logger;
     private readonly LlmClientOptions _llmOptions;
     private readonly AgentOptions _agentOptions;
@@ -27,7 +28,7 @@ public sealed class ResilientChatClient : IChatClient
 
     public ResilientChatClient(
         IChatClient primaryClient,
-        IChatClient fallbackClient,
+        IChatClient? fallbackClient,
         ILogger<ResilientChatClient> logger,
         LlmClientOptions llmOptions,
         AgentOptions agentOptions,
@@ -44,14 +45,14 @@ public sealed class ResilientChatClient : IChatClient
         _streamingStartPipeline = retryPolicyFactory.CreateStreamingStartPipeline();
     }
 
-    public object GetService(Type serviceType, object serviceKey = null)
+    public object? GetService(Type serviceType, object? serviceKey = null)
     {
         return _primaryClient.GetService(serviceType, serviceKey);
     }
 
     public async Task<ChatResponse> GetResponseAsync(
         IEnumerable<ChatMessage> chatMessages,
-        ChatOptions options = null,
+        ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         if (!_agentOptions.RetryEnabled)
@@ -74,7 +75,7 @@ public sealed class ResilientChatClient : IChatClient
 
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
         IEnumerable<ChatMessage> chatMessages,
-        ChatOptions options = null,
+        ChatOptions? options = null,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (!_agentOptions.RetryEnabled)
@@ -100,12 +101,9 @@ public sealed class ResilientChatClient : IChatClient
             response = await HandleRetriesExhaustedStreamAsync(messages, options, ex, cancellationToken);
         }
 
-        if (response is not null)
+        await foreach (var chunk in response)
         {
-            await foreach (var chunk in response)
-            {
-                yield return chunk;
-            }
+            yield return chunk;
         }
     }
 
@@ -120,11 +118,11 @@ public sealed class ResilientChatClient : IChatClient
 
     private async Task<ChatResponse> HandleRetriesExhaustedAsync(
         List<ChatMessage> messages,
-        ChatOptions options,
+        ChatOptions? options,
         ClientResultException lastException,
         CancellationToken cancellationToken)
     {
-        if (_agentOptions.ModelFallbackEnabled && _fallbackClient is not null && lastException is not null)
+        if (_agentOptions.ModelFallbackEnabled && _fallbackClient is not null)
         {
             AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
             AgentLogMessages.FallbackStarted(_logger);
@@ -143,22 +141,21 @@ public sealed class ResilientChatClient : IChatClient
             }
         }
 
-        if (lastException is not null)
-        {
-            AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
-            throw lastException;
-        }
+        AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
+        ExceptionDispatchInfo.Capture(lastException).Throw();
 
-        throw new InvalidOperationException("Unexpected state in ResilientChatClient");
+        // Stryker disable once all: ExceptionDispatchInfo.Throw() always throws, so this line is
+        // unreachable at runtime; it exists only to satisfy the compiler's return-on-all-paths check.
+        throw null!;
     }
 
     private async Task<IAsyncEnumerable<ChatResponseUpdate>> HandleRetriesExhaustedStreamAsync(
         List<ChatMessage> messages,
-        ChatOptions options,
+        ChatOptions? options,
         ClientResultException lastException,
         CancellationToken cancellationToken)
     {
-        if (_agentOptions.ModelFallbackEnabled && _fallbackClient is not null && lastException is not null)
+        if (_agentOptions.ModelFallbackEnabled && _fallbackClient is not null)
         {
             AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
             AgentLogMessages.FallbackStarted(_logger);
@@ -167,25 +164,24 @@ public sealed class ResilientChatClient : IChatClient
             return HandleFallbackStreamAsync(messages, options, cancellationToken);
         }
 
-        if (lastException is not null)
-        {
-            AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
-            throw lastException;
-        }
+        AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
+        ExceptionDispatchInfo.Capture(lastException).Throw();
 
-        throw new InvalidOperationException("Unexpected state in ResilientChatClient");
+        // Stryker disable once all: ExceptionDispatchInfo.Throw() always throws, so this line is
+        // unreachable at runtime; it exists only to satisfy the compiler's return-on-all-paths check.
+        throw null!;
     }
 
     private async IAsyncEnumerable<ChatResponseUpdate> HandleFallbackStreamAsync(
         List<ChatMessage> messages,
-        ChatOptions options,
+        ChatOptions? options,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         bool succeeded = false;
 
         try
         {
-            await foreach (var chunk in _fallbackClient.GetStreamingResponseAsync(messages, options, cancellationToken))
+            await foreach (var chunk in _fallbackClient!.GetStreamingResponseAsync(messages, options, cancellationToken))
             {
                 yield return chunk;
             }

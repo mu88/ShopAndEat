@@ -1,25 +1,32 @@
-﻿using JetBrains.Annotations;
+using JetBrains.Annotations;
 
 namespace DataLayer.EfClasses;
 
-public class Ingredient
+public class Ingredient : IHasId<int>
 {
+    // MA0056: assign the backing fields directly (not the virtual properties) from the constructor.
+    private Article _article;
+    private Unit _unit;
+
     public Ingredient(Article article, double quantity, Unit unit)
     {
-        Article = article;
+        _article = article;
         Quantity = quantity;
-        Unit = unit;
+        _unit = unit;
     }
 
+    // Stryker disable once all: these null-forgiving assignments only satisfy the compiler for EF Core's materialization constructor; removing them leaves the same runtime state.
     public Ingredient()
     {
+        _article = null!;
+        _unit = null!;
     }
 
     public virtual Article Article
     {
-        get;
+        get => _article;
         [UsedImplicitly]
-        private set;
+        private set => _article = value;
     }
 
     public double Quantity
@@ -31,9 +38,9 @@ public class Ingredient
 
     public virtual Unit Unit
     {
-        get;
+        get => _unit;
         [UsedImplicitly]
-        private set;
+        private set => _unit = value;
     }
 
     public int IngredientId

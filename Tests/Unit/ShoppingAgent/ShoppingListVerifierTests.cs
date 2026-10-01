@@ -8,7 +8,7 @@ namespace Tests.Unit.ShoppingAgent;
 [Category("Unit")]
 public class ShoppingListVerifierTests
 {
-    private ShoppingListVerifier _sut;
+    private ShoppingListVerifier _sut = null!;
 
     [SetUp]
     public void SetUp() => _sut = new ShoppingListVerifier();
@@ -46,7 +46,7 @@ public class ShoppingListVerifierTests
         var cartContents = """[{"Name":"Mozzarella"}]""";
 
         // Act
-        var result = _sut.FindMissingItems(null, cartContents);
+        var result = _sut.FindMissingItems(string.Empty, cartContents);
 
         // Assert
         result.Should().BeEmpty();
@@ -234,26 +234,68 @@ public class ShoppingListVerifierTests
     }
 
     [Test]
-    public void FindMissingItems_MixedQuantityFormats_HandledCorrectly()
+    public void FindMissingItems_KeywordStartingWithParenthesis_TreatsWholeKeywordAsSignificant()
     {
-        // Arrange
-        var shoppingList = """
-            2x Äpfel
-            1,5 kg Mehl
-            3.0 Packungen Joghurt
-            """;
-        var cartContents = """
-            [
-              {"Name":"Naturaplan Bio Äpfel"},
-              {"Name":"Prix Garantie Weissmehl"},
-              {"Name":"Naturaplan Bio Joghurt"}
-            ]
-            """;
+        // Arrange — no leading quantity, so LeadingQuantityPattern does not match and the keyword is
+        // unchanged. parenIndex is 0 here (paren is the very first character), which must NOT strip
+        // the keyword down to an empty baseKeyword (that would happen if the "parenIndex > 0" check
+        // were mutated to "parenIndex >= 0").
+        var shoppingList = "(Filet)";
+        var cartContents = "Gekaufte Artikel: (Filet)";
 
         // Act
         var result = _sut.FindMissingItems(shoppingList, cartContents);
 
         // Assert
         result.Should().BeEmpty();
+    }
+
+    [Test]
+    public void FindMissingItems_ParentheticalDirectlyAttachedToWord_StripsBeforeWordBoundary()
+    {
+        // Arrange — no space before the parenthesis, so splitting on ' ' alone cannot separate the
+        // significant word from the parenthetical note; the "parenIndex > 0" stripping itself must
+        // actually run (i.e. the ternary condition must not be forced to always take the "else"
+        // branch, which would leave the parenthetical attached and prevent the match).
+        var shoppingList = "Filet(Bio)";
+        var cartContents = "Wir haben Filet gekauft";
+
+        // Act
+        var result = _sut.FindMissingItems(shoppingList, cartContents);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Test]
+    public void FindMissingItems_MultiWordKeyword_OnlyOneSignificantWordNeedsToMatch()
+    {
+        // Arrange — "Bio" (3 chars) is not significant and absent from the cart, but "Tomaten"
+        // (7 chars) is significant and present. Only one significant word needs to match (Any), not
+        // every word (All).
+        var shoppingList = "Bio Tomaten";
+        var cartContents = "Frische Tomaten";
+
+        // Act
+        var result = _sut.FindMissingItems(shoppingList, cartContents);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Test]
+    public void FindMissingItems_ExactlyThreeLetterWord_NotTreatedAsSignificant()
+    {
+        // Arrange — "Öle" has exactly 3 characters and is present in the cart verbatim, but words of
+        // length 3 are not "significant" (boundary is > 3, not >= 3), so it must still be reported as
+        // missing.
+        var shoppingList = "Öle";
+        var cartContents = "Wir haben Öle gekauft";
+
+        // Act
+        var result = _sut.FindMissingItems(shoppingList, cartContents);
+
+        // Assert
+        result.Should().ContainSingle().Which.Should().Be("Öle");
     }
 }

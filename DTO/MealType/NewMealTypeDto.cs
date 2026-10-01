@@ -1,6 +1,3 @@
-﻿namespace DTO.MealType;
+namespace DTO.MealType;
 
-public class NewMealTypeDto(string name)
-{
-    public string Name { get; } = name;
-}
+public record NewMealTypeDto(string Name);

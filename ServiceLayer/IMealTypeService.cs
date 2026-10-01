@@ -1,12 +1,12 @@
-﻿using DTO.MealType;
+using DTO.MealType;
 
 namespace ServiceLayer;
 
 public interface IMealTypeService
 {
-    ExistingMealTypeDto CreateMealType(NewMealTypeDto newArticleGroupDto);
+    Task<ExistingMealTypeDto> CreateMealTypeAsync(NewMealTypeDto newArticleGroupDto, CancellationToken cancellationToken = default);
 
-    void DeleteMealType(DeleteMealTypeDto deleteArticleGroupDto);
+    Task DeleteMealTypeAsync(DeleteMealTypeDto deleteArticleGroupDto, CancellationToken cancellationToken = default);
 
-    IEnumerable<ExistingMealTypeDto> GetAllMealTypes();
+    Task<IReadOnlyList<ExistingMealTypeDto>> GetAllMealTypesAsync(CancellationToken cancellationToken = default);
 }

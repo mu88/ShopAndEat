@@ -1,12 +1,12 @@
-﻿using DTO.Unit;
+using DTO.Unit;
 
 namespace ServiceLayer;
 
 public interface IUnitService
 {
-    ExistingUnitDto CreateUnit(NewUnitDto newArticleGroupDto);
+    Task<ExistingUnitDto> CreateUnitAsync(NewUnitDto newArticleGroupDto, CancellationToken cancellationToken = default);
 
-    void DeleteUnit(DeleteUnitDto deleteArticleGroupDto);
+    Task DeleteUnitAsync(DeleteUnitDto deleteArticleGroupDto, CancellationToken cancellationToken = default);
 
-    IEnumerable<ExistingUnitDto> GetAllUnits();
+    Task<IReadOnlyList<ExistingUnitDto>> GetAllUnitsAsync(CancellationToken cancellationToken = default);
 }

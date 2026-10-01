@@ -1,4 +1,4 @@
-﻿using DataLayer.EfClasses;
+using DataLayer.EfClasses;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -12,7 +12,7 @@ public class PurchaseItemTests
     public void CreatePurchaseItem()
     {
         // Arrange
-        var article = new Article { Name = "Tomato", ArticleGroup = new ArticleGroup("Vegetables"), IsInventory = false };
+        var article = new Article("Tomato", new ArticleGroup("Vegetables"), isInventory: false);
         uint quantity = 3;
         var unit = new global::DataLayer.EfClasses.Unit("Bag");
 

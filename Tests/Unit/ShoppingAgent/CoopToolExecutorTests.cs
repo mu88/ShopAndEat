@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NUnit.Framework;
+using ShoppingAgent.Diagnostics;
 using ShoppingAgent.Models;
 using ShoppingAgent.Services;
 using ShoppingAgent.Services.Concrete;
@@ -13,13 +15,27 @@ namespace Tests.Unit.ShoppingAgent;
 [Category("Unit")]
 public class CoopToolExecutorTests
 {
-    private IExtensionBridge _bridgeMock;
+    private readonly List<Activity> _completedActivities = [];
+    private IExtensionBridge _bridgeMock = null!;
+    private ActivityListener _activityListener = null!;
 
     [SetUp]
     public void SetUp()
     {
         _bridgeMock = Substitute.For<IExtensionBridge>();
+
+        _completedActivities.Clear();
+        _activityListener = new ActivityListener
+        {
+            ShouldListenTo = source => string.Equals(source.Name, ShoppingAgentDiagnostics.ActivitySourceName, StringComparison.Ordinal),
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            ActivityStopped = _completedActivities.Add,
+        };
+        ActivitySource.AddActivityListener(_activityListener);
     }
+
+    [TearDown]
+    public void TearDown() => _activityListener.Dispose();
 
     [Test]
     public async Task SearchAsync_ParsesJsonResult_WhenBridgeReturnsProducts()
@@ -312,6 +328,263 @@ public class CoopToolExecutorTests
                 d["cartEntryUid"].ToString() == "uid-abc123"),
             "coop",
             Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task SearchAsync_DeserializesCaseInsensitively_WhenJsonKeysUseDifferentCasing()
+    {
+        // Arrange
+        const string json = """[{"NAME":"Organic Tofu","PRICE":"2.95","URL":"https://coop.ch/p/123"}]""";
+        _bridgeMock
+            .ExecuteToolAsync("search", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = json });
+
+        var testee = CreateTestee();
+
+        // Act
+        var result = await testee.SearchAsync("Tofu");
+
+        // Assert
+        result.Should().ContainSingle().Which.Name.Should().Be("Organic Tofu");
+    }
+
+    [Test]
+    public async Task SearchAsync_ReturnsEmptyList_WhenBridgeReturnsJsonNull()
+    {
+        // Arrange
+        _bridgeMock
+            .ExecuteToolAsync("search", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = "null" });
+
+        var testee = CreateTestee();
+
+        // Act
+        var result = await testee.SearchAsync("Tofu");
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task SearchAsync_RecordsActivityTagsAndName_WhenBridgeSucceeds()
+    {
+        // Arrange
+        var json = JsonSerializer.Serialize(new[] { new ShopProduct { Name = "Tofu" } });
+        _bridgeMock
+            .ExecuteToolAsync("search", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = json });
+
+        var testee = CreateTestee();
+
+        // Act
+        await testee.SearchAsync("Tofu");
+
+        // Assert
+        var activity = _completedActivities.Should().ContainSingle().Subject;
+        activity.OperationName.Should().Be("ShoppingAgent.Coop.SearchProducts");
+        activity.GetTagItem("coop.search_term").Should().Be("Tofu");
+        activity.GetTagItem("coop.result_count").Should().Be(1);
+        activity.Status.Should().Be(ActivityStatusCode.Unset);
+    }
+
+    [Test]
+    public async Task SearchAsync_SetsErrorStatusOnActivity_WhenBridgeFails()
+    {
+        // Arrange
+        _bridgeMock
+            .ExecuteToolAsync("search", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = false, Error = "Extension not connected" });
+
+        var testee = CreateTestee();
+
+        // Act
+        await testee.SearchAsync("Tofu");
+
+        // Assert
+        var activity = _completedActivities.Should().ContainSingle().Subject;
+        activity.Status.Should().Be(ActivityStatusCode.Error);
+        activity.StatusDescription.Should().Be("Extension not connected");
+    }
+
+    [Test]
+    public async Task GetProductDetailsAsync_PassesUrlToBridge()
+    {
+        // Arrange
+        _bridgeMock
+            .ExecuteToolAsync(Arg.Any<string>(), Arg.Any<Dictionary<string, object>>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = JsonSerializer.Serialize(new ProductDetails()) });
+
+        var testee = CreateTestee();
+
+        // Act
+        await testee.GetProductDetailsAsync("https://coop.ch/p/123");
+
+        // Assert
+        await _bridgeMock.Received(1).ExecuteToolAsync(
+            "getProductDetails",
+            Arg.Is<Dictionary<string, object>>(d => d["url"].ToString() == "https://coop.ch/p/123"),
+            "coop",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task GetProductDetailsAsync_RecordsActivityTagsAndName_WhenBridgeSucceeds()
+    {
+        // Arrange
+        _bridgeMock
+            .ExecuteToolAsync("getProductDetails", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = JsonSerializer.Serialize(new ProductDetails { Name = "Tofu" }) });
+
+        var testee = CreateTestee();
+
+        // Act
+        await testee.GetProductDetailsAsync("https://coop.ch/p/123");
+
+        // Assert
+        var activity = _completedActivities.Should().ContainSingle().Subject;
+        activity.OperationName.Should().Be("ShoppingAgent.Coop.GetProductDetails");
+        activity.GetTagItem("coop.product_url").Should().Be("https://coop.ch/p/123");
+        activity.Status.Should().Be(ActivityStatusCode.Unset);
+    }
+
+    [Test]
+    public async Task GetProductDetailsAsync_SetsErrorStatusOnActivity_WhenBridgeFails()
+    {
+        // Arrange
+        _bridgeMock
+            .ExecuteToolAsync("getProductDetails", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = false, Error = "Page load failed" });
+
+        var testee = CreateTestee();
+
+        // Act
+        await testee.GetProductDetailsAsync("https://coop.ch/p/999");
+
+        // Assert
+        var activity = _completedActivities.Should().ContainSingle().Subject;
+        activity.Status.Should().Be(ActivityStatusCode.Error);
+        activity.StatusDescription.Should().Be("Page load failed");
+    }
+
+    [Test]
+    public async Task AddToCartAsync_PassesUrlAndQuantityToBridge()
+    {
+        // Arrange
+        _bridgeMock
+            .ExecuteToolAsync(Arg.Any<string>(), Arg.Any<Dictionary<string, object>>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = "ok" });
+
+        var testee = CreateTestee();
+
+        // Act
+        await testee.AddToCartAsync("https://coop.ch/p/123", 3);
+
+        // Assert
+        await _bridgeMock.Received(1).ExecuteToolAsync(
+            "addToCart",
+            Arg.Is<Dictionary<string, object>>(d =>
+                d["url"].ToString() == "https://coop.ch/p/123" &&
+                d["quantity"].Equals(3)),
+            "coop",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task AddToCartAsync_RecordsActivityTagsAndName_WhenBridgeSucceeds()
+    {
+        // Arrange
+        _bridgeMock
+            .ExecuteToolAsync("addToCart", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = "ok" });
+
+        var testee = CreateTestee();
+
+        // Act
+        await testee.AddToCartAsync("https://coop.ch/p/123", 3);
+
+        // Assert
+        var activity = _completedActivities.Should().ContainSingle().Subject;
+        activity.OperationName.Should().Be("ShoppingAgent.Coop.AddToCart");
+        activity.GetTagItem("coop.product_url").Should().Be("https://coop.ch/p/123");
+        activity.GetTagItem("coop.quantity").Should().Be(3);
+        activity.Status.Should().Be(ActivityStatusCode.Unset);
+    }
+
+    [Test]
+    public async Task AddToCartAsync_SetsErrorStatusOnActivity_WhenBridgeFails()
+    {
+        // Arrange
+        _bridgeMock
+            .ExecuteToolAsync("addToCart", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = false, Error = "Product unavailable" });
+
+        var testee = CreateTestee();
+
+        // Act
+        await testee.AddToCartAsync("https://coop.ch/p/123", 1);
+
+        // Assert
+        var activity = _completedActivities.Should().ContainSingle().Subject;
+        activity.Status.Should().Be(ActivityStatusCode.Error);
+        activity.StatusDescription.Should().Be("Product unavailable");
+    }
+
+    [Test]
+    public async Task SearchAsync_GetProductDetailsAsync_AddToCartAsync_DoNotThrow_WhenNoActivityListenerIsRegistered_AndCallsSucceed()
+    {
+        // Arrange — without a listener, ActivitySource.StartActivity returns null, exercising
+        // the null-conditional `activity?.SetTag` branches used for optional OpenTelemetry tagging.
+        _activityListener.Dispose();
+        _bridgeMock
+            .ExecuteToolAsync("search", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = "[]" });
+        _bridgeMock
+            .ExecuteToolAsync("getProductDetails", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = JsonSerializer.Serialize(new ProductDetails()) });
+        _bridgeMock
+            .ExecuteToolAsync("addToCart", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = true, Data = "ok" });
+
+        var testee = CreateTestee();
+
+        // Act
+        var search = async () => await testee.SearchAsync("Tofu");
+        var details = async () => await testee.GetProductDetailsAsync("https://coop.ch/p/1");
+        var addToCart = async () => await testee.AddToCartAsync("https://coop.ch/p/1", 1);
+
+        // Assert
+        await search.Should().NotThrowAsync();
+        await details.Should().NotThrowAsync();
+        await addToCart.Should().NotThrowAsync();
+    }
+
+    [Test]
+    public async Task SearchAsync_GetProductDetailsAsync_AddToCartAsync_DoNotThrow_WhenNoActivityListenerIsRegistered_AndCallsFail()
+    {
+        // Arrange — without a listener, ActivitySource.StartActivity returns null, exercising
+        // the null-conditional `activity?.SetStatus` branches used for optional OpenTelemetry error tagging.
+        _activityListener.Dispose();
+        _bridgeMock
+            .ExecuteToolAsync("search", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = false, Error = "boom" });
+        _bridgeMock
+            .ExecuteToolAsync("getProductDetails", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = false, Error = "boom" });
+        _bridgeMock
+            .ExecuteToolAsync("addToCart", Arg.Any<Dictionary<string, object>>(), "coop", Arg.Any<CancellationToken>())
+            .Returns(new ToolResult { Success = false, Error = "boom" });
+
+        var testee = CreateTestee();
+
+        // Act
+        var search = async () => await testee.SearchAsync("Tofu");
+        var details = async () => await testee.GetProductDetailsAsync("https://coop.ch/p/1");
+        var addToCart = async () => await testee.AddToCartAsync("https://coop.ch/p/1", 1);
+
+        // Assert
+        await search.Should().NotThrowAsync();
+        await details.Should().NotThrowAsync();
+        await addToCart.Should().NotThrowAsync();
     }
 
     private CoopToolExecutor CreateTestee() => new(_bridgeMock, NullLogger<CoopToolExecutor>.Instance);

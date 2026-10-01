@@ -1,4 +1,4 @@
-﻿using BizDbAccess;
+using BizDbAccess;
 using DTO.Ingredient;
 
 namespace BizLogic.Concrete;
@@ -14,16 +14,16 @@ public class IngredientAction(IIngredientDbAccess ingredientDbAccess) : IIngredi
     }
 
     /// <inheritdoc />
-    public void DeleteIngredient(DeleteIngredientDto deleteIngredientDto)
+    public async Task DeleteIngredientAsync(DeleteIngredientDto deleteIngredientDto, CancellationToken cancellationToken = default)
     {
-        ingredientDbAccess.DeleteIngredient(ingredientDbAccess.GetIngredient(deleteIngredientDto.IngredientId));
+        ingredientDbAccess.DeleteIngredient(await ingredientDbAccess.GetIngredientAsync(deleteIngredientDto.IngredientId, cancellationToken));
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingIngredientDto> GetAllIngredients()
+    public async Task<IReadOnlyList<ExistingIngredientDto>> GetAllIngredientsAsync(CancellationToken cancellationToken = default)
     {
-        var ingredients = ingredientDbAccess.GetIngredients();
+        var ingredients = await ingredientDbAccess.GetIngredientsAsync(cancellationToken);
 
-        return ingredients.Select(i => i.ToDto());
+        return ingredients.Select(ingredient => ingredient.ToDto()).ToList();
     }
 }

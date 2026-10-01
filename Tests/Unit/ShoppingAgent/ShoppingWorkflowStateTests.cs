@@ -9,7 +9,7 @@ namespace Tests.Unit.ShoppingAgent;
 [Category("Unit")]
 public class ShoppingWorkflowStateTests
 {
-    private ShoppingWorkflowState _sut;
+    private ShoppingWorkflowState _sut = null!;
 
     [SetUp]
     public void SetUp()
@@ -85,7 +85,8 @@ public class ShoppingWorkflowStateTests
         var act = () => _sut.MoveToFillingCart();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Cannot move to FillingCart from Researching. Must be in AwaitingConfirmation first.");
     }
 
     [Test]
@@ -166,7 +167,8 @@ public class ShoppingWorkflowStateTests
         var act = () => _sut.MoveToAwaitingClarification(["Garlic"]);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Cannot move to AwaitingClarification from FillingCart.");
     }
 
     [Test]

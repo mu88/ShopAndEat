@@ -1,5 +1,6 @@
-﻿@page "/article"
+@page "/article"
 @rendermode InteractiveServer
+@using DataLayer.EfClasses
 @using DTO.Article
 @using DTO.ArticleGroup
 @using ServiceLayer
@@ -60,10 +61,10 @@
                 <td>@article.ArticleGroup.Name</td>
                 <td>@article.IsInventory</td>
                 <td>
-                    <button class="btn btn-primary" @onclick="@(_ => DeleteArticle(article.ArticleId))">❌</button>
+                    <button class="btn btn-primary" @onclick="@(_ => DeleteArticleAsync(article.ArticleId.Value))">❌</button>
                 </td>
                 <td>
-                    <button class="btn btn-primary" @onclick="@(_ => EditArticleAsync(article.ArticleId))">🖊</button>
+                    <button class="btn btn-primary" @onclick="@(_ => EditArticleAsync(article.ArticleId.Value))">🖊</button>
                 </td>
             </tr>
         }
@@ -73,26 +74,26 @@
 @code {
 
     /// <inheritdoc />
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnInitialized();
+        await base.OnInitializedAsync();
 
-        LoadArticles();
-        ArticleGroups = ArticleGroupService.GetAllArticleGroups();
+        await LoadArticlesAsync();
+        ArticleGroups = await ArticleGroupService.GetAllArticleGroupsAsync();
     }
 
-    private void LoadArticles()
+    private async Task LoadArticlesAsync()
     {
-        Articles = ArticleService.GetAllArticles().ToList();
+        Articles = await ArticleService.GetAllArticlesAsync();
         if (Articles.Any())
         {
             _articleModel.ArticleGroupName = Articles.First().ArticleGroup.Name;
         }
     }
 
-    private IEnumerable<ExistingArticleDto> Articles { get; set; }
+    private IReadOnlyList<ExistingArticleDto> Articles { get; set; } = [];
 
-    private IEnumerable<ExistingArticleGroupDto> ArticleGroups { get; set; }
+    private IReadOnlyList<ExistingArticleGroupDto> ArticleGroups { get; set; } = [];
 
     private readonly ArticleModel _articleModel = new();
 
@@ -101,32 +102,32 @@
         if (_articleModel.ArticleId == default)
         {
             var newArticle = new NewArticleDto(_articleModel.ArticleName, ArticleGroups.Single(x => x.Name == _articleModel.ArticleGroupName), _articleModel.IsInventory);
-            ArticleService.CreateArticle(newArticle);
+            await ArticleService.CreateArticleAsync(newArticle);
         }
         else
         {
-            var updatedArticle = new ExistingArticleDto(_articleModel.ArticleId, _articleModel.ArticleName, ArticleGroups.Single(x => x.Name == _articleModel.ArticleGroupName), _articleModel.IsInventory);
-            ArticleService.UpdateArticle(updatedArticle);
+            var updatedArticle = new ExistingArticleDto(new ArticleId(_articleModel.ArticleId), _articleModel.ArticleName, ArticleGroups.Single(x => x.Name == _articleModel.ArticleGroupName), _articleModel.IsInventory);
+            await ArticleService.UpdateArticleAsync(updatedArticle);
             _articleModel.ArticleId = default;
         }
 
         await ShowSaveConfirmationAsync();
 
-        LoadArticles();
+        await LoadArticlesAsync();
     }
 
     private async Task ShowSaveConfirmationAsync() => await Js.InvokeVoidAsync("window.alert", "Saved!");
 
-    private void DeleteArticle(int articleId)
+    private async Task DeleteArticleAsync(int articleId)
     {
-        ArticleService.DeleteArticle(new DeleteArticleDto(articleId));
-        LoadArticles();
+        await ArticleService.DeleteArticleAsync(new DeleteArticleDto(new ArticleId(articleId)));
+        await LoadArticlesAsync();
     }
 
     private async Task EditArticleAsync(int articleId)
     {
-        var article = Articles.Single(x => x.ArticleId == articleId);
-        _articleModel.ArticleId = article.ArticleId;
+        var article = Articles.Single(x => x.ArticleId.Value == articleId);
+        _articleModel.ArticleId = article.ArticleId.Value;
         _articleModel.ArticleName = article.Name;
         _articleModel.ArticleGroupName = article.ArticleGroup.Name;
         _articleModel.IsInventory = article.IsInventory;

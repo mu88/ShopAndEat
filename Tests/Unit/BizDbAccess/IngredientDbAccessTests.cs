@@ -1,7 +1,7 @@
-﻿using BizDbAccess.Concrete;
-using DataLayer.EfClasses;
+using BizDbAccess.Concrete;
 using FluentAssertions;
 using NUnit.Framework;
+using Tests.Builders;
 
 namespace Tests.Unit.BizDbAccess;
 
@@ -10,47 +10,43 @@ namespace Tests.Unit.BizDbAccess;
 public class IngredientDbAccessTests
 {
     [Test]
-    public void GetIngredient()
+    public async Task GetIngredientAsync()
     {
         // Arrange
-        using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = new ArticleGroup("Vegetables");
-        var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
-        var piece = new global::DataLayer.EfClasses.Unit("Piece");
-        inMemoryDbContext.ArticleGroups.Add(vegetables);
-        inMemoryDbContext.Articles.Add(tomato);
-        inMemoryDbContext.Units.Add(piece);
-        var ingredient = inMemoryDbContext.Ingredients.Add(new Ingredient(tomato, 2, piece));
-        inMemoryDbContext.SaveChanges();
+        await using var inMemoryDbContext = new InMemoryDbContext();
+        var ingredient = new IngredientBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(ingredient.Article.ArticleGroup);
+        inMemoryDbContext.Articles.Add(ingredient.Article);
+        inMemoryDbContext.Units.Add(ingredient.Unit);
+        var ingredientEntry = inMemoryDbContext.Ingredients.Add(ingredient);
+        await inMemoryDbContext.SaveChangesAsync();
         var testee = new IngredientDbAccess(inMemoryDbContext);
 
         // Act
-        var result = testee.GetIngredient(ingredient.Entity.IngredientId);
+        var result = await testee.GetIngredientAsync(ingredientEntry.Entity.IngredientId);
 
         // Assert
-        result.Article.Name.Should().Be("Tomato");
+        result.Article.Name.Should().Be(ingredient.Article.Name);
     }
 
     [Test]
-    public void GetIngredients()
+    public async Task GetIngredientsAsync()
     {
         // Arrange
-        using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = new ArticleGroup("Vegetables");
-        var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
-        var piece = new global::DataLayer.EfClasses.Unit("Piece");
-        inMemoryDbContext.ArticleGroups.Add(vegetables);
-        inMemoryDbContext.Articles.Add(tomato);
-        inMemoryDbContext.Units.Add(piece);
-        var ingredient = inMemoryDbContext.Ingredients.Add(new Ingredient(tomato, 2, piece));
-        inMemoryDbContext.SaveChanges();
+        await using var inMemoryDbContext = new InMemoryDbContext();
+        var ingredient = new IngredientBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(ingredient.Article.ArticleGroup);
+        inMemoryDbContext.Articles.Add(ingredient.Article);
+        inMemoryDbContext.Units.Add(ingredient.Unit);
+        var ingredientEntry = inMemoryDbContext.Ingredients.Add(ingredient);
+        await inMemoryDbContext.SaveChangesAsync();
         var testee = new IngredientDbAccess(inMemoryDbContext);
 
         // Act
-        var result = testee.GetIngredients();
+        var result = await testee.GetIngredientsAsync();
 
         // Assert
-        result.Should().Contain(ingredient.Entity);
+        result.Should().Contain(ingredientEntry.Entity);
     }
 
     [Test]
@@ -58,17 +54,15 @@ public class IngredientDbAccessTests
     {
         // Arrange
         using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = new ArticleGroup("Vegetables");
-        var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
-        var piece = new global::DataLayer.EfClasses.Unit("Piece");
-        inMemoryDbContext.ArticleGroups.Add(vegetables);
-        inMemoryDbContext.Articles.Add(tomato);
-        inMemoryDbContext.Units.Add(piece);
+        var ingredient = new IngredientBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(ingredient.Article.ArticleGroup);
+        inMemoryDbContext.Articles.Add(ingredient.Article);
+        inMemoryDbContext.Units.Add(ingredient.Unit);
         inMemoryDbContext.SaveChanges();
         var testee = new IngredientDbAccess(inMemoryDbContext);
 
         // Act
-        var result = testee.AddIngredient(new Ingredient(tomato, 2, piece));
+        var result = testee.AddIngredient(ingredient);
         inMemoryDbContext.SaveChanges();
 
         // Assert
@@ -80,21 +74,19 @@ public class IngredientDbAccessTests
     {
         // Arrange
         using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = new ArticleGroup("Vegetables");
-        var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
-        var piece = new global::DataLayer.EfClasses.Unit("Piece");
-        inMemoryDbContext.ArticleGroups.Add(vegetables);
-        inMemoryDbContext.Articles.Add(tomato);
-        inMemoryDbContext.Units.Add(piece);
-        var ingredient = inMemoryDbContext.Ingredients.Add(new Ingredient(tomato, 2, piece));
+        var ingredient = new IngredientBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(ingredient.Article.ArticleGroup);
+        inMemoryDbContext.Articles.Add(ingredient.Article);
+        inMemoryDbContext.Units.Add(ingredient.Unit);
+        var ingredientEntry = inMemoryDbContext.Ingredients.Add(ingredient);
         inMemoryDbContext.SaveChanges();
         var testee = new IngredientDbAccess(inMemoryDbContext);
 
         // Act
-        testee.DeleteIngredient(ingredient.Entity);
+        testee.DeleteIngredient(ingredientEntry.Entity);
         inMemoryDbContext.SaveChanges();
 
         // Assert
-        inMemoryDbContext.Ingredients.Should().NotContain(ingredient.Entity);
+        inMemoryDbContext.Ingredients.Should().NotContain(ingredientEntry.Entity);
     }
 }

@@ -14,11 +14,11 @@ namespace Tests.System;
 [Category("System")]
 public class ShoppingFeatureSystemTests
 {
-    private static CancellationTokenSource _cancellationTokenSource;
+    private static CancellationTokenSource _cancellationTokenSource = null!;
     private static CancellationToken _cancellationToken;
-    private static DockerClient _dockerClient;
-    private static IContainer _container;
-    private static HttpClient _httpClient;
+    private static DockerClient _dockerClient = null!;
+    private static IContainer _container = null!;
+    private static HttpClient _httpClient = null!;
 
     [OneTimeSetUp]
     public static async Task OneTimeSetup()

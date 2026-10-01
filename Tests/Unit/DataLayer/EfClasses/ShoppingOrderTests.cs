@@ -1,4 +1,4 @@
-﻿using DataLayer.EfClasses;
+using DataLayer.EfClasses;
 using FluentAssertions;
 using NUnit.Framework;
 

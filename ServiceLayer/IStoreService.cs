@@ -1,8 +1,8 @@
-﻿using DTO.Store;
+using DTO.Store;
 
 namespace ServiceLayer;
 
 public interface IStoreService
 {
-    IEnumerable<ExistingStoreDto> GetAllStores();
+    Task<IReadOnlyList<ExistingStoreDto>> GetAllStoresAsync(CancellationToken cancellationToken = default);
 }

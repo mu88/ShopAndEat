@@ -19,10 +19,10 @@ namespace Tests.System;
 [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP014:Use a single instance of HttpClient", Justification = "System tests create isolated HttpClient instances per test by design")]
 public class SystemTests
 {
-    private CancellationTokenSource _cancellationTokenSource;
+    private CancellationTokenSource _cancellationTokenSource = null!;
     private CancellationToken _cancellationToken;
-    private DockerClient _dockerClient;
-    private IContainer _container;
+    private DockerClient _dockerClient = null!;
+    private IContainer _container = null!;
 
     [SetUp]
     public void Setup()

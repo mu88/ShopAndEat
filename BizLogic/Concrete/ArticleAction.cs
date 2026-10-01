@@ -1,4 +1,4 @@
-﻿using BizDbAccess;
+using BizDbAccess;
 using DTO.Article;
 
 namespace BizLogic.Concrete;
@@ -15,12 +15,13 @@ public class ArticleAction(IArticleDbAccess articleDbAccess) : IArticleAction
     }
 
     /// <inheritdoc />
-    public void DeleteArticle(DeleteArticleDto deleteArticleDto)
+    public async Task DeleteArticleAsync(DeleteArticleDto deleteArticleDto, CancellationToken cancellationToken = default)
     {
-        var article = articleDbAccess.GetArticle(deleteArticleDto.ArticleId);
+        var article = await articleDbAccess.GetArticleAsync(deleteArticleDto.ArticleId, cancellationToken);
         articleDbAccess.DeleteArticle(article);
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingArticleDto> GetAllArticles() => articleDbAccess.GetArticles().Select(a => a.ToDto());
+    public async Task<IReadOnlyList<ExistingArticleDto>> GetAllArticlesAsync(CancellationToken cancellationToken = default)
+        => (await articleDbAccess.GetArticlesAsync(cancellationToken)).Select(article => article.ToDto()).ToList();
 }

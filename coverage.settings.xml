@@ -1,5 +1,13 @@
 <Configuration>
     <CodeCoverage>
+        <!-- MAINTENANCE: ModulePaths/Include enumerates each production project's compiled assembly.
+             This is an intentional allowlist, not a convention-based regex: Tests.csproj's build
+             output directory is flat and contains both our own project DLLs and dozens of third-party
+             NuGet DLLs (no shared project name prefix exists across BizDbAccess/BizLogic/DataLayer/DTO/
+             ServiceLayer/ShopAndEat/ShoppingAgent to regex-match against), so a broad pattern would
+             either over-match third-party assemblies or under-match our own. Whenever a new production
+             project is added to ShopAndEat.slnx, add its assembly here too, or it silently gets 0%
+             coverage reporting instead of appearing as a gap. -->
         <ModulePaths>
             <Include>
                 <ModulePath>.*BizDbAccess\.dll$</ModulePath>
@@ -11,5 +19,44 @@
                 <ModulePath>.*ShoppingAgent\.dll$</ModulePath>
             </Include>
         </ModulePaths>
+        <!-- Program.cs and hand-written Migrations are NOT excluded here: both are already exercised
+             end-to-end by Integration tests (WebApplicationFactory boots Program.cs; Integration tests
+             apply EF migrations against a real/test database), and a measured before/after showed
+             excluding them drops overall coverage rather than raising it. For current coverage gaps
+             and line-by-line details, refer to SonarCloud coverage reports on this branch. -->
+        <!-- EfCoreContextModelSnapshot.cs's BuildModel() is pure tool-generated design-time metadata
+             (only used by `dotnet ef` CLI scaffolding) and is genuinely unreachable at runtime: the
+             PendingModelChangesWarning diagnostic that used to build/diff it on every startup is
+             suppressed in Program.cs/CustomWebApplicationFactory.cs (workaround for a confirmed
+             non-convergent dotnet-ef 10.0.10 Sqlite:Autoincrement annotation diff, unrelated to any
+             real model change — see PendingModelChangesGuardTests.cs, which guards that suppression
+             doesn't mask other drift). Excluding it here is the same category as excluding generated
+             code, not a coverage-avoidance shortcut. `*.Designer.cs` migration files are deliberately
+             NOT all excluded: only the newest migration's BuildTargetModel loses coverage from the same
+             root cause; the rest remain fully exercised, so a broader exclusion would hide real gaps. -->
+        <!-- OpenApiXmlCommentSupport.generated.cs is a build-time Roslyn source-generator output under
+             ShopAndEat/obj/**/Microsoft.AspNetCore.OpenApi.SourceGenerators/ (feeds OpenAPI XML doc
+             comments into Scalar/OpenAPI schema generation) — pure tool-generated interceptor/metadata
+             code, never hand-written, not meaningfully testable via normal request/response tests. Same
+             category of exclusion as EfCoreContextModelSnapshot.cs. -->
+        <!-- Logging.g.cs (under ShopAndEat/obj/**/Microsoft.Gen.Logging.LoggingGenerator/) is the
+             compiler-generated implementation of every [LoggerMessage] partial method across the
+             project. Its internal `if (logger.IsEnabled(...))` guard is measurably false against
+             NullLogger instances used in unit tests, so the generated formatting/EventId body is
+             legitimately unreachable there — same tool-generated-code category as the other exclusions. -->
+        <!-- RegexGenerator.g.cs (under ShoppingAgent/obj/**/System.Text.RegularExpressions.Generator/)
+             is the compiler-generated implementation backing [GeneratedRegex] partial properties/
+             methods — pure tool-generated regex-matching state machines, same exclusion category. -->
+        <!-- ShoppingAgent.dll coverage details: for current gaps and line-by-line uncovered locations,
+             refer to SonarCloud coverage reports on this branch. Historical effort notes: streaming
+             IChatClient failure/retry scenarios represent the highest per-item test-authoring cost. -->
+        <Sources>
+            <Exclude>
+                <Source>.*EfCoreContextModelSnapshot\.cs$</Source>
+                <Source>.*OpenApiXmlCommentSupport\.generated\.cs$</Source>
+                <Source>.*Logging\.g\.cs$</Source>
+                <Source>.*RegexGenerator\.g\.cs$</Source>
+            </Exclude>
+        </Sources>
     </CodeCoverage>
 </Configuration>

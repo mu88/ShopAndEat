@@ -1,4 +1,4 @@
-﻿using DTO.Meal;
+using DTO.Meal;
 using DTO.PurchaseItem;
 using DTO.Store;
 
@@ -6,15 +6,15 @@ namespace ServiceLayer;
 
 public interface IMealService
 {
-    void CreateMeal(NewMealDto newMealDto);
+    Task CreateMealAsync(NewMealDto newMealDto, CancellationToken cancellationToken = default);
 
-    IEnumerable<ExistingMealDto> GetFutureMeals();
+    Task<IReadOnlyList<ExistingMealDto>> GetFutureMealsAsync(CancellationToken cancellationToken = default);
 
-    IEnumerable<ExistingMealDto> GetMealsForToday();
+    Task<IReadOnlyList<ExistingMealDto>> GetMealsForTodayAsync(CancellationToken cancellationToken = default);
 
-    IEnumerable<NewPurchaseItemDto> GetOrderedPurchaseItems(ExistingStoreDto existingStoreDto);
+    Task<IReadOnlyList<NewPurchaseItemDto>> GetOrderedPurchaseItemsAsync(ExistingStoreDto existingStoreDto, CancellationToken cancellationToken = default);
 
-    void DeleteMeal(DeleteMealDto mealToDelete);
+    Task DeleteMealAsync(DeleteMealDto mealToDelete, CancellationToken cancellationToken = default);
 
-    void ToggleMeal(int mealId);
+    Task ToggleMealAsync(int mealId, CancellationToken cancellationToken = default);
 }

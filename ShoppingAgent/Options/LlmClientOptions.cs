@@ -34,5 +34,5 @@ public class LlmClientOptions
     /// In development: set in appsettings.Development.json (never commit).
     /// </summary>
     [Required]
-    public string ApiKey { get; set; }
+    public string ApiKey { get; set; } = string.Empty;
 }

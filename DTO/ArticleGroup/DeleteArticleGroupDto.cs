@@ -1,6 +1,5 @@
-﻿namespace DTO.ArticleGroup;
+using DataLayer.EfClasses;
 
-public class DeleteArticleGroupDto(int articleGroupId)
-{
-    public int ArticleGroupId { get; } = articleGroupId;
-}
+namespace DTO.ArticleGroup;
+
+public record DeleteArticleGroupDto(ArticleGroupId ArticleGroupId);

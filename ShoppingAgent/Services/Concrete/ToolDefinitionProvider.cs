@@ -1,6 +1,7 @@
 #nullable enable
 using Microsoft.Extensions.AI;
 using ShoppingAgent.Models;
+using ShoppingAgent.Services;
 
 namespace ShoppingAgent.Services.Concrete;
 
@@ -12,50 +13,58 @@ public class ToolDefinitionProvider : IToolDefinitionProvider
     public IReadOnlyList<AITool> GetToolDefinitions(string shopName, WorkflowPhase phase) =>
         phase switch
         {
-            WorkflowPhase.Researching =>
-            [
-                SearchProducts(shopName),
-                GetProductDetails(shopName),
-                SavePreference(),
-                DeletePreference(),
-                RequestClarification(),
-                ConfirmCart(),
-            ],
+            WorkflowPhase.Researching => ResearchingTools(shopName),
 
             // AwaitingClarification: AgentService resets to Researching before every LLM call,
             // so this tool set is never actively served. It acts as a safety net in case
             // the phase somehow reaches the LLM — search tools are intentionally absent.
-            WorkflowPhase.AwaitingClarification =>
-            [
-                RequestClarification(),
-                SavePreference(),
-                DeletePreference(),
-                ConfirmCart(),
-            ],
-            WorkflowPhase.AwaitingConfirmation =>
-            [
-                SearchProducts(shopName),
-                GetProductDetails(shopName),
-                SavePreference(),
-                DeletePreference(),
-                RequestClarification(),
-                ConfirmCart(),
-                ProceedToCart(),
-            ],
-            WorkflowPhase.FillingCart =>
-            [
-                SearchProducts(shopName),
-                GetProductDetails(shopName),
-                AddToCart(shopName),
-                RemoveFromCart(shopName),
-                GetCartContents(shopName),
-                NavigateToCart(shopName),
-                SavePreference(),
-                DeletePreference(),
-                VerifyShoppingList(),
-            ],
+            WorkflowPhase.AwaitingClarification => AwaitingClarificationTools(),
+            WorkflowPhase.AwaitingConfirmation => AwaitingConfirmationTools(shopName),
+            WorkflowPhase.FillingCart => FillingCartTools(shopName),
             _ => throw new ArgumentOutOfRangeException(nameof(phase), phase, null),
         };
+
+    private static IReadOnlyList<AITool> ResearchingTools(string shopName) =>
+    [
+        SearchProducts(shopName),
+        GetProductDetails(shopName),
+        SavePreference(),
+        DeletePreference(),
+        RequestClarification(),
+        ConfirmCart(),
+    ];
+
+    private static IReadOnlyList<AITool> AwaitingClarificationTools() =>
+    [
+        RequestClarification(),
+        SavePreference(),
+        DeletePreference(),
+        ConfirmCart(),
+    ];
+
+    private static IReadOnlyList<AITool> AwaitingConfirmationTools(string shopName) =>
+    [
+        SearchProducts(shopName),
+        GetProductDetails(shopName),
+        SavePreference(),
+        DeletePreference(),
+        RequestClarification(),
+        ConfirmCart(),
+        ProceedToCart(),
+    ];
+
+    private static IReadOnlyList<AITool> FillingCartTools(string shopName) =>
+    [
+        SearchProducts(shopName),
+        GetProductDetails(shopName),
+        AddToCart(shopName),
+        RemoveFromCart(shopName),
+        GetCartContents(shopName),
+        NavigateToCart(shopName),
+        SavePreference(),
+        DeletePreference(),
+        VerifyShoppingList(),
+    ];
 
     private static AIFunction SearchProducts(string shopName) =>
         AIFunctionFactory.Create(
@@ -114,7 +123,7 @@ public class ToolDefinitionProvider : IToolDefinitionProvider
     private static AIFunction ConfirmCart() =>
         AIFunctionFactory.Create(
             () => Task.FromResult(string.Empty),
-            "confirm_cart",
+            SignalToolNames.ConfirmCart,
             "Call this tool ONLY when ALL items in the shopping plan table are resolved (no ❓ items remain). This signals the end of the research phase and requests user confirmation. Do NOT call this while any item still shows ❓ — present the table and ask open questions first.");
 
     private static AIFunction RequestClarification() =>
@@ -126,6 +135,6 @@ public class ToolDefinitionProvider : IToolDefinitionProvider
     private static AIFunction ProceedToCart() =>
         AIFunctionFactory.Create(
             () => Task.FromResult(string.Empty),
-            "proceed_to_cart",
+            SignalToolNames.ProceedToCart,
             "Call this tool when the user has explicitly confirmed the shopping plan. This transitions the workflow to the cart-filling phase. After calling this tool, proceed to add all planned products to the cart using add_to_cart.");
 }

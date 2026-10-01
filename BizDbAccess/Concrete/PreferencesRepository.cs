@@ -6,7 +6,7 @@ namespace BizDbAccess.Concrete;
 
 public class PreferencesRepository(EfCoreContext context) : IPreferencesRepository
 {
-    public async Task<IReadOnlyList<ShoppingPreference>> GetAllPreferencesAsync(string scope, string storeKey, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ShoppingPreference>> GetAllPreferencesAsync(string? scope, string? storeKey, CancellationToken cancellationToken = default)
     {
         var query = context.ShoppingPreferences.AsQueryable();
 
@@ -44,7 +44,7 @@ public class PreferencesRepository(EfCoreContext context) : IPreferencesReposito
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<bool> DeletePreferenceAsync(string scope, string key, string storeKey, CancellationToken cancellationToken = default)
+    public async Task<bool> DeletePreferenceAsync(string scope, string key, string? storeKey, CancellationToken cancellationToken = default)
     {
         var preference = await context.ShoppingPreferences
             .FirstOrDefaultAsync(preference => preference.Scope == scope && preference.Key == key && preference.StoreKey == storeKey, cancellationToken);

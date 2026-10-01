@@ -1,5 +1,6 @@
-﻿using DataLayer.EF;
+using DataLayer.EF;
 using DataLayer.EfClasses;
+using Microsoft.EntityFrameworkCore;
 
 namespace BizDbAccess.Concrete;
 
@@ -11,5 +12,6 @@ public class PurchaseItemDbAccess(EfCoreContext context) : IPurchaseItemDbAccess
     public void DeletePurchaseItem(PurchaseItem purchaseItem) => context.PurchaseItems.Remove(purchaseItem);
 
     /// <inheritdoc />
-    public PurchaseItem GetPurchaseItem(int purchaseItemId) => context.PurchaseItems.Single(x => x.PurchaseItemId == purchaseItemId);
+    public Task<PurchaseItem> GetPurchaseItemAsync(int purchaseItemId, CancellationToken cancellationToken = default)
+        => context.PurchaseItems.SingleAsync(purchaseItem => purchaseItem.PurchaseItemId == purchaseItemId, cancellationToken);
 }

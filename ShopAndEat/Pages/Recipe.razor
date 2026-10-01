@@ -1,5 +1,6 @@
-﻿@page "/recipe"
+@page "/recipe"
 @rendermode InteractiveServer
+@using DataLayer.EfClasses
 @using DTO.Article
 @using DTO.Ingredient
 @using DTO.Recipe
@@ -55,7 +56,7 @@
                         <option>Choose Unit...</option>
                         @foreach (var unit in Units.OrderBy(x => x.Name))
                         {
-                            <option value="@unit.UnitId">@unit.Name</option>
+                            <option value="@unit.UnitId.Value">@unit.Name</option>
                         }
                     </select>
                 </td>
@@ -64,7 +65,7 @@
                         <option>Choose Article...</option>
                         @foreach (var article in Articles.OrderBy(x => x.Name))
                         {
-                            <option value="@article.ArticleId">@article.Name</option>
+                            <option value="@article.ArticleId.Value">@article.Name</option>
                         }
                     </select>
                 </td>
@@ -92,10 +93,10 @@
             <tr>
                 <td>@recipe.Name</td>
                 <td>
-                    <button class="btn btn-primary" @onclick="@(e => DeleteRecipe(recipe.RecipeId))">❌</button>
+                    <button class="btn btn-primary" @onclick="@(e => DeleteRecipeAsync(recipe.RecipeId.Value))">❌</button>
                 </td>
                 <td>
-                    <button class="btn btn-primary" @onclick="@(e => EditRecipeAsync(recipe.RecipeId))">🖊</button>
+                    <button class="btn btn-primary" @onclick="@(e => EditRecipeAsync(recipe.RecipeId.Value))">🖊</button>
                 </td>
             </tr>
         }
@@ -105,35 +106,35 @@
 @code {
 
     /// <inheritdoc />
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnInitialized();
+        await base.OnInitializedAsync();
 
-        LoadRecipes();
-        Units = UnitService.GetAllUnits();
-        Articles = ArticleService.GetAllArticles();
+        await LoadRecipesAsync();
+        Units = await UnitService.GetAllUnitsAsync();
+        Articles = await ArticleService.GetAllArticlesAsync();
         SelectedUnitIds = new List<int>();
         SelectedArticleIds = new List<int>();
         SelectedQuantities = new List<double>();
         AddIngredient();
     }
 
-    private List<int> SelectedUnitIds { get; set; }
+    private List<int> SelectedUnitIds { get; set; } = [];
 
-    private List<int> SelectedArticleIds { get; set; }
+    private List<int> SelectedArticleIds { get; set; } = [];
 
-    private List<double> SelectedQuantities { get; set; }
+    private List<double> SelectedQuantities { get; set; } = [];
 
-    private IEnumerable<ExistingArticleDto> Articles { get; set; }
+    private IReadOnlyList<ExistingArticleDto> Articles { get; set; } = [];
 
-    private IEnumerable<ExistingUnitDto> Units { get; set; }
+    private IReadOnlyList<ExistingUnitDto> Units { get; set; } = [];
 
-    private void LoadRecipes()
+    private async Task LoadRecipesAsync()
     {
-        Recipes = RecipeService.GetAllRecipes();
+        Recipes = await RecipeService.GetAllRecipesAsync();
     }
 
-    private IEnumerable<ExistingRecipeDto> Recipes { get; set; }
+    private IReadOnlyList<ExistingRecipeDto> Recipes { get; set; } = [];
 
     private int NumberOfIngredients => SelectedArticleIds.Count;
 
@@ -141,36 +142,35 @@
 
     private async Task HandleSubmitAsync()
     {
+        var ingredients = BuildIngredients();
+
         if (_recipeModel.RecipeId == default)
         {
-            var ingredients = new List<NewIngredientDto>();
-            for (var i = 0; i < NumberOfIngredients; i++)
-            {
-                ingredients.Add(new NewIngredientDto(Articles.Single(x => x.ArticleId == SelectedArticleIds[i]),
-                    SelectedQuantities[i],
-                    Units.Single(x => x.UnitId == SelectedUnitIds[i])));
-            }
-
             var newRecipe = new NewRecipeDto(_recipeModel.Name, _recipeModel.NumberOfDays, _recipeModel.NumberOfPersons, ingredients);
-            RecipeService.CreateNewRecipe(newRecipe);
+            await RecipeService.CreateNewRecipeAsync(newRecipe);
         }
         else
         {
-            var ingredients = new List<NewIngredientDto>();
-            for (var i = 0; i < NumberOfIngredients; i++)
-            {
-                ingredients.Add(new NewIngredientDto(Articles.Single(x => x.ArticleId == SelectedArticleIds[i]),
-                    SelectedQuantities[i],
-                    Units.Single(x => x.UnitId == SelectedUnitIds[i])));
-            }
-
-            var updatedRecipe = new UpdateRecipeDto(_recipeModel.Name, _recipeModel.NumberOfDays, _recipeModel.NumberOfPersons, ingredients, _recipeModel.RecipeId);
-            RecipeService.UpdateRecipe(updatedRecipe);
+            var updatedRecipe = new UpdateRecipeDto(_recipeModel.Name, _recipeModel.NumberOfDays, _recipeModel.NumberOfPersons, ingredients, new RecipeId(_recipeModel.RecipeId));
+            await RecipeService.UpdateRecipeAsync(updatedRecipe);
         }
 
         await ShowSaveConfirmationAsync();
 
-        LoadRecipes();
+        await LoadRecipesAsync();
+    }
+
+    private List<NewIngredientDto> BuildIngredients()
+    {
+        var ingredients = new List<NewIngredientDto>();
+        for (var i = 0; i < NumberOfIngredients; i++)
+        {
+            ingredients.Add(new NewIngredientDto(Articles.Single(x => x.ArticleId.Value == SelectedArticleIds[i]),
+                SelectedQuantities[i],
+            Units.Single(x => x.UnitId.Value == SelectedUnitIds[i])));
+        }
+
+        return ingredients;
     }
 
     private async Task ShowSaveConfirmationAsync() => await JS.InvokeVoidAsync("window.alert", "Saved!");
@@ -190,22 +190,22 @@
         SelectedUnitIds.RemoveAt(indexOfLastIngredient);
     }
 
-    private void DeleteRecipe(int recipeId)
+    private async Task DeleteRecipeAsync(int recipeId)
     {
-        RecipeService.DeleteRecipe(new DeleteRecipeDto(recipeId));
-        LoadRecipes();
+        await RecipeService.DeleteRecipeAsync(new DeleteRecipeDto(new RecipeId(recipeId)));
+        await LoadRecipesAsync();
     }
 
     private async Task EditRecipeAsync(int recipeId)
     {
-        var recipe = Recipes.Single(x => x.RecipeId == recipeId);
+        var recipe = Recipes.Single(x => x.RecipeId.Value == recipeId);
         _recipeModel.Name = recipe.Name;
         _recipeModel.NumberOfDays = recipe.NumberOfDays;
         _recipeModel.NumberOfPersons = recipe.NumberOfPersons;
-        SelectedArticleIds = recipe.Ingredients.Select(x => x.Article).Select(x => x.ArticleId).ToList();
+        SelectedArticleIds = recipe.Ingredients.Select(x => x.Article).Select(x => x.ArticleId.Value).ToList();
         SelectedQuantities = recipe.Ingredients.Select(x => x.Quantity).ToList();
-        SelectedUnitIds = recipe.Ingredients.Select(x => x.Unit).Select(x => x.UnitId).ToList();
-        _recipeModel.RecipeId = recipe.RecipeId;
+        SelectedUnitIds = recipe.Ingredients.Select(x => x.Unit).Select(x => x.UnitId.Value).ToList();
+        _recipeModel.RecipeId = recipe.RecipeId.Value;
         await ScrollToTopAsync();
     }
 

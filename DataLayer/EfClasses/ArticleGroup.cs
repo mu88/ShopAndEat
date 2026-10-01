@@ -1,13 +1,14 @@
-﻿using JetBrains.Annotations;
+using JetBrains.Annotations;
 
 namespace DataLayer.EfClasses;
 
-public class ArticleGroup
+public class ArticleGroup : IHasId<ArticleGroupId>
 {
     public ArticleGroup(string name) => Name = name;
 
     public ArticleGroup()
     {
+        Name = string.Empty;
     }
 
     public string Name
@@ -17,7 +18,7 @@ public class ArticleGroup
         private set;
     }
 
-    public int ArticleGroupId
+    public ArticleGroupId ArticleGroupId
     {
         get;
         [UsedImplicitly]

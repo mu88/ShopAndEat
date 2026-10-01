@@ -1,17 +1,16 @@
-#pragma warning disable SA1010 // Opening square brackets should not be preceded by a space
+#pragma warning disable SA1011 // Closing square bracket should be followed by a space
 
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using FluentAssertions;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using NUnit.Framework;
 using ShoppingAgent.Diagnostics;
 using ShoppingAgent.Options;
-using ShoppingAgent.Resources;
 using ShoppingAgent.Services;
 using ShoppingAgent.Services.Concrete;
 using WorkflowPhase = ShoppingAgent.Models.WorkflowPhase;
@@ -22,31 +21,22 @@ namespace Tests.Unit.ShoppingAgent;
 [Category("Unit")]
 public class ConversationManagerTests
 {
-    private IToolCallDispatcher _dispatcherMock;
-    private IToolResultRenderer _rendererMock;
-    private IToolResultCompressor _compressorMock;
-    private IStringLocalizer<Messages> _localizerMock;
-    private ILogger<ConversationManager> _loggerMock;
-    private ShoppingAgentMetrics _metrics;
-    private IOptions<AgentOptions> _agentOptions;
-    private IOptions<LlmClientOptions> _llmOptions;
-    private ConversationManager _sut;
+    private readonly List<Activity> _completedActivities = [];
+    private IToolCallDispatcher _dispatcherMock = null!;
+    private ILlmCommunicator _llmCommunicatorMock = null!;
+    private IToolExecutionOrchestrator _toolExecutionOrchestratorMock = null!;
+    private ShoppingAgentMetrics _metrics = null!;
+    private IOptions<AgentOptions> _agentOptions = null!;
+    private IOptions<LlmClientOptions> _llmOptions = null!;
+    private ConversationManager _sut = null!;
+    private ActivityListener _activityListener = null!;
 
     [SetUp]
     public void SetUp()
     {
         _dispatcherMock = Substitute.For<IToolCallDispatcher>();
-        _rendererMock = Substitute.For<IToolResultRenderer>();
-        _compressorMock = Substitute.For<IToolResultCompressor>();
-        _compressorMock.Compress(Arg.Any<string>(), Arg.Any<string>()).Returns(callInfo => callInfo.ArgAt<string>(1));
-
-        _localizerMock = Substitute.For<IStringLocalizer<Messages>>();
-        _localizerMock[Arg.Any<string>()].Returns(call =>
-            new LocalizedString(call.Arg<string>(), call.Arg<string>()));
-        _localizerMock[Arg.Any<string>(), Arg.Any<object[]>()].Returns(call =>
-            new LocalizedString(call.ArgAt<string>(0), call.ArgAt<string>(0)));
-
-        _loggerMock = NullLogger<ConversationManager>.Instance;
+        _llmCommunicatorMock = Substitute.For<ILlmCommunicator>();
+        _toolExecutionOrchestratorMock = Substitute.For<IToolExecutionOrchestrator>();
 
         var meterFactory = Substitute.For<IMeterFactory>();
         meterFactory.Create(Arg.Any<MeterOptions>()).Returns(callInfo => new Meter(callInfo.Arg<MeterOptions>()));
@@ -57,294 +47,293 @@ public class ConversationManagerTests
 
         _sut = new ConversationManager(
             _dispatcherMock,
-            _rendererMock,
-            _compressorMock,
-            _localizerMock,
-            _loggerMock,
+            _llmCommunicatorMock,
+            _toolExecutionOrchestratorMock,
+            NullLogger<ConversationManager>.Instance,
             _metrics,
             _agentOptions,
             _llmOptions);
+
+        _completedActivities.Clear();
+        _activityListener = new ActivityListener
+        {
+            ShouldListenTo = source => string.Equals(source.Name, ShoppingAgentDiagnostics.ActivitySourceName, StringComparison.Ordinal),
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            ActivityStopped = _completedActivities.Add,
+        };
+        ActivitySource.AddActivityListener(_activityListener);
     }
 
+    [TearDown]
+    public void TearDown() => _activityListener.Dispose();
+
     [Test]
-    public async Task ProcessAsync_SimpleTextResponse_StreamsText()
+    public async Task ProcessAsync_ReturnsNewMessagesWithoutMutatingInputHistory()
     {
         // Arrange
+        var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
         var chatClient = Substitute.For<IChatClient>();
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, "Hello from the agent")]);
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(response));
+        var appendedMessage = new ChatMessage(ChatRole.Assistant, "Persisted assistant message");
 
-        var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
-        var tools = new List<AITool>();
+        _llmCommunicatorMock
+            .GetResponseAsync(Arg.Any<IChatClient>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<Func<IReadOnlyList<AITool>>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<(ChatResponse?, string?, string?)>((response, null, "fallback")));
+        _toolExecutionOrchestratorMock
+            .ProcessResponseAsync(Arg.Any<ChatResponse>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<string>(), Arg.Any<ConversationProcessingState>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => ReturnChunks(
+                callInfo.ArgAt<IList<ChatMessage>>(1),
+                callInfo.ArgAt<ConversationProcessingState>(3),
+                appendedMessage,
+                true,
+                "processed"));
 
         // Act
+        var result = _sut.ProcessAsync(history, chatClient, () => [], "coop");
         var results = new List<string>();
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
+        await foreach (var chunk in result.Chunks)
         {
             results.Add(chunk);
         }
 
         // Assert
-        results.Should().ContainSingle().Which.Should().Be("Hello from the agent");
-        history.Should().HaveCount(2);
-        history[1].Role.Should().Be(ChatRole.Assistant);
+        results.Should().ContainInOrder("fallback", "processed");
+        history.Should().ContainSingle();
+        result.NewMessages.Should().ContainSingle().Which.Should().BeSameAs(appendedMessage);
+        _completedActivities.Should().ContainSingle(activity => activity.OperationName == "ShoppingAgent.ProcessMessage");
+        _completedActivities.Single().Tags.Should().Contain(tag => tag.Key == "agent.shop" && tag.Value == "coop");
     }
 
     [Test]
-    public async Task ProcessAsync_WhenToolCallingDisabled_FallsBackWithoutTools()
+    public async Task ProcessAsync_ReturnsNewMessages_WhenNoActivityListenerIsRegistered()
     {
-        // Arrange
-        var chatClient = Substitute.For<IChatClient>();
-
-        // First call: throw tool-not-supported error
-        // Second call (fallback without tools): return text
-        var textResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, "Fallback response")]);
-
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(
-                _ => throw new InvalidOperationException("Tool calling is NOT SUPPORTED by this model"),
-                _ => Task.FromResult(textResponse));
-
+        // Arrange — without a listener, ActivitySource.StartActivity returns null, exercising
+        // the null-conditional `processActivity?.SetTag` branch used for optional OpenTelemetry tagging.
+        _activityListener.Dispose();
         var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
-        var tools = new List<AITool> { AIFunctionFactory.Create(() => "test", "test_tool", "A test tool") };
+        var chatClient = Substitute.For<IChatClient>();
+        var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, "Hello from the agent")]);
+        var appendedMessage = new ChatMessage(ChatRole.Assistant, "Persisted assistant message");
+
+        _llmCommunicatorMock
+            .GetResponseAsync(Arg.Any<IChatClient>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<Func<IReadOnlyList<AITool>>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<(ChatResponse?, string?, string?)>((response, null, null)));
+        _toolExecutionOrchestratorMock
+            .ProcessResponseAsync(Arg.Any<ChatResponse>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<string>(), Arg.Any<ConversationProcessingState>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => ReturnChunks(
+                callInfo.ArgAt<IList<ChatMessage>>(1),
+                callInfo.ArgAt<ConversationProcessingState>(3),
+                appendedMessage,
+                true,
+                "processed"));
 
         // Act
+        var result = _sut.ProcessAsync(history, chatClient, () => [], "coop");
         var results = new List<string>();
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
+        await foreach (var chunk in result.Chunks)
         {
             results.Add(chunk);
         }
 
         // Assert
-        results.Should().Contain(s => s.Contains("Fallback response"));
+        results.Should().Contain("processed");
+        result.NewMessages.Should().ContainSingle().Which.Should().BeSameAs(appendedMessage);
     }
 
     [Test]
-    public async Task ProcessAsync_WhenToolCallingDisabled_SubsequentCallOmitsTools()
+    public async Task ProcessAsync_StopsAfterErrorMessage_WhenNoActivityListenerIsRegistered()
     {
-        // Arrange
+        // Arrange — without a listener, ActivitySource.StartActivity returns null, exercising
+        // the null-conditional `processActivity?.SetStatus` branch on the error path.
+        _activityListener.Dispose();
+        var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
         var chatClient = Substitute.For<IChatClient>();
 
-        // First call: throw tool-not-supported error, triggering fallback
-        var textResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, "Fallback response")]);
-
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(
-                _ => throw new InvalidOperationException("Tool calling is NOT SUPPORTED by this model"),
-                _ => Task.FromResult(textResponse));
-
-        var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
-        var tools = new List<AITool> { AIFunctionFactory.Create(() => "test", "test_tool", "A test tool") };
-
-        // Trigger fallback
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
-        {
-            _ = chunk;
-        }
-
-        // Arrange subsequent call
-        history.Clear();
-        history.Add(new ChatMessage(ChatRole.User, "Hello again"));
-        chatClient.ClearReceivedCalls();
-
-        var thirdResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, "No tools here")]);
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(thirdResponse));
+        _llmCommunicatorMock
+            .GetResponseAsync(Arg.Any<IChatClient>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<Func<IReadOnlyList<AITool>>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<(ChatResponse?, string?, string?)>((null, "llm-error", null)));
 
         // Act
+        var result = _sut.ProcessAsync(history, chatClient, () => [], "coop");
         var results = new List<string>();
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
+        await foreach (var chunk in result.Chunks)
         {
             results.Add(chunk);
         }
 
         // Assert
-        results.Should().ContainSingle().Which.Should().Be("No tools here");
-        await chatClient.Received().GetResponseAsync(
-            Arg.Any<IEnumerable<ChatMessage>>(),
-            Arg.Is<ChatOptions>(o => o.Tools == null),
+        results.Should().ContainSingle().Which.Should().Be("llm-error");
+    }
+
+    [Test]
+    public async Task ProcessAsync_StopsAfterErrorMessage()
+    {
+        // Arrange
+        var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
+        var chatClient = Substitute.For<IChatClient>();
+
+        _llmCommunicatorMock
+            .GetResponseAsync(Arg.Any<IChatClient>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<Func<IReadOnlyList<AITool>>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<(ChatResponse?, string?, string?)>((null, "llm-error", null)));
+
+        // Act
+        var result = _sut.ProcessAsync(history, chatClient, () => [], "coop");
+        var results = new List<string>();
+        await foreach (var chunk in result.Chunks)
+        {
+            results.Add(chunk);
+        }
+
+        // Assert
+        results.Should().ContainSingle().Which.Should().Be("llm-error");
+        _toolExecutionOrchestratorMock.DidNotReceive().ProcessResponseAsync(
+            Arg.Any<ChatResponse>(),
+            Arg.Any<IList<ChatMessage>>(),
+            Arg.Any<string>(),
+            Arg.Any<ConversationProcessingState>(),
+            Arg.Any<CancellationToken>());
+        _completedActivities.Should().ContainSingle().Which.Status.Should().Be(ActivityStatusCode.Error);
+    }
+
+    [Test]
+    public async Task ProcessAsync_ContinuesIterationsUntilBreakIsRequested()
+    {
+        // Arrange
+        var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
+        var chatClient = Substitute.For<IChatClient>();
+        var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, "Hello")]);
+        var invocationCount = 0;
+
+        _llmCommunicatorMock
+            .GetResponseAsync(Arg.Any<IChatClient>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<Func<IReadOnlyList<AITool>>>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                invocationCount++;
+                return Task.FromResult<(ChatResponse?, string?, string?)>((response, null, null));
+            });
+        _toolExecutionOrchestratorMock
+            .ProcessResponseAsync(Arg.Any<ChatResponse>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<string>(), Arg.Any<ConversationProcessingState>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => ReturnChunks(callInfo.ArgAt<ConversationProcessingState>(3), invocationCount >= 2, $"chunk-{invocationCount.ToString(CultureInfo.InvariantCulture)}"));
+
+        // Act
+        var result = _sut.ProcessAsync(history, chatClient, () => [], "coop");
+        var results = new List<string>();
+        await foreach (var chunk in result.Chunks)
+        {
+            results.Add(chunk);
+        }
+
+        // Assert
+        results.Should().ContainInOrder("chunk-1", "chunk-2");
+        await _llmCommunicatorMock.Received(2).GetResponseAsync(
+            chatClient,
+            Arg.Any<IList<ChatMessage>>(),
+            Arg.Any<Func<IReadOnlyList<AITool>>>(),
             Arg.Any<CancellationToken>());
     }
 
     [Test]
-    public async Task ProcessAsync_ReturnsTimeoutMessage_WhenLlmTimesOut()
+    public async Task ProcessAsync_StopsAfterMaxToolCallingIterations_WhenNoBreakIsRequested()
     {
-        // Arrange
-        var chatClient = Substitute.For<IChatClient>();
-        _llmOptions = Options.Create(new LlmClientOptions { TimeoutSeconds = 1 });
-        _sut = new ConversationManager(_dispatcherMock, _rendererMock, _compressorMock, _localizerMock, _loggerMock, _metrics, _agentOptions, _llmOptions);
-
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(async callInfo =>
-            {
-                var ct = callInfo.ArgAt<CancellationToken>(2);
-                await Task.Delay(TimeSpan.FromSeconds(10), ct);
-                return new ChatResponse([new ChatMessage(ChatRole.Assistant, "should not reach")]);
-            });
+        // Arrange — proves the for-loop's iteration counter actually increases; with a mutated
+        // decrement, the loop would never reach MaxToolCallingIterations and run indefinitely.
+        _agentOptions = Options.Create(new AgentOptions { MaxToolCallingIterations = 3 });
+        _sut = new ConversationManager(
+            _dispatcherMock,
+            _llmCommunicatorMock,
+            _toolExecutionOrchestratorMock,
+            NullLogger<ConversationManager>.Instance,
+            _metrics,
+            _agentOptions,
+            _llmOptions);
 
         var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
-        var tools = new List<AITool>();
-
-        // Act
-        var results = new List<string>();
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
-        {
-            results.Add(chunk);
-        }
-
-        // Assert
-        results.Should().ContainSingle().Which.Should().Contain("LlmTimeout");
-    }
-
-    [Test]
-    public async Task ProcessAsync_ReturnsErrorMessage_WhenLlmThrowsGenericException()
-    {
-        // Arrange
         var chatClient = Substitute.For<IChatClient>();
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns<ChatResponse>(_ => throw new InvalidOperationException("Model overloaded"));
+        var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, "Hello")]);
+        var invocationCount = 0;
 
-        var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
-        var tools = new List<AITool>();
-
-        // Act
-        var results = new List<string>();
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
-        {
-            results.Add(chunk);
-        }
-
-        // Assert
-        results.Should().ContainSingle().Which.Should().Contain("LlmError");
-    }
-
-    [Test]
-    public async Task ProcessAsync_ExecutesToolCalls_AndReturnsRenderedResults()
-    {
-        // Arrange
-        var chatClient = Substitute.For<IChatClient>();
-        var toolCallContent = new FunctionCallContent("call-1", "search_products", new Dictionary<string, object> { ["search_term"] = "Tofu" });
-        var toolCallContents = new List<AIContent> { toolCallContent };
-        var firstResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, toolCallContents)]);
-        var secondResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, "Found 2 products for Tofu")]);
-
-        var callCount = 0;
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
+        _llmCommunicatorMock
+            .GetResponseAsync(Arg.Any<IChatClient>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<Func<IReadOnlyList<AITool>>>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
-                callCount++;
-                return Task.FromResult(callCount == 1 ? firstResponse : secondResponse);
+                invocationCount++;
+                if (invocationCount > 3)
+                {
+                    throw new InvalidOperationException("Too many iterations");
+                }
+
+                return Task.FromResult<(ChatResponse?, string?, string?)>((response, null, null));
             });
-
-        _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "🔍", [toolCallContent])]);
-        _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object>>()).Returns("search_term=Tofu");
-        _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
-            .Returns(("2 products found", true));
-
-        _rendererMock.RenderToolGroupStart(Arg.Any<string>(), Arg.Any<string>()).Returns("<group>");
-        _rendererMock.RenderToolCallStart(Arg.Any<string>(), Arg.Any<string>()).Returns("<tool>");
-        _rendererMock.RenderToolResult(Arg.Any<string>()).Returns("<result>");
-        _rendererMock.RenderToolGroupEnd().Returns("</group>");
-
-        var history = new List<ChatMessage> { new(ChatRole.User, "Search Tofu") };
-        var tools = new List<AITool>();
+        _toolExecutionOrchestratorMock
+            .ProcessResponseAsync(Arg.Any<ChatResponse>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<string>(), Arg.Any<ConversationProcessingState>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => ReturnChunks(callInfo.ArgAt<ConversationProcessingState>(3), false));
 
         // Act
-        var results = new List<string>();
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
-        {
-            results.Add(chunk);
-        }
+        var result = _sut.ProcessAsync(history, chatClient, () => [], "coop");
+        await ConsumeChunksAsync(result.Chunks).WaitAsync(TimeSpan.FromSeconds(1));
 
-        // Assert
-        results.Should().Contain("<group>");
-        results.Should().Contain("<tool>");
-        results.Should().Contain("<result>");
-        results.Should().Contain("</group>");
-        results.Should().Contain("Found 2 products for Tofu");
+        // Assert — the loop must terminate exactly after MaxToolCallingIterations calls.
+        await _llmCommunicatorMock.Received(3).GetResponseAsync(
+            chatClient,
+            Arg.Any<IList<ChatMessage>>(),
+            Arg.Any<Func<IReadOnlyList<AITool>>>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Test]
-    public async Task ProcessAsync_StopsAfterRepeatedToolFailure()
+    public async Task ProcessAsync_RecordsMessageProcessingTimeMetric()
     {
         // Arrange
+        var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
         var chatClient = Substitute.For<IChatClient>();
-        _agentOptions = Options.Create(new AgentOptions { ToolFailureThreshold = 2, MaxToolCallingIterations = 10 });
-        _sut = new ConversationManager(_dispatcherMock, _rendererMock, _compressorMock, _localizerMock, _loggerMock, _metrics, _agentOptions, _llmOptions);
+        var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, "Hello")]);
 
-        var toolCallContent = new FunctionCallContent("call-1", "search_products", new Dictionary<string, object> { ["search_term"] = "Tofu" });
-        var toolCallContents = new List<AIContent> { toolCallContent };
-        var toolResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, toolCallContents)]);
+        _llmCommunicatorMock
+            .GetResponseAsync(Arg.Any<IChatClient>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<Func<IReadOnlyList<AITool>>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<(ChatResponse?, string?, string?)>((response, null, null)));
+        _toolExecutionOrchestratorMock
+            .ProcessResponseAsync(Arg.Any<ChatResponse>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<string>(), Arg.Any<ConversationProcessingState>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => ReturnChunks(callInfo.ArgAt<ConversationProcessingState>(3), true));
 
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(toolResponse));
-
-        _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "🔍", [toolCallContent])]);
-        _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object>>()).Returns("search_term=Tofu");
-        _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
-            .Returns(("Search failed", false));
-
-        _rendererMock.RenderToolGroupStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolCallStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolResult(Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolGroupEnd().Returns(string.Empty);
-
-        var history = new List<ChatMessage> { new(ChatRole.User, "Search Tofu") };
-        var tools = new List<AITool>();
+        var recordedValues = new List<double>();
+        using var meterListener = new MeterListener
+        {
+            InstrumentPublished = (instrument, listener) =>
+            {
+                if (string.Equals(instrument.Name, _metrics.MessageProcessingTimeMs.Name, StringComparison.Ordinal))
+                {
+                    listener.EnableMeasurementEvents(instrument);
+                }
+            },
+        };
+        meterListener.SetMeasurementEventCallback<double>((_, measurement, _, _) => recordedValues.Add(measurement));
+        meterListener.Start();
 
         // Act
-        var results = new List<string>();
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
+        var result = _sut.ProcessAsync(history, chatClient, () => [], "coop");
+        await foreach (var chunk in result.Chunks)
         {
-            results.Add(chunk);
+            _ = chunk;
         }
 
         // Assert
-        results.Should().Contain(s => s.Contains("RepeatedToolFailure"));
+        recordedValues.Should().ContainSingle();
     }
 
     [Test]
     public async Task ProcessAsync_WithCancelledToken_ThrowsOperationCanceledException()
     {
         // Arrange
-        var chatClient = Substitute.For<IChatClient>();
         var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
-        var tools = new List<AITool>();
-
+        var chatClient = Substitute.For<IChatClient>();
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
         // Act
         var act = async () =>
         {
-            await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop", cts.Token))
+            var result = _sut.ProcessAsync(history, chatClient, () => [], "coop", cts.Token);
+            await foreach (var chunk in result.Chunks.WithCancellation(cts.Token))
             {
                 _ = chunk;
             }
@@ -355,50 +344,52 @@ public class ConversationManagerTests
     }
 
     [Test]
-    public async Task ProcessAsync_WithTokenCancelledDuringToolExecution_ThrowsOperationCanceledException()
+    public async Task ProcessAsync_WhenCancelledMidStream_StillReturnsMessagesProducedBeforeCancellation()
     {
-        // Arrange
+        // Arrange — regression test: a cancellation (or any exception) after at least one
+        // successful iteration must not discard tool-call/assistant messages that iteration
+        // already produced, since some of those calls (e.g. add_to_cart) have real side effects
+        // that the next turn needs to see in the conversation history.
+        var history = new List<ChatMessage> { new(ChatRole.User, "Hi") };
         var chatClient = Substitute.For<IChatClient>();
-        using var cts = new CancellationTokenSource();
+        var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, "Hello from the agent")]);
+        var appendedMessage = new ChatMessage(ChatRole.Assistant, "Message from the completed first iteration");
+        var invocationCount = 0;
 
-        var toolCallContent = new FunctionCallContent("call-1", "search_products", new Dictionary<string, object> { ["search_term"] = "Tofu" });
-        var firstResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
-
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(firstResponse));
-
-        _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "🔍", [toolCallContent])]);
-        _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object>>()).Returns("search_term=Tofu");
-        _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
-            .Returns(callInfo =>
+        _llmCommunicatorMock
+            .GetResponseAsync(Arg.Any<IChatClient>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<Func<IReadOnlyList<AITool>>>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
             {
-                cts.Cancel();
-                return ("results", true);
+                invocationCount++;
+                if (invocationCount > 1)
+                {
+                    throw new OperationCanceledException("Cancelled mid-stream");
+                }
+
+                return Task.FromResult<(ChatResponse?, string?, string?)>((response, null, null));
             });
-
-        _rendererMock.RenderToolGroupStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolCallStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolResult(Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolGroupEnd().Returns(string.Empty);
-
-        var history = new List<ChatMessage> { new(ChatRole.User, "Search Tofu") };
-        var tools = new List<AITool>();
+        _toolExecutionOrchestratorMock
+            .ProcessResponseAsync(Arg.Any<ChatResponse>(), Arg.Any<IList<ChatMessage>>(), Arg.Any<string>(), Arg.Any<ConversationProcessingState>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => ReturnChunks(
+                callInfo.ArgAt<IList<ChatMessage>>(1),
+                callInfo.ArgAt<ConversationProcessingState>(3),
+                appendedMessage,
+                false,
+                "chunk1"));
 
         // Act
+        var result = _sut.ProcessAsync(history, chatClient, () => [], "coop");
         var act = async () =>
         {
-            await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop", cts.Token))
+            await foreach (var chunk in result.Chunks)
             {
                 _ = chunk;
             }
         };
 
-        // Assert
+        // Assert — the exception still propagates, but the first iteration's message is preserved.
         await act.Should().ThrowAsync<OperationCanceledException>();
+        result.NewMessages.Should().ContainSingle().Which.Should().BeSameAs(appendedMessage);
     }
 
     [Test]
@@ -417,217 +408,60 @@ public class ConversationManagerTests
     [Test]
     public void ResetWorkflow_DelegatesToDispatcher()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         _sut.ResetWorkflow();
 
         // Assert
         _dispatcherMock.Received(1).ResetWorkflow();
     }
 
-    [Test]
-    public async Task ProcessAsync_BreaksLoop_WhenDispatcherSignalsShouldBreak()
+    private static async IAsyncEnumerable<string> ReturnChunks(
+        IList<ChatMessage> workingHistory,
+        ConversationProcessingState state,
+        ChatMessage appendedMessage,
+        bool shouldBreak,
+        params string[] chunks)
     {
-        // Arrange
-        var chatClient = Substitute.For<IChatClient>();
-        var toolCallContent = new FunctionCallContent("call-1", "confirm_cart", new Dictionary<string, object>());
-        var toolResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
+        workingHistory.Add(appendedMessage);
 
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(toolResponse));
-
-        _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("workflow", "Shopping Plan", "📋", [toolCallContent])]);
-        _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object>>()).Returns(string.Empty);
-        _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
-            .Returns(("__phase:awaiting_confirmation__", true));
-        _dispatcherMock.ShouldBreakAfterToolExecution.Returns(true);
-
-        _rendererMock.RenderToolGroupStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolCallStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolResult(Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolGroupEnd().Returns(string.Empty);
-
-        List<ChatMessage> history = [new(ChatRole.User, "proceed")];
-        List<AITool> tools = [];
-
-        // Act
-        List<string> results = [];
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
+        foreach (var chunk in chunks)
         {
-            results.Add(chunk);
+            yield return chunk;
         }
 
-        // Assert — loop breaks after first tool call; LLM was called exactly once
-        await chatClient.Received(1).GetResponseAsync(
-            Arg.Any<IEnumerable<ChatMessage>>(),
-            Arg.Any<ChatOptions>(),
-            Arg.Any<CancellationToken>());
+        if (shouldBreak)
+        {
+            state.ShouldBreak = true;
+        }
+
+        await Task.CompletedTask;
     }
 
-    [Test]
-    public async Task ProcessAsync_WhenResponseContainsTextAndToolCall_YieldsTextBeforeToolGroup()
+    private static async IAsyncEnumerable<string> ReturnChunks(
+        ConversationProcessingState state,
+        bool shouldBreak,
+        params string[] chunks)
     {
-        // Arrange
-        var chatClient = Substitute.For<IChatClient>();
-        const string planTableText = "Here is your shopping plan:\n| Product | Qty |\n|---------|-----|\n| Tomatoes | 1 |";
-        var toolCallContent = new FunctionCallContent("call-1", "confirm_cart", new Dictionary<string, object>());
-
-        // LLM returns text AND a tool call in the same response (typical when presenting plan + signalling confirm)
-        var mixedContents = new List<AIContent>
+        foreach (var chunk in chunks)
         {
-            new TextContent(planTableText),
-            toolCallContent,
-        };
-        var mixedResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, mixedContents)]);
-
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(mixedResponse));
-
-        _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("workflow", "Shopping Plan", "📋", [toolCallContent])]);
-        _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object>>()).Returns(string.Empty);
-        _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
-            .Returns(("__phase:awaiting_confirmation__", true));
-        _dispatcherMock.ShouldBreakAfterToolExecution.Returns(true);
-
-        _rendererMock.RenderToolGroupStart(Arg.Any<string>(), Arg.Any<string>()).Returns("<group>");
-        _rendererMock.RenderToolCallStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolResult(Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolGroupEnd().Returns("</group>");
-
-        List<ChatMessage> history = [new(ChatRole.User, "Here is my shopping list")];
-        List<AITool> tools = [];
-
-        // Act
-        List<string> results = [];
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
-        {
-            results.Add(chunk);
+            yield return chunk;
         }
 
-        // Assert — plan table text appears in output AND the tool group is rendered
-        results.Should().Contain(planTableText);
-        results.Should().Contain("<group>");
-        results.Should().Contain("</group>");
+        if (shouldBreak)
+        {
+            state.ShouldBreak = true;
+        }
 
-        // Text must appear BEFORE the tool group
-        var textIndex = results.IndexOf(planTableText);
-        var groupIndex = results.IndexOf("<group>");
-        textIndex.Should().BeLessThan(groupIndex);
+        await Task.CompletedTask;
     }
 
-    [Test]
-    public async Task ProcessAsync_WhenRequestClarificationCalledSilently_ContinuesLoopToAllowTextGeneration()
+    private static async Task ConsumeChunksAsync(IAsyncEnumerable<string> chunks)
     {
-        // Arrange — simulates: LLM searches, then calls request_clarification with NO inline text.
-        // The loop must NOT break so the LLM gets one more turn (with AwaitingClarification tools)
-        // to produce the updated plan table as text.
-        var chatClient = Substitute.For<IChatClient>();
-        var toolCallContent = new FunctionCallContent(
-            "call-1",
-            "request_clarification",
-            new Dictionary<string, object> { ["pending_items"] = "Garlic, Muesli" });
-
-        var silentToolResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
-        var textResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, "Updated plan: | Garlic | ❓ |")]);
-
-        var callCount = 0;
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(_ =>
-            {
-                callCount++;
-                return Task.FromResult(callCount == 1 ? silentToolResponse : textResponse);
-            });
-
-        _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("clarification", "Clarification Needed", "❓", [toolCallContent])]);
-        _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object>>()).Returns("pending_items=Garlic, Muesli");
-        _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
-            .Returns(("AWAITING CLARIFICATION.", true));
-        _dispatcherMock.ShouldBreakAfterToolExecution.Returns(true);
-        _dispatcherMock.Phase.Returns(WorkflowPhase.AwaitingClarification);
-
-        _rendererMock.RenderToolGroupStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolCallStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolResult(Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolGroupEnd().Returns(string.Empty);
-
-        List<ChatMessage> history = [new(ChatRole.User, "Naturaplan apples, remove sesame")];
-        List<AITool> tools = [];
-
-        // Act
-        List<string> results = [];
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
+        await foreach (var chunk in chunks)
         {
-            results.Add(chunk);
+            _ = chunk;
         }
-
-        // Assert — LLM must have been called twice: once for the silent tool call, once for the text response
-        await chatClient.Received(2).GetResponseAsync(
-            Arg.Any<IEnumerable<ChatMessage>>(),
-            Arg.Any<ChatOptions>(),
-            Arg.Any<CancellationToken>());
-        results.Should().Contain(s => s.Contains("Updated plan"));
-    }
-
-    [Test]
-    public async Task ProcessAsync_WhenRequestClarificationCalledWithInlineText_BreaksLoopImmediately()
-    {
-        // Arrange — simulates: LLM outputs the plan table as text AND calls request_clarification in the same response.
-        // The loop MUST break immediately because the user has already seen the text.
-        var chatClient = Substitute.For<IChatClient>();
-        const string planText = "Here is your plan:\n| Garlic | ❓ |\nPlease choose a product for Garlic.";
-        var toolCallContent = new FunctionCallContent(
-            "call-1",
-            "request_clarification",
-            new Dictionary<string, object> { ["pending_items"] = "Garlic" });
-
-        var mixedContents = new List<AIContent> { new TextContent(planText), toolCallContent };
-        var mixedResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, mixedContents)]);
-
-        chatClient.GetResponseAsync(
-                Arg.Any<IEnumerable<ChatMessage>>(),
-                Arg.Any<ChatOptions>(),
-                Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(mixedResponse));
-
-        _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("clarification", "Clarification Needed", "❓", [toolCallContent])]);
-        _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object>>()).Returns("pending_items=Garlic");
-        _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
-            .Returns(("AWAITING CLARIFICATION.", true));
-        _dispatcherMock.ShouldBreakAfterToolExecution.Returns(true);
-        _dispatcherMock.Phase.Returns(WorkflowPhase.AwaitingClarification);
-
-        _rendererMock.RenderToolGroupStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolCallStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolResult(Arg.Any<string>()).Returns(string.Empty);
-        _rendererMock.RenderToolGroupEnd().Returns(string.Empty);
-
-        List<ChatMessage> history = [new(ChatRole.User, "Here is my shopping list")];
-        List<AITool> tools = [];
-
-        // Act
-        List<string> results = [];
-        await foreach (var chunk in _sut.ProcessAsync(history, chatClient, () => tools, "coop"))
-        {
-            results.Add(chunk);
-        }
-
-        // Assert — LLM called exactly once; loop broke because text was already shown
-        await chatClient.Received(1).GetResponseAsync(
-            Arg.Any<IEnumerable<ChatMessage>>(),
-            Arg.Any<ChatOptions>(),
-            Arg.Any<CancellationToken>());
-        results.Should().Contain(planText);
     }
 }

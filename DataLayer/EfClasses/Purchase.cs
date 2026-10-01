@@ -1,10 +1,10 @@
-﻿using JetBrains.Annotations;
+using JetBrains.Annotations;
 
 namespace DataLayer.EfClasses;
 
 public class Purchase
 {
-    private readonly List<PurchaseItem> _purchaseItems;
+    private readonly List<PurchaseItem> _purchaseItems = [];
 
     public Purchase(DateTime from, DateTime to, IEnumerable<PurchaseItem> purchaseItems)
     {

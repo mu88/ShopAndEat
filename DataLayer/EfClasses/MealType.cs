@@ -1,8 +1,8 @@
-﻿using JetBrains.Annotations;
+using JetBrains.Annotations;
 
 namespace DataLayer.EfClasses;
 
-public class MealType
+public class MealType : IHasId<int>
 {
     public MealType(string name, int order)
     {
@@ -12,11 +12,22 @@ public class MealType
 
     public MealType()
     {
+        Name = string.Empty;
     }
 
-    public string Name { get; set; }
+    public string Name
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 
-    public int Order { get; set; }
+    public int Order
+    {
+        get;
+        [UsedImplicitly]
+        private set;
+    }
 
     public int MealTypeId
     {

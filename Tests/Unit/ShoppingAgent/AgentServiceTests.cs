@@ -90,7 +90,7 @@ public class AgentServiceTests
         var toolCallContent = new FunctionCallContent(
             "call_1",
             "search_products",
-            new Dictionary<string, object>(global::System.StringComparer.Ordinal) { ["search_term"] = "Tofu" });
+            new Dictionary<string, object?>(global::System.StringComparer.Ordinal) { ["search_term"] = "Tofu" });
         var assistantMessage = new AiChatMessage(ChatRole.Assistant, new List<AIContent> { toolCallContent });
         var firstResponse = new ChatResponse([assistantMessage]);
 
@@ -149,6 +149,116 @@ public class AgentServiceTests
     }
 
     [Test]
+    public async Task ProcessMessageAsync_RaisesOnStateChanged_AtStartAndEnd()
+    {
+        // Arrange
+        var chatClientMock = Substitute.For<IChatClient>();
+        var testee = CreateTestee(chatClientMock);
+        chatClientMock.GetResponseAsync(
+                Arg.Any<IEnumerable<AiChatMessage>>(),
+                Arg.Any<ChatOptions>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new ChatResponse([new AiChatMessage(ChatRole.Assistant, "Done")])));
+
+        var processingStatesAtEachEvent = new List<bool>();
+        testee.OnStateChanged += () => processingStatesAtEachEvent.Add(testee.IsProcessing);
+
+        // Act
+        await foreach (var chunk in testee.ProcessMessageAsync("test"))
+        {
+            _ = chunk;
+        }
+
+        // Assert — exactly two invocations: once when processing starts (IsProcessing=true),
+        // once in the finally block when it ends (IsProcessing=false).
+        processingStatesAtEachEvent.Should().Equal(true, false);
+    }
+
+    [Test]
+    public async Task ProcessMessageAsync_IncrementsMessagesProcessedMetric()
+    {
+        // Arrange
+        var chatClientMock = Substitute.For<IChatClient>();
+        chatClientMock.GetResponseAsync(
+                Arg.Any<IEnumerable<AiChatMessage>>(),
+                Arg.Any<ChatOptions>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new ChatResponse([new AiChatMessage(ChatRole.Assistant, "Done")])));
+        var (testee, _, metrics) = CreateTesteeWithDependencies(chatClientMock);
+
+        var intMeasurements = new List<int>();
+        using var meterListener = new MeterListener
+        {
+            InstrumentPublished = (instrument, listener) =>
+            {
+                if (string.Equals(instrument.Name, metrics.MessagesProcessed.Name, StringComparison.Ordinal))
+                {
+                    listener.EnableMeasurementEvents(instrument);
+                }
+            },
+        };
+        meterListener.SetMeasurementEventCallback<int>((_, measurement, _, _) => intMeasurements.Add(measurement));
+        meterListener.Start();
+
+        // Act
+        await foreach (var chunk in testee.ProcessMessageAsync("test"))
+        {
+            _ = chunk;
+        }
+
+        // Assert
+        intMeasurements.Should().ContainSingle().Which.Should().Be(1);
+    }
+
+    [Test]
+    public async Task ProcessMessageAsync_CallsFallbackClient_WhenModelFallbackEnabled()
+    {
+        // Arrange
+        var chatClientMock = Substitute.For<IChatClient>();
+        chatClientMock.GetResponseAsync(
+                Arg.Any<IEnumerable<AiChatMessage>>(),
+                Arg.Any<ChatOptions>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new ChatResponse([new AiChatMessage(ChatRole.Assistant, "Done")])));
+        var (testee, chatClientProviderMock, _) = CreateTesteeWithDependencies(
+            chatClientMock,
+            agentOptionsOverride: new AgentOptions { ModelFallbackEnabled = true });
+
+        // Act
+        await foreach (var chunk in testee.ProcessMessageAsync("test"))
+        {
+            _ = chunk;
+        }
+
+        // Assert
+        await chatClientProviderMock.Received(1).GetFallbackChatClientAsync();
+    }
+
+    [Test]
+    public async Task ProcessMessageAsync_DoesNotCallFallbackClient_WhenModelFallbackDisabled()
+    {
+        // Arrange
+        var chatClientMock = Substitute.For<IChatClient>();
+        chatClientMock.GetResponseAsync(
+                Arg.Any<IEnumerable<AiChatMessage>>(),
+                Arg.Any<ChatOptions>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new ChatResponse([new AiChatMessage(ChatRole.Assistant, "Done")])));
+        var (testee, chatClientProviderMock, _) = CreateTesteeWithDependencies(
+            chatClientMock,
+            agentOptionsOverride: new AgentOptions { ModelFallbackEnabled = false });
+
+        // Act
+        await foreach (var chunk in testee.ProcessMessageAsync("test"))
+        {
+            _ = chunk;
+        }
+
+        // Assert
+        await chatClientProviderMock.DidNotReceive().GetFallbackChatClientAsync();
+    }
+
+    [Test]
     public async Task ProcessMessageAsync_SavePreference_CallsPreferencesService()
     {
         // Arrange
@@ -160,7 +270,7 @@ public class AgentServiceTests
         var toolCallContent = new FunctionCallContent(
             "call_save",
             "save_preference",
-            new Dictionary<string, object>(global::System.StringComparer.Ordinal)
+            new Dictionary<string, object?>(global::System.StringComparer.Ordinal)
             {
                 ["scope"] = "article:Tofu",
                 ["key"] = "confirmed_product",
@@ -205,7 +315,7 @@ public class AgentServiceTests
         var toolCallContent = new FunctionCallContent(
             "call_delete",
             "delete_preference",
-            new Dictionary<string, object>(global::System.StringComparer.Ordinal)
+            new Dictionary<string, object?>(global::System.StringComparer.Ordinal)
             {
                 ["scope"] = "article:Tofu",
                 ["key"] = "confirmed_product",
@@ -244,7 +354,7 @@ public class AgentServiceTests
         var toolCallContent = new FunctionCallContent(
             "call_cart",
             "add_to_cart",
-            new Dictionary<string, object>(global::System.StringComparer.Ordinal)
+            new Dictionary<string, object?>(global::System.StringComparer.Ordinal)
             {
                 ["product_url"] = "https://coop.ch/p/123",
                 ["quantity"] = "2",
@@ -284,7 +394,7 @@ public class AgentServiceTests
         var toolCallContent = new FunctionCallContent(
             "call_cart",
             "add_to_cart",
-            new Dictionary<string, object>(global::System.StringComparer.Ordinal));
+            new Dictionary<string, object?>(global::System.StringComparer.Ordinal));
         var assistantMessage = new AiChatMessage(ChatRole.Assistant, new List<AIContent> { toolCallContent });
         var firstResponse = new ChatResponse([assistantMessage]);
         var finalResponse = new ChatResponse([new AiChatMessage(ChatRole.Assistant, "Done.")]);
@@ -314,21 +424,34 @@ public class AgentServiceTests
         var toolExecutorMock = Substitute.For<IShopToolExecutor>();
         toolExecutorMock.SearchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new List<ShopProduct>());
-        var testee = CreateTestee(chatClientMock, toolExecutorMock);
+        var testee = CreateTesteeWithDependencies(
+            chatClientMock,
+            toolExecutor: toolExecutorMock,
+            agentOptionsOverride: new AgentOptions { MaxToolCallingIterations = 3 }).Testee;
 
         // LLM always returns a search_products tool call
         var toolCallContent = new FunctionCallContent(
             "call_search",
             "search_products",
-            new Dictionary<string, object>(global::System.StringComparer.Ordinal) { ["search_term"] = "Tofu" });
+            new Dictionary<string, object?>(global::System.StringComparer.Ordinal) { ["search_term"] = "Tofu" });
         var assistantMessage = new AiChatMessage(ChatRole.Assistant, new List<AIContent> { toolCallContent });
         var toolResponse = new ChatResponse([assistantMessage]);
+        var llmCallCount = 0;
 
         chatClientMock.GetResponseAsync(
                 Arg.Any<IEnumerable<AiChatMessage>>(),
                 Arg.Any<ChatOptions>(),
                 Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(toolResponse));
+            .Returns(_ =>
+            {
+                llmCallCount++;
+                if (llmCallCount > 3)
+                {
+                    throw new InvalidOperationException("Too many iterations");
+                }
+
+                return Task.FromResult(toolResponse);
+            });
 
         // Act
         var chunks = new List<string>();
@@ -338,8 +461,9 @@ public class AgentServiceTests
         }
 
         // Assert
-        // The loop must have broken at max iterations (50); SearchAsync called at most 50 times
-        await toolExecutorMock.Received(50).SearchAsync("Tofu", Arg.Any<CancellationToken>());
+        // The loop must have broken at max iterations (3); with a decrement mutation, the fourth
+        // LLM call would throw and fail the test instead of hanging until Stryker times out it.
+        await toolExecutorMock.Received(3).SearchAsync("Tofu", Arg.Any<CancellationToken>());
     }
 
     [Test]
@@ -368,6 +492,85 @@ public class AgentServiceTests
     }
 
     [Test]
+    public async Task ProcessMessageAsync_WhenCancelledMidStream_StillAppendsMessagesProducedBeforeCancellation()
+    {
+        // Arrange — regression test: a cancellation/exception after ConversationManager already
+        // produced messages (e.g. a tool call with real side effects) must not discard them; they
+        // need to be appended to _conversationHistory so the next turn's LLM call sees them.
+        var producedMessage = new AiChatMessage(ChatRole.Assistant, "Produced before cancellation");
+        var newMessages = new List<AiChatMessage>();
+
+        async IAsyncEnumerable<string> ThrowingChunksAsync()
+        {
+            yield return "partial";
+            newMessages.Add(producedMessage);
+            await Task.Yield();
+            throw new OperationCanceledException("Cancelled mid-stream");
+        }
+
+        IReadOnlyList<AiChatMessage>? historyOnNextCall = null;
+        var callCount = 0;
+        var conversationManagerMock = Substitute.For<IConversationManager>();
+        conversationManagerMock.Phase.Returns(WorkflowPhase.Researching);
+        conversationManagerMock
+            .ProcessAsync(
+                Arg.Do<IReadOnlyList<AiChatMessage>>(history =>
+                {
+                    callCount++;
+                    if (callCount == 2)
+                    {
+                        historyOnNextCall = history;
+                    }
+                }),
+                Arg.Any<IChatClient>(),
+                Arg.Any<Func<IReadOnlyList<AITool>>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(
+                _ => CreateConversationProcessingResult(ThrowingChunksAsync(), newMessages),
+                _ => CreateConversationProcessingResult());
+        var testee = CreateTestee(Substitute.For<IChatClient>(), conversationManager: conversationManagerMock);
+
+        // Act — first call is cancelled mid-stream; the second call is where we can observe
+        // whether the first call's produced message survived into the conversation history.
+        var act = async () =>
+        {
+            await foreach (var chunk in testee.ProcessMessageAsync("Hi"))
+            {
+                _ = chunk;
+            }
+        };
+        await act.Should().ThrowAsync<OperationCanceledException>();
+
+        await foreach (var chunk in testee.ProcessMessageAsync("Still there?"))
+        {
+            _ = chunk;
+        }
+
+        // Assert
+        historyOnNextCall.Should().NotBeNull();
+        historyOnNextCall!.Should().Contain(producedMessage);
+    }
+
+    [Test]
+    public void AddMessage_AppendsMessage_ToMessagesInOrder_AndKeepsListReadOnly()
+    {
+        // Arrange
+        var testee = CreateTestee(Substitute.For<IChatClient>());
+        var first = new ModelChatMessage { Role = "user", Content = "Hello" };
+        var second = new ModelChatMessage { Role = "assistant", Content = "Hi there" };
+
+        // Act
+        testee.AddMessage(first);
+        testee.AddMessage(second);
+
+        // Assert — Messages is exposed as a read-only view; callers can no longer
+        // mutate the underlying list except through the explicit AddMessage method.
+        testee.Messages.Should().BeAssignableTo<IReadOnlyList<ModelChatMessage>>();
+        testee.Messages.Should().ContainInOrder(first, second);
+    }
+
+    [Test]
     public async Task SwitchShopAsync_ClearsMessagesAndReinitializes()
     {
         // Arrange
@@ -377,7 +580,7 @@ public class AgentServiceTests
         var testee = CreateTestee(chatClientMock);
 
         // Seed one message
-        testee.Messages.Add(new ModelChatMessage { Role = "user", Content = "Hello" });
+        testee.AddMessage(new ModelChatMessage { Role = "user", Content = "Hello" });
         testee.Messages.Should().HaveCount(1);
 
         // Act
@@ -386,6 +589,26 @@ public class AgentServiceTests
         // Assert
         testee.Messages.Should().BeEmpty("SwitchShopAsync must clear the conversation");
         testee.SelectedShopKey.Should().Be("coop");
+    }
+
+    [Test]
+    public async Task SwitchShopAsync_ResetsShopSessionManager_SoPromptIsRebuiltEvenForTheSameShop()
+    {
+        // Arrange
+        var promptBuilderMock = Substitute.For<ISystemPromptBuilder>();
+        promptBuilderMock
+            .BuildSystemPromptAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult("system prompt"));
+        var testee = CreateTestee(Substitute.For<IChatClient>(), systemPromptBuilder: promptBuilderMock);
+        await testee.InitializeAsync("coop");
+
+        // Act — switching to the SAME shop key must still rebuild the prompt, because
+        // SwitchShopAsync's shopSessionManager.Reset() must clear IsInitialized first.
+        await testee.SwitchShopAsync("coop");
+
+        // Assert
+        await promptBuilderMock.Received(2).BuildSystemPromptAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Test]
@@ -432,6 +655,38 @@ public class AgentServiceTests
     }
 
     [Test]
+    public async Task InitializeAsync_ClearsConversationHistory_WhenReinitializingAfterReset()
+    {
+        // Arrange
+        var conversationManagerMock = Substitute.For<IConversationManager>();
+        conversationManagerMock.Phase.Returns(WorkflowPhase.Researching);
+        IReadOnlyList<AiChatMessage>? capturedHistory = null;
+        conversationManagerMock
+            .ProcessAsync(
+                Arg.Do<IReadOnlyList<AiChatMessage>>(history => capturedHistory = history),
+                Arg.Any<IChatClient>(),
+                Arg.Any<Func<IReadOnlyList<AITool>>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(CreateConversationProcessingResult());
+        var testee = CreateTestee(Substitute.For<IChatClient>(), conversationManager: conversationManagerMock);
+        await testee.InitializeAsync("coop");
+
+        // Act — SwitchShopAsync resets IsInitialized, forcing InitializeAsync to rebuild the prompt
+        // via the Clear()+rebuild path (not the early-return path).
+        await testee.SwitchShopAsync("coop");
+        await foreach (var chunk in testee.ProcessMessageAsync("Hi"))
+        {
+            _ = chunk;
+        }
+
+        // Assert — only ONE System message must be present; without _conversationHistory.Clear(),
+        // the first InitializeAsync's system prompt would still be there too, duplicated.
+        capturedHistory.Should().NotBeNull();
+        capturedHistory!.Count(message => message.Role == ChatRole.System).Should().Be(1);
+    }
+
+    [Test]
     public async Task ProcessMessageAsync_PassesFuncToConversationManager_ThatReturnsPhaseBasedTools()
     {
         // Arrange
@@ -443,15 +698,15 @@ public class AgentServiceTests
             .GetToolDefinitions(Arg.Any<string>(), Arg.Any<WorkflowPhase>())
             .Returns([]);
 
-        Func<IReadOnlyList<AITool>> capturedGetTools = null;
+        Func<IReadOnlyList<AITool>>? capturedGetTools = null;
         conversationManagerMock
             .ProcessAsync(
-                Arg.Any<IList<AiChatMessage>>(),
+                Arg.Any<IReadOnlyList<AiChatMessage>>(),
                 Arg.Any<IChatClient>(),
                 Arg.Do<Func<IReadOnlyList<AITool>>>(func => capturedGetTools = func),
                 Arg.Any<string>(),
                 Arg.Any<CancellationToken>())
-            .Returns(EmptyAsyncEnumerable());
+            .Returns(CreateConversationProcessingResult());
 
         var testee = CreateTestee(
             Substitute.For<IChatClient>(),
@@ -466,7 +721,7 @@ public class AgentServiceTests
 
         // Assert
         conversationManagerMock.Received(1).ProcessAsync(
-            Arg.Any<IList<AiChatMessage>>(),
+            Arg.Any<IReadOnlyList<AiChatMessage>>(),
             Arg.Any<IChatClient>(),
             Arg.Any<Func<IReadOnlyList<AITool>>>(),
             Arg.Any<string>(),
@@ -485,12 +740,12 @@ public class AgentServiceTests
         conversationManagerMock.Phase.Returns(WorkflowPhase.AwaitingClarification);
         conversationManagerMock
             .ProcessAsync(
-                Arg.Any<IList<AiChatMessage>>(),
+                Arg.Any<IReadOnlyList<AiChatMessage>>(),
                 Arg.Any<IChatClient>(),
                 Arg.Any<Func<IReadOnlyList<AITool>>>(),
                 Arg.Any<string>(),
                 Arg.Any<CancellationToken>())
-            .Returns(EmptyAsyncEnumerable());
+            .Returns(CreateConversationProcessingResult());
 
         var testee = CreateTestee(
             Substitute.For<IChatClient>(),
@@ -514,12 +769,12 @@ public class AgentServiceTests
         conversationManagerMock.Phase.Returns(WorkflowPhase.Researching);
         conversationManagerMock
             .ProcessAsync(
-                Arg.Any<IList<AiChatMessage>>(),
+                Arg.Any<IReadOnlyList<AiChatMessage>>(),
                 Arg.Any<IChatClient>(),
                 Arg.Any<Func<IReadOnlyList<AITool>>>(),
                 Arg.Any<string>(),
                 Arg.Any<CancellationToken>())
-            .Returns(EmptyAsyncEnumerable());
+            .Returns(CreateConversationProcessingResult());
 
         var testee = CreateTestee(
             Substitute.For<IChatClient>(),
@@ -535,19 +790,89 @@ public class AgentServiceTests
         conversationManagerMock.Received(1).ResetWorkflow();
     }
 
+    [Test]
+    public async Task ProcessMessageAsync_AppendsReturnedMessagesToConversationHistory()
+    {
+        // Arrange
+        var conversationManagerMock = Substitute.For<IConversationManager>();
+        IReadOnlyList<AiChatMessage>? secondHistory = null;
+
+        conversationManagerMock
+            .ProcessAsync(
+                Arg.Any<IReadOnlyList<AiChatMessage>>(),
+                Arg.Any<IChatClient>(),
+                Arg.Any<Func<IReadOnlyList<AITool>>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(
+                _ => CreateConversationProcessingResult(
+                    newMessages:
+                    [
+                        new AiChatMessage(ChatRole.Assistant, "Assistant reply"),
+                    ]),
+                callInfo =>
+                {
+                    secondHistory = callInfo.ArgAt<IReadOnlyList<AiChatMessage>>(0);
+                    return CreateConversationProcessingResult();
+                });
+
+        var testee = CreateTestee(
+            Substitute.For<IChatClient>(),
+            conversationManager: conversationManagerMock);
+
+        // Act
+        await foreach (var chunk in testee.ProcessMessageAsync("First"))
+        {
+            _ = chunk;
+        }
+
+        await foreach (var chunk in testee.ProcessMessageAsync("Second"))
+        {
+            _ = chunk;
+        }
+
+        // Assert
+        secondHistory.Should().NotBeNull();
+        secondHistory!.Select(message => message.Role).Should().ContainInOrder(ChatRole.System, ChatRole.User, ChatRole.Assistant, ChatRole.User);
+        secondHistory[2].Text.Should().Be("Assistant reply");
+    }
+
     private static async IAsyncEnumerable<string> EmptyAsyncEnumerable()
     {
         await Task.CompletedTask;
         yield break;
     }
 
+    private static ConversationProcessingResult CreateConversationProcessingResult(
+        IAsyncEnumerable<string>? chunks = null,
+        IReadOnlyList<AiChatMessage>? newMessages = null)
+        => new(
+            chunks ?? EmptyAsyncEnumerable(),
+            newMessages ?? []);
+
     private static AgentService CreateTestee(
         IChatClient chatClient,
-        IShopToolExecutor toolExecutor = null,
-        IPreferencesService preferencesService = null,
-        ISystemPromptBuilder systemPromptBuilder = null,
-        IConversationManager conversationManager = null,
-        IToolDefinitionProvider toolDefinitionProvider = null)
+        IShopToolExecutor? toolExecutor = null,
+        IPreferencesService? preferencesService = null,
+        ISystemPromptBuilder? systemPromptBuilder = null,
+        IConversationManager? conversationManager = null,
+        IToolDefinitionProvider? toolDefinitionProvider = null)
+        => CreateTesteeWithDependencies(
+            chatClient,
+            toolExecutor,
+            preferencesService,
+            systemPromptBuilder,
+            conversationManager,
+            toolDefinitionProvider).Testee;
+
+    private static (AgentService Testee, IMistralChatClientProvider ChatClientProviderMock, ShoppingAgentMetrics Metrics) CreateTesteeWithDependencies(
+        IChatClient chatClient,
+        IShopToolExecutor? toolExecutor = null,
+        IPreferencesService? preferencesService = null,
+        ISystemPromptBuilder? systemPromptBuilder = null,
+        IConversationManager? conversationManager = null,
+        IToolDefinitionProvider? toolDefinitionProvider = null,
+        AgentOptions? agentOptionsOverride = null)
     {
         toolExecutor ??= Substitute.For<IShopToolExecutor>();
 
@@ -584,17 +909,17 @@ public class AgentServiceTests
         var metrics = new ShoppingAgentMetrics(meterFactory);
 
         var llmOptions = Options.Create(new LlmClientOptions { ApiKey = "test-key" });
-        var agentOptions = Options.Create(new AgentOptions());
+        var agentOptions = Options.Create(agentOptionsOverride ?? new AgentOptions());
 
         var systemPromptBuilderInstance = systemPromptBuilder ?? new SystemPromptBuilder(preferencesMock, sessionMock, localizerMock);
         var toolDefinitionProviderInstance = toolDefinitionProvider ?? new ToolDefinitionProvider();
         var workflowStateMock = Substitute.For<IShoppingWorkflowState>();
         var toolCallDispatcher = new ToolCallDispatcher(factoryMock, preferencesMock, Substitute.For<IShoppingListVerifier>(), localizerMock, workflowStateMock);
-        var conversationManagerInstance = conversationManager ?? new ConversationManager(toolCallDispatcher, new HtmlToolResultRenderer(localizerMock), new ToolResultCompressor(), localizerMock, NullLogger<ConversationManager>.Instance, metrics, agentOptions, llmOptions);
+        var conversationManagerInstance = conversationManager ?? CreateConversationManager(toolCallDispatcher, localizerMock, metrics, agentOptions, llmOptions);
         var shopSessionManager = new ShopSessionManager(factoryMock, NullLogger<ShopSessionManager>.Instance);
         var retryPolicyFactory = new LlmRetryPolicyFactory(llmOptions, metrics, NullLogger<LlmRetryPolicyFactory>.Instance);
 
-        return new AgentService(
+        var testee = new AgentService(
             chatClientProviderMock,
             systemPromptBuilderInstance,
             toolDefinitionProviderInstance,
@@ -606,5 +931,29 @@ public class AgentServiceTests
             metrics,
             NullLogger<AgentService>.Instance,
             NullLogger<ResilientChatClient>.Instance);
+
+        return (testee, chatClientProviderMock, metrics);
     }
+
+    private static ConversationManager CreateConversationManager(
+        ToolCallDispatcher toolCallDispatcher,
+        IStringLocalizer<Messages> localizerMock,
+        ShoppingAgentMetrics metrics,
+        IOptions<AgentOptions> agentOptions,
+        IOptions<LlmClientOptions> llmOptions)
+        => new(
+            toolCallDispatcher,
+            new LlmCommunicator(localizerMock, NullLogger<LlmCommunicator>.Instance, metrics, llmOptions),
+            new ToolExecutionOrchestrator(
+                toolCallDispatcher,
+                new HtmlToolResultRenderer(localizerMock),
+                new ToolResultCompressor(),
+                localizerMock,
+                NullLogger<ToolExecutionOrchestrator>.Instance,
+                metrics,
+                agentOptions),
+            NullLogger<ConversationManager>.Instance,
+            metrics,
+            agentOptions,
+            llmOptions);
 }

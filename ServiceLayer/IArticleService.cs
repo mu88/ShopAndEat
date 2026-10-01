@@ -1,14 +1,14 @@
-﻿using DTO.Article;
+using DTO.Article;
 
 namespace ServiceLayer;
 
 public interface IArticleService
 {
-    ExistingArticleDto CreateArticle(NewArticleDto newArticleDto);
+    Task<ExistingArticleDto> CreateArticleAsync(NewArticleDto newArticleDto, CancellationToken cancellationToken = default);
 
-    void DeleteArticle(DeleteArticleDto deleteArticleDto);
+    Task DeleteArticleAsync(DeleteArticleDto deleteArticleDto, CancellationToken cancellationToken = default);
 
-    IEnumerable<ExistingArticleDto> GetAllArticles();
+    Task<IReadOnlyList<ExistingArticleDto>> GetAllArticlesAsync(CancellationToken cancellationToken = default);
 
-    void UpdateArticle(ExistingArticleDto existingArticleDto);
+    Task UpdateArticleAsync(ExistingArticleDto existingArticleDto, CancellationToken cancellationToken = default);
 }

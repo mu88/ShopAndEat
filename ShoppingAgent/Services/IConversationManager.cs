@@ -9,8 +9,8 @@ public interface IConversationManager
 
     void ResetWorkflow();
 
-    IAsyncEnumerable<string> ProcessAsync(
-        IList<ChatMessage> conversationHistory,
+    ConversationProcessingResult ProcessAsync(
+        IReadOnlyList<ChatMessage> conversationHistory,
         IChatClient chatClient,
         Func<IReadOnlyList<AITool>> getTools,
         string shopKey,

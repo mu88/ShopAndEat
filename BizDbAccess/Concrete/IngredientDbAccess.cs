@@ -1,5 +1,6 @@
-﻿using DataLayer.EF;
+using DataLayer.EF;
 using DataLayer.EfClasses;
+using Microsoft.EntityFrameworkCore;
 
 namespace BizDbAccess.Concrete;
 
@@ -12,8 +13,10 @@ public class IngredientDbAccess(EfCoreContext context) : IIngredientDbAccess
     public void DeleteIngredient(Ingredient ingredient) => context.Ingredients.Remove(ingredient);
 
     /// <inheritdoc />
-    public Ingredient GetIngredient(int ingredientId) => context.Ingredients.Single(x => x.IngredientId == ingredientId);
+    public Task<Ingredient> GetIngredientAsync(int ingredientId, CancellationToken cancellationToken = default)
+        => context.Ingredients.SingleAsync(ingredient => ingredient.IngredientId == ingredientId, cancellationToken);
 
     /// <inheritdoc />
-    public IEnumerable<Ingredient> GetIngredients() => context.Ingredients;
+    public async Task<IEnumerable<Ingredient>> GetIngredientsAsync(CancellationToken cancellationToken = default)
+        => await context.Ingredients.ToListAsync(cancellationToken);
 }

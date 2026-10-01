@@ -16,6 +16,14 @@ public record SessionSummary
 public record SessionItemDto
 {
     public string OriginalIngredient { get; init; } = string.Empty;
+
+    public string SelectedProductName { get; init; } = string.Empty;
+
+    public string SelectedProductUrl { get; init; } = string.Empty;
+
+    public int Quantity { get; init; } = 1;
+
+    public string Price { get; init; } = string.Empty;
 }
 
 public record IngredientItem

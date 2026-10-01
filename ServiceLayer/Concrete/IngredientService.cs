@@ -1,26 +1,33 @@
-﻿using BizLogic;
+using BizLogic;
 using DataLayer.EF;
 using DTO.Ingredient;
+using ServiceLayer.Diagnostics;
 
 namespace ServiceLayer.Concrete;
 
 public class IngredientService(IIngredientAction ingredientAction, EfCoreContext context) : IIngredientService
 {
-    public ExistingIngredientDto CreateIngredient(NewIngredientDto newIngredientDto)
+    public async Task<ExistingIngredientDto> CreateIngredientAsync(NewIngredientDto newIngredientDto, CancellationToken cancellationToken = default)
     {
+        using var activity = ServiceLayerDiagnostics.ActivitySource.StartActivity("IngredientService.CreateIngredientAsync");
         var createdIngredientDto = ingredientAction.CreateIngredient(newIngredientDto);
-        context.SaveChanges();
+        await context.SaveChangesAsync(cancellationToken);
 
         return createdIngredientDto;
     }
 
     /// <inheritdoc />
-    public void DeleteIngredient(DeleteIngredientDto deleteIngredientDto)
+    public async Task DeleteIngredientAsync(DeleteIngredientDto deleteIngredientDto, CancellationToken cancellationToken = default)
     {
-        ingredientAction.DeleteIngredient(deleteIngredientDto);
-        context.SaveChanges();
+        using var activity = ServiceLayerDiagnostics.ActivitySource.StartActivity("IngredientService.DeleteIngredientAsync");
+        await ingredientAction.DeleteIngredientAsync(deleteIngredientDto, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingIngredientDto> GetAllIngredients() => ingredientAction.GetAllIngredients();
+    public async Task<IReadOnlyList<ExistingIngredientDto>> GetAllIngredientsAsync(CancellationToken cancellationToken = default)
+    {
+        using var activity = ServiceLayerDiagnostics.ActivitySource.StartActivity("IngredientService.GetAllIngredientsAsync");
+        return await ingredientAction.GetAllIngredientsAsync(cancellationToken);
+    }
 }

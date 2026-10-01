@@ -16,13 +16,15 @@ namespace Tests.Unit.ShoppingAgent;
 [Category("Unit")]
 public class ToolCallDispatcherTests
 {
-    private IShopToolExecutorFactory _factoryMock;
-    private IShopToolExecutor _executorMock;
-    private IPreferencesService _preferencesMock;
-    private IShoppingListVerifier _verifierMock;
-    private IStringLocalizer<Messages> _localizerMock;
-    private IShoppingWorkflowState _workflowStateMock;
-    private ToolCallDispatcher _sut;
+    private static readonly string[] GarlicLemonItems = ["Garlic", "Lemon"];
+
+    private IShopToolExecutorFactory _factoryMock = null!;
+    private IShopToolExecutor _executorMock = null!;
+    private IPreferencesService _preferencesMock = null!;
+    private IShoppingListVerifier _verifierMock = null!;
+    private IStringLocalizer<Messages> _localizerMock = null!;
+    private IShoppingWorkflowState _workflowStateMock = null!;
+    private ToolCallDispatcher _sut = null!;
 
     [SetUp]
     public void SetUp()
@@ -52,7 +54,7 @@ public class ToolCallDispatcherTests
         // Arrange
         _executorMock.SearchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns([]);
-        var toolCall = CreateToolCall("search_products", new Dictionary<string, object> { ["search_term"] = "milk" });
+        var toolCall = CreateToolCall("search_products", new Dictionary<string, object?> { ["search_term"] = "milk" });
 
         // Act
         var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
@@ -67,8 +69,8 @@ public class ToolCallDispatcherTests
     {
         // Arrange
         _executorMock.GetProductDetailsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns((global::ShoppingAgent.Models.ProductDetails)null);
-        var toolCall = CreateToolCall("get_product_details", new Dictionary<string, object> { ["product_url"] = "https://example.com/product" });
+            .Returns(x => Task.FromResult(new global::ShoppingAgent.Models.ProductDetails()));
+        var toolCall = CreateToolCall("get_product_details", new Dictionary<string, object?> { ["product_url"] = "https://example.com/product" });
 
         // Act
         var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
@@ -84,7 +86,7 @@ public class ToolCallDispatcherTests
         // Arrange
         _executorMock.AddToCartAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns("Added");
-        var toolCall = CreateToolCall("add_to_cart", new Dictionary<string, object> { ["product_url"] = "https://example.com/product", ["quantity"] = "2" });
+        var toolCall = CreateToolCall("add_to_cart", new Dictionary<string, object?> { ["product_url"] = "https://example.com/product", ["quantity"] = "2" });
 
         // Act
         var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
@@ -101,7 +103,7 @@ public class ToolCallDispatcherTests
         // Arrange
         _executorMock.AddToCartAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns("Added");
-        var toolCall = CreateToolCall("add_to_cart", new Dictionary<string, object> { ["product_url"] = "https://example.com/product", ["quantity"] = "invalid" });
+        var toolCall = CreateToolCall("add_to_cart", new Dictionary<string, object?> { ["product_url"] = "https://example.com/product", ["quantity"] = "invalid" });
 
         // Act
         await _sut.DispatchAsync(toolCall, "coop");
@@ -116,7 +118,7 @@ public class ToolCallDispatcherTests
         // Arrange
         _executorMock.RemoveFromCartAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns("Removed");
-        var toolCall = CreateToolCall("remove_from_cart", new Dictionary<string, object> { ["product_name"] = "Milk" });
+        var toolCall = CreateToolCall("remove_from_cart", new Dictionary<string, object?> { ["product_name"] = "Milk" });
 
         // Act
         var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
@@ -128,12 +130,31 @@ public class ToolCallDispatcherTests
     }
 
     [Test]
+    public async Task DispatchAsync_RemoveFromCart_WithNullCartEntryUid_PassesEmptyStringToExecutor()
+    {
+        // Arrange
+        _executorMock.RemoveFromCartAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns("Removed");
+        var toolCall = CreateToolCall("remove_from_cart", new Dictionary<string, object?>
+        {
+            ["product_name"] = "Milk",
+            ["cart_entry_uid"] = null,
+        });
+
+        // Act
+        await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert — key present but with a null value must fall back to string.Empty, same as a missing key.
+        await _executorMock.Received(1).RemoveFromCartAsync("Milk", string.Empty, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
     public async Task DispatchAsync_RemoveFromCart_WithCartEntryUid_PassesUidToExecutor()
     {
         // Arrange
         _executorMock.RemoveFromCartAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns("Removed");
-        var toolCall = CreateToolCall("remove_from_cart", new Dictionary<string, object>
+        var toolCall = CreateToolCall("remove_from_cart", new Dictionary<string, object?>
         {
             ["product_name"] = "Milk",
             ["cart_entry_uid"] = "uid-123",
@@ -180,10 +201,46 @@ public class ToolCallDispatcherTests
     }
 
     [Test]
+    public async Task DispatchAsync_RequestClarification_WithoutPendingItems_TreatsAsNoItems()
+    {
+        // Arrange — no "pending_items" argument at all, so GetArg returns string.Empty, which is
+        // whitespace-only. This must take the "no items" branch (empty array) instead of falling
+        // through to Split(), which would also produce an empty array from an empty string, but
+        // isolates the ternary's guard condition rather than relying on Split's own robustness.
+        var toolCall = CreateToolCall("request_clarification", []);
+
+        // Act
+        var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        success.Should().BeTrue();
+        result.Should().Contain("the items above");
+        _workflowStateMock.Received(1).MoveToAwaitingClarification(Arg.Is<IEnumerable<string>>(items => !items.Any()));
+    }
+
+    [Test]
+    public async Task DispatchAsync_RequestClarification_WithPendingItems_SplitsCommaSeparatedList()
+    {
+        // Arrange
+        var toolCall = CreateToolCall("request_clarification", new Dictionary<string, object?>
+        {
+            ["pending_items"] = "Garlic, Lemon",
+        });
+
+        // Act
+        var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        success.Should().BeTrue();
+        result.Should().Contain("Garlic, Lemon");
+        _workflowStateMock.Received(1).MoveToAwaitingClarification(Arg.Is<IEnumerable<string>>(items => items.SequenceEqual(GarlicLemonItems)));
+    }
+
+    [Test]
     public async Task DispatchAsync_SavePreference_CallsPreferencesService()
     {
         // Arrange
-        var toolCall = CreateToolCall("save_preference", new Dictionary<string, object>
+        var toolCall = CreateToolCall("save_preference", new Dictionary<string, object?>
         {
             ["scope"] = "global",
             ["key"] = "prefer_bio",
@@ -195,8 +252,28 @@ public class ToolCallDispatcherTests
 
         // Assert
         success.Should().BeTrue();
+        result.Should().Be("PreferenceSaved");
         await _preferencesMock.Received(1).SavePreferenceAsync(
             Arg.Is<PreferenceDto>(p => p.Scope == "global" && p.Key == "prefer_bio" && p.Value == "true" && p.StoreKey == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task DispatchAsync_SavePreference_MissingScope_DefaultsToGlobal()
+    {
+        // Arrange
+        var toolCall = CreateToolCall("save_preference", new Dictionary<string, object?>
+        {
+            ["key"] = "prefer_bio",
+            ["value"] = "true",
+        });
+
+        // Act
+        await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
+        await _preferencesMock.Received(1).SavePreferenceAsync(
+            Arg.Is<PreferenceDto>(p => p.Scope == "global"),
             Arg.Any<CancellationToken>());
     }
 
@@ -204,7 +281,7 @@ public class ToolCallDispatcherTests
     public async Task DispatchAsync_SavePreference_ArticleScope_SetsStoreKey()
     {
         // Arrange
-        var toolCall = CreateToolCall("save_preference", new Dictionary<string, object>
+        var toolCall = CreateToolCall("save_preference", new Dictionary<string, object?>
         {
             ["scope"] = "article:Tofu",
             ["key"] = "confirmed_product",
@@ -226,7 +303,7 @@ public class ToolCallDispatcherTests
         // Arrange
         _preferencesMock.DeletePreferenceAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(true);
-        var toolCall = CreateToolCall("delete_preference", new Dictionary<string, object>
+        var toolCall = CreateToolCall("delete_preference", new Dictionary<string, object?>
         {
             ["scope"] = "global",
             ["key"] = "prefer_bio",
@@ -237,6 +314,25 @@ public class ToolCallDispatcherTests
 
         // Assert
         success.Should().BeTrue();
+        result.Should().Be("PreferenceDeleted");
+        await _preferencesMock.Received(1).DeletePreferenceAsync("global", "prefer_bio", null, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task DispatchAsync_DeletePreference_MissingScope_DefaultsToGlobal()
+    {
+        // Arrange
+        _preferencesMock.DeletePreferenceAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+        var toolCall = CreateToolCall("delete_preference", new Dictionary<string, object?>
+        {
+            ["key"] = "prefer_bio",
+        });
+
+        // Act
+        await _sut.DispatchAsync(toolCall, "coop");
+
+        // Assert
         await _preferencesMock.Received(1).DeletePreferenceAsync("global", "prefer_bio", null, Arg.Any<CancellationToken>());
     }
 
@@ -246,7 +342,7 @@ public class ToolCallDispatcherTests
         // Arrange
         _preferencesMock.DeletePreferenceAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(false);
-        var toolCall = CreateToolCall("delete_preference", new Dictionary<string, object>
+        var toolCall = CreateToolCall("delete_preference", new Dictionary<string, object?>
         {
             ["scope"] = "global",
             ["key"] = "unknown_key",
@@ -280,7 +376,7 @@ public class ToolCallDispatcherTests
         // Arrange
         _executorMock.SearchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<global::ShoppingAgent.Models.ShopProduct>>(_ => throw new InvalidOperationException("Something broke"));
-        var toolCall = CreateToolCall("search_products", new Dictionary<string, object> { ["search_term"] = "milk" });
+        var toolCall = CreateToolCall("search_products", new Dictionary<string, object?> { ["search_term"] = "milk" });
 
         // Act
         var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
@@ -296,7 +392,7 @@ public class ToolCallDispatcherTests
         // Arrange
         _executorMock.SearchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<global::ShoppingAgent.Models.ShopProduct>>(_ => throw new OperationCanceledException());
-        var toolCall = CreateToolCall("search_products", new Dictionary<string, object> { ["search_term"] = "milk" });
+        var toolCall = CreateToolCall("search_products", new Dictionary<string, object?> { ["search_term"] = "milk" });
 
         // Act
         var act = () => _sut.DispatchAsync(toolCall, "coop");
@@ -311,8 +407,8 @@ public class ToolCallDispatcherTests
         // Arrange
         var toolCalls = new List<FunctionCallContent>
         {
-            CreateToolCall("search_products", new Dictionary<string, object> { ["search_term"] = "milk" }),
-            CreateToolCall("get_product_details", new Dictionary<string, object> { ["product_url"] = "url1" }),
+            CreateToolCall("search_products", new Dictionary<string, object?> { ["search_term"] = "milk" }),
+            CreateToolCall("get_product_details", new Dictionary<string, object?> { ["product_url"] = "url1" }),
         };
 
         // Act
@@ -330,9 +426,9 @@ public class ToolCallDispatcherTests
         // Arrange
         var toolCalls = new List<FunctionCallContent>
         {
-            CreateToolCall("search_products", new Dictionary<string, object> { ["search_term"] = "milk" }),
-            CreateToolCall("add_to_cart", new Dictionary<string, object> { ["product_url"] = "url1", ["quantity"] = "1" }),
-            CreateToolCall("save_preference", new Dictionary<string, object> { ["scope"] = "global", ["key"] = "k", ["value"] = "v" }),
+            CreateToolCall("search_products", new Dictionary<string, object?> { ["search_term"] = "milk" }),
+            CreateToolCall("add_to_cart", new Dictionary<string, object?> { ["product_url"] = "url1", ["quantity"] = "1" }),
+            CreateToolCall("save_preference", new Dictionary<string, object?> { ["scope"] = "global", ["key"] = "k", ["value"] = "v" }),
         };
 
         // Act
@@ -346,10 +442,53 @@ public class ToolCallDispatcherTests
     }
 
     [Test]
+    public void GroupConsecutiveToolCalls_MapsClarificationAndWorkflowToolsToTheirOwnGroups()
+    {
+        // Arrange
+        var toolCalls = new List<FunctionCallContent>
+        {
+            CreateToolCall("request_clarification", []),
+            CreateToolCall("confirm_cart", []),
+            CreateToolCall("proceed_to_cart", []),
+        };
+
+        // Act
+        var groups = _sut.GroupConsecutiveToolCalls(toolCalls);
+
+        // Assert
+        groups.Should().HaveCount(2);
+        groups[0].Key.Should().Be("clarify");
+        groups[0].Label.Should().Be("Clarification Needed");
+        groups[0].Icon.Should().Be("❓");
+        groups[1].Key.Should().Be("workflow");
+        groups[1].Label.Should().Be("Shopping Plan");
+        groups[1].Icon.Should().Be("📋");
+        groups[1].Tools.Should().HaveCount(2);
+    }
+
+    [Test]
+    public void GroupConsecutiveToolCalls_MapsProceedToCartToWorkflowGroup()
+    {
+        // Arrange — isolated from confirm_cart so its own "workflow"/"Shopping Plan"/"📋" literals are
+        // the only source for this group's values (a shared group with confirm_cart wouldn't
+        // distinguish which of the two identical case bodies actually produced them).
+        var toolCalls = new List<FunctionCallContent> { CreateToolCall("proceed_to_cart", []) };
+
+        // Act
+        var groups = _sut.GroupConsecutiveToolCalls(toolCalls);
+
+        // Assert
+        groups.Should().ContainSingle();
+        groups[0].Key.Should().Be("workflow");
+        groups[0].Label.Should().Be("Shopping Plan");
+        groups[0].Icon.Should().Be("📋");
+    }
+
+    [Test]
     public void FormatArgs_EmptyArgs_ReturnsEmptyString()
     {
         // Arrange
-        var args = new Dictionary<string, object>();
+        var args = new Dictionary<string, object?>();
 
         // Act
         var result = _sut.FormatArgs(args);
@@ -372,7 +511,7 @@ public class ToolCallDispatcherTests
     public void FormatArgs_MultipleArgs_ReturnsFormattedString()
     {
         // Arrange
-        var args = new Dictionary<string, object> { ["key1"] = "value1", ["key2"] = "value2" };
+        var args = new Dictionary<string, object?> { ["key1"] = "value1", ["key2"] = "value2" };
 
         // Act
         var result = _sut.FormatArgs(args);
@@ -405,7 +544,7 @@ public class ToolCallDispatcherTests
         icon.Should().Be(expectedIcon);
     }
 
-    private static FunctionCallContent CreateToolCall(string name, Dictionary<string, object> args) =>
+    private static FunctionCallContent CreateToolCall(string name, Dictionary<string, object?> args) =>
         new("call-id", name, args);
 
     [Test]
@@ -435,6 +574,9 @@ public class ToolCallDispatcherTests
                 new() { Scope = "reminder", Key = "Kaffee", Value = "true" },
                 new() { Scope = "reminder", Key = "Bier", Value = "true" },
             ]);
+        // Make the localizer echo the joined reminder list back, so the exact join separator is observable.
+        _localizerMock["ReminderGate", Arg.Any<object[]>()].Returns(call =>
+            new LocalizedString("ReminderGate", $"ReminderGate:{call.ArgAt<object[]>(1)[0]}"));
         var toolCall = CreateToolCall("navigate_to_cart", []);
 
         // Act
@@ -442,8 +584,7 @@ public class ToolCallDispatcherTests
 
         // Assert
         success.Should().BeTrue();
-        result.Should().Contain("Navigated");
-        result.Should().Contain("ReminderGate"); // localizer key indicates reminder gate was appended
+        result.Should().Be("Navigated" + Environment.NewLine + "ReminderGate:Kaffee, Bier");
         await _preferencesMock.Received(1).GetAllPreferencesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -453,7 +594,7 @@ public class ToolCallDispatcherTests
         // Arrange
         _executorMock.GetCartContentsAsync(Arg.Any<CancellationToken>()).Returns("[{\"Name\":\"Milch\"}]");
         _verifierMock.FindMissingItems(Arg.Any<string>(), Arg.Any<string>()).Returns([]);
-        var toolCall = CreateToolCall("verify_shopping_list", new Dictionary<string, object>
+        var toolCall = CreateToolCall("verify_shopping_list", new Dictionary<string, object?>
         {
             ["shopping_list"] = "1 Packung Milch",
         });
@@ -463,7 +604,8 @@ public class ToolCallDispatcherTests
 
         // Assert
         success.Should().BeTrue();
-        result.Should().Contain("OK");
+        result.Should().Be("OK — all items from the shopping list appear to be in the cart.");
+        _verifierMock.Received(1).FindMissingItems("1 Packung Milch", "[{\"Name\":\"Milch\"}]");
     }
 
     [Test]
@@ -472,7 +614,7 @@ public class ToolCallDispatcherTests
         // Arrange
         _executorMock.GetCartContentsAsync(Arg.Any<CancellationToken>()).Returns("[{\"Name\":\"Milch\"}]");
         _verifierMock.FindMissingItems(Arg.Any<string>(), Arg.Any<string>()).Returns(["Lauch", "Kartoffeln"]);
-        var toolCall = CreateToolCall("verify_shopping_list", new Dictionary<string, object>
+        var toolCall = CreateToolCall("verify_shopping_list", new Dictionary<string, object?>
         {
             ["shopping_list"] = "1 Stück Lauch\n2 Stück Kartoffeln\n1 Packung Milch",
         });
@@ -482,8 +624,10 @@ public class ToolCallDispatcherTests
 
         // Assert
         success.Should().BeTrue();
-        result.Should().Contain("Lauch");
-        result.Should().Contain("Kartoffeln");
+        result.Should().Be("Potentially missing from cart: Lauch, Kartoffeln. Please check and add them before navigating to cart.");
+        _verifierMock.Received(1).FindMissingItems(
+            "1 Stück Lauch\n2 Stück Kartoffeln\n1 Packung Milch",
+            "[{\"Name\":\"Milch\"}]");
     }
 
     [Test]
@@ -576,17 +720,24 @@ public class ToolCallDispatcherTests
         var toolCall = new FunctionCallContent(
             "call_clarify",
             "request_clarification",
-            new Dictionary<string, object>(StringComparer.Ordinal) { ["pending_items"] = "Garlic, Lemon" });
+            new Dictionary<string, object?>(StringComparer.Ordinal) { ["pending_items"] = "Garlic, Lemon" });
 
         // Act
         var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
 
         // Assert
         success.Should().BeTrue();
-        result.Should().Contain("AWAITING CLARIFICATION");
-        result.Should().Contain("Garlic, Lemon");
-        result.Should().Contain("search_products");
-        result.Should().Contain("table");
+        result.Should().Be(
+            "AWAITING CLARIFICATION. Unresolved items: Garlic, Lemon. " +
+            "INSTRUCTION: Do NOT search for any products NOW. Do NOT call confirm_cart NOW. " +
+            "Wait for the user to reply. " +
+            "When the user replies: " +
+            "(1) Search for every product the user names by calling search_products. " +
+            "(2) Output the COMPLETE updated plan table as text — ALL rows, not just changed ones. " +
+            "(3) Below the table, ask about ALL still-open ❓ items in text. " +
+            "(4) Only THEN call request_clarification for remaining ❓ items. " +
+            "You MUST output the table and questions as text before calling request_clarification. " +
+            "NEVER skip the table output, even if most rows are unchanged.");
         _workflowStateMock.Received(1).MoveToAwaitingClarification(
             Arg.Is<IEnumerable<string>>(items => items.SequenceEqual(new[] { "Garlic", "Lemon" })));
     }
@@ -598,7 +749,7 @@ public class ToolCallDispatcherTests
         var toolCall = new FunctionCallContent(
             "call_clarify",
             "request_clarification",
-            new Dictionary<string, object>(StringComparer.Ordinal) { ["pending_items"] = "   " });
+            new Dictionary<string, object?>(StringComparer.Ordinal) { ["pending_items"] = "   " });
 
         // Act
         var (result, success) = await _sut.DispatchAsync(toolCall, "coop");
@@ -609,5 +760,4 @@ public class ToolCallDispatcherTests
         _workflowStateMock.Received(1).MoveToAwaitingClarification(
             Arg.Is<IEnumerable<string>>(items => !items.Any()));
     }
-
 }

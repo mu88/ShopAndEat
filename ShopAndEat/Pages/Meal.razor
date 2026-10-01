@@ -1,6 +1,7 @@
-﻿@page "/"
+@page "/"
 @page "/meal"
 @rendermode InteractiveServer
+@using DataLayer.EfClasses
 @using DTO.Meal
 @using DTO.MealType
 @using DTO.PurchaseItem
@@ -13,6 +14,7 @@
 @inject IRecipeService RecipeService
 @inject IMealTypeService MealTypeService
 @inject IJSRuntime Js
+@inject TimeProvider TimeProvider
 @* TODO mu88: Build translator *@
 
 <select @onchange="SelectedStoreChanged">
@@ -28,7 +30,7 @@
 }
 else
 {
-    <button class="btn btn-primary" @onclick="GetShoppingList">Get shopping list</button>
+    <button class="btn btn-primary" @onclick="GetShoppingListAsync">Get shopping list</button>
 }
 
 <hr>
@@ -49,7 +51,7 @@ else
     <tbody>
         @foreach (var meal in Meals)
         {
-            @if (meal.Day.Date == DateTime.Today)
+            @if (meal.Day.Date == Today)
             {
                 <tr style="background-color:#00FF00">
                     <td>@meal.Day.ToShortDateString() (@meal.Day.ToString("dddd"))</td>
@@ -58,10 +60,10 @@ else
                     <td>@meal.HasBeenShopped</td>
                     <td>@meal.NumberOfPersons</td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => DeleteMeal(meal.MealId))">❌</button>
+                        <button class="btn btn-primary" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))">❌</button>
                     </td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => Toggle(meal.MealId))">🔃</button>
+                        <button class="btn btn-primary" @onclick="@(_ => ToggleAsync(meal.MealId.Value))">🔃</button>
                     </td>
                 </tr>
             }
@@ -74,10 +76,10 @@ else
                     <td>@meal.HasBeenShopped</td>
                     <td>@meal.NumberOfPersons</td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => DeleteMeal(meal.MealId))">❌</button>
+                        <button class="btn btn-primary" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))">❌</button>
                     </td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => Toggle(meal.MealId))">🔃</button>
+                        <button class="btn btn-primary" @onclick="@(_ => ToggleAsync(meal.MealId.Value))">🔃</button>
                     </td>
                 </tr>
             }
@@ -85,7 +87,7 @@ else
     </tbody>
 </table>
 
-<EditForm Model="@_mealModel" OnSubmit="HandleSubmit" FormName="MealForm">
+<EditForm Model="@_mealModel" OnSubmit="HandleSubmitAsync" FormName="MealForm">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
 
@@ -152,47 +154,43 @@ else
 @code {
 
     /// <inheritdoc />
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnInitialized();
+        await base.OnInitializedAsync();
 
-        LoadMeals();
-        Recipes = RecipeService.GetAllRecipes();
-        MealTypes = MealTypeService.GetAllMealTypes();
+        await LoadMealsAsync();
+        Recipes = await RecipeService.GetAllRecipesAsync();
+        MealTypes = await MealTypeService.GetAllMealTypesAsync();
         PurchaseItems = new List<NewPurchaseItemDto>();
-        Stores = StoreService.GetAllStores();
+        Stores = await StoreService.GetAllStoresAsync();
         SelectedStore = Stores.FirstOrDefault();
+        _mealModel.Date = TimeProvider.GetLocalNow().DateTime.Date;
     }
 
-    private void LoadMeals() => Meals = MealService.GetFutureMeals().ToList();
+    private DateTime Today => TimeProvider.GetLocalNow().DateTime.Date;
 
-    private IEnumerable<ExistingMealDto> Meals { get; set; }
+    private async Task LoadMealsAsync() => Meals = await MealService.GetFutureMealsAsync();
 
-    private IEnumerable<ExistingMealTypeDto> MealTypes { get; set; }
+    private IReadOnlyList<ExistingMealDto> Meals { get; set; } = [];
 
-    private IEnumerable<ExistingRecipeDto> Recipes { get; set; }
+    private IReadOnlyList<ExistingMealTypeDto> MealTypes { get; set; } = [];
 
-    private IEnumerable<NewPurchaseItemDto> PurchaseItems { get; set; }
+    private IReadOnlyList<ExistingRecipeDto> Recipes { get; set; } = [];
 
-    private IEnumerable<ExistingStoreDto> Stores { get; set; }
+    private IReadOnlyList<NewPurchaseItemDto> PurchaseItems { get; set; } = [];
 
-    private ExistingStoreDto SelectedStore { get; set; }
+    private IReadOnlyList<ExistingStoreDto> Stores { get; set; } = [];
 
-    private void GetShoppingList()
+    private ExistingStoreDto? SelectedStore { get; set; }
+
+    private async Task GetShoppingListAsync()
     {
-        PurchaseItems = MealService.GetOrderedPurchaseItems(SelectedStore);
-        LoadMeals();
+        PurchaseItems = await MealService.GetOrderedPurchaseItemsAsync(SelectedStore!);
+        await LoadMealsAsync();
     }
 
-    private async Task CopyToClipboardAsync()
-    {
-        if (!PurchaseItems.Any())
-        {
-            return;
-        }
-
+    private async Task CopyToClipboardAsync() =>
         await Js.InvokeVoidAsync("navigator.clipboard.writeText", string.Join(Environment.NewLine, PurchaseItems));
-    }
 
     void SelectedStoreChanged(ChangeEventArgs e)
     {
@@ -201,27 +199,27 @@ else
 
     private readonly MealModel _mealModel = new();
 
-    private void HandleSubmit()
+    private async Task HandleSubmitAsync()
     {
         var newMeal = new NewMealDto(_mealModel.Date,
             MealTypes.Single(x => x.Name == _mealModel.MealTypeName),
             Recipes.Single(x => x.Name == _mealModel.RecipeName),
             _mealModel.NumberOfPersons,
             _mealModel.NumberOfDays);
-        MealService.CreateMeal(newMeal);
-        LoadMeals();
+        await MealService.CreateMealAsync(newMeal);
+        await LoadMealsAsync();
     }
 
-    private void DeleteMeal(int mealId)
+    private async Task DeleteMealAsync(int mealId)
     {
-        MealService.DeleteMeal(new DeleteMealDto(mealId));
-        LoadMeals();
+        await MealService.DeleteMealAsync(new DeleteMealDto(new MealId(mealId)));
+        await LoadMealsAsync();
     }
 
-    private void Toggle(int mealId)
+    private async Task ToggleAsync(int mealId)
     {
-        MealService.ToggleMeal(mealId);
-        LoadMeals();
+        await MealService.ToggleMealAsync(mealId);
+        await LoadMealsAsync();
     }
 
     private void SelectedRecipeChanged(ChangeEventArgs e)

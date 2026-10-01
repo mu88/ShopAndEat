@@ -11,13 +11,13 @@ namespace ShopAndEat.Features.ShoppingAgent.Adapters;
 /// </summary>
 public partial class ServerPreferencesAdapter(IPreferencesRepository repository, ILogger<ServerPreferencesAdapter> logger) : IPreferencesService
 {
-    public async Task<IReadOnlyList<PreferenceDto>> GetAllPreferencesAsync(string storeKey = null, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PreferenceDto>> GetAllPreferencesAsync(string? storeKey = null, CancellationToken cancellationToken = default)
     {
         var preferences = await repository.GetAllPreferencesAsync(null, storeKey, cancellationToken);
         return preferences.Select(ToDto).ToList();
     }
 
-    public async Task<IReadOnlyList<PreferenceDto>> GetPreferencesForArticleAsync(string articleName, string storeKey = null, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PreferenceDto>> GetPreferencesForArticleAsync(string articleName, string? storeKey = null, CancellationToken cancellationToken = default)
     {
         var scope = $"article:{articleName}";
         var preferences = await repository.GetAllPreferencesAsync(scope, storeKey, cancellationToken);
@@ -34,7 +34,7 @@ public partial class ServerPreferencesAdapter(IPreferencesRepository repository,
         LogPreferenceSaved(logger, preference.Scope, preference.Key);
     }
 
-    public Task<bool> DeletePreferenceAsync(string scope, string key, string storeKey = null, CancellationToken cancellationToken = default) =>
+    public Task<bool> DeletePreferenceAsync(string scope, string key, string? storeKey = null, CancellationToken cancellationToken = default) =>
         repository.DeletePreferenceAsync(scope, key, storeKey, cancellationToken);
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Preference saved: [{Scope}] {Key}")]

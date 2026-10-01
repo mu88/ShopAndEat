@@ -14,10 +14,10 @@ namespace Tests.Unit.ShoppingAgent;
 [Category("Unit")]
 public class SystemPromptBuilderTests
 {
-    private IPreferencesService _preferencesMock;
-    private ISessionService _sessionMock;
-    private IStringLocalizer<Messages> _localizerMock;
-    private SystemPromptBuilder _sut;
+    private IPreferencesService _preferencesMock = null!;
+    private ISessionService _sessionMock = null!;
+    private IStringLocalizer<Messages> _localizerMock = null!;
+    private SystemPromptBuilder _sut = null!;
 
     [SetUp]
     public void SetUp()
@@ -168,5 +168,69 @@ public class SystemPromptBuilderTests
         // Assert — with no units the placeholder is replaced by an empty string
         result.Should().Contain("do NOT belong in the search term: ")
             .And.NotContain("{unitList}");
+    }
+
+    [Test]
+    public async Task BuildSystemPromptAsync_PreferenceValueContainsCarriageReturn_StripsCarriageReturnNotReplace()
+    {
+        // Arrange — Value.Replace('\n', ' ').Replace("\r", string.Empty) must strip "\r" entirely,
+        // not substitute it with anything.
+        _preferencesMock.GetAllPreferencesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns([new() { Scope = "global", Key = "note", Value = "line1\r\nline2" }]);
+        _sessionMock.GetUnitsAsync(Arg.Any<CancellationToken>())
+            .Returns(["kg"]);
+
+        // Act
+        var result = await _sut.BuildSystemPromptAsync("Coop", "https://www.coop.ch", "coop");
+
+        // Assert
+        result.Should().Contain("[global] note: `line1 line2`");
+    }
+
+    [Test]
+    public async Task BuildSystemPromptAsync_WithEmptyPreferences_ProducesExactlyTheTemplateWithoutPreferenceText()
+    {
+        // Arrange — proves prefText is truly the empty string (not some other placeholder value) when
+        // there are no preferences, by comparing against the raw embedded template with all other
+        // placeholders substituted and {prefText} removed.
+        _preferencesMock.GetAllPreferencesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns([]);
+        _sessionMock.GetUnitsAsync(Arg.Any<CancellationToken>())
+            .Returns(["kg"]);
+
+        // Act
+        var result = await _sut.BuildSystemPromptAsync("Coop", "https://www.coop.ch", "coop");
+
+        // Assert
+        var expected = LoadEmbeddedTemplate()
+            .Replace("{shopName}", "Coop", StringComparison.Ordinal)
+            .Replace("{shopUrl}", "https://www.coop.ch", StringComparison.Ordinal)
+            .Replace("{unitList}", "\"kg\"", StringComparison.Ordinal)
+            .Replace("{prefText}", string.Empty, StringComparison.Ordinal);
+        result.Should().Be(expected);
+    }
+
+    [Test]
+    public async Task BuildSystemPromptAsync_WithMultipleUnits_JoinsWithCommaAndSpace()
+    {
+        // Arrange
+        _preferencesMock.GetAllPreferencesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns([]);
+        _sessionMock.GetUnitsAsync(Arg.Any<CancellationToken>())
+            .Returns(["kg", "g", "l"]);
+
+        // Act
+        var result = await _sut.BuildSystemPromptAsync("Coop", "https://www.coop.ch", "coop");
+
+        // Assert
+        result.Should().Contain("\"kg\", \"g\", \"l\"");
+    }
+
+    private static string LoadEmbeddedTemplate()
+    {
+        var assembly = typeof(SystemPromptBuilder).Assembly;
+        using var stream = assembly.GetManifestResourceStream("ShoppingAgent.Resources.SystemPrompt.txt")!;
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 }

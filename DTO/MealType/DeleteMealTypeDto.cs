@@ -1,6 +1,3 @@
-﻿namespace DTO.MealType;
+namespace DTO.MealType;
 
-public class DeleteMealTypeDto(int mealTypeId)
-{
-    public int MealTypeId { get; } = mealTypeId;
-}
+public record DeleteMealTypeDto(int MealTypeId);

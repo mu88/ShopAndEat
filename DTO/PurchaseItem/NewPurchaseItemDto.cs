@@ -1,16 +1,13 @@
-﻿using DTO.Article;
+using DTO.Article;
 using DTO.Unit;
 
 namespace DTO.PurchaseItem;
 
-public class NewPurchaseItemDto(ExistingArticleDto article, ExistingUnitDto unit, double quantity)
+public record NewPurchaseItemDto(
+    ExistingArticleDto Article,
+    ExistingUnitDto Unit,
+    double Quantity)
 {
-    public ExistingArticleDto Article { get; } = article;
-
-    public ExistingUnitDto Unit { get; } = unit;
-
-    public double Quantity { get; } = quantity;
-
     /// <inheritdoc />
     public override string ToString() => string.Equals(Unit.Name, "piece", StringComparison.Ordinal) ? $"{Quantity} {Article.Name}" : $"{Quantity} {Unit.Name} {Article.Name}";
 }

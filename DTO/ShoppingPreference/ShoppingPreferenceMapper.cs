@@ -6,7 +6,7 @@ public static class ShoppingPreferenceMapper
     {
         Scope = preference.Scope,
         Key = preference.Key,
-        Value = preference.Value,
+        Value = preference.Value ?? string.Empty,
         Source = preference.Source.ToString(),
         StoreKey = preference.StoreKey,
         UsageCount = preference.UsageCount,

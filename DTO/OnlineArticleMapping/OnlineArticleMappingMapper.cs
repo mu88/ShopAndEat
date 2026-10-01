@@ -22,12 +22,9 @@ public static class OnlineArticleMappingMapper
         };
 
     public static EfOnlineArticleMapping ToEntity(this NewOnlineArticleMappingDto dto, string storeKey)
-        => new(dto.ArticleName, storeKey, dto.StoreProductCode, default)
-        {
-            StoreProductName = dto.StoreProductName,
-            StoreProductPrice = dto.StoreProductPrice,
-            Confidence = dto.Confidence,
-            MatchMethod = dto.MatchMethod ?? default,
-            QuantityPerUnit = dto.QuantityPerUnit,
-        };
+    {
+        var mapping = new EfOnlineArticleMapping(dto.ArticleName, storeKey, dto.StoreProductCode ?? string.Empty, default);
+        mapping.RecordMatch(dto.StoreProductName ?? string.Empty, dto.StoreProductPrice, dto.Confidence, dto.MatchMethod ?? default, dto.QuantityPerUnit, default);
+        return mapping;
+    }
 }

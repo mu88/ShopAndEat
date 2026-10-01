@@ -1,11 +1,11 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 
 namespace DataLayer.EfClasses;
 
-public class Store
+public class Store : IHasId<StoreId>
 {
-    private readonly List<ShoppingOrder> _compartments;
+    private readonly List<ShoppingOrder> _compartments = [];
 
     public Store(string name, IEnumerable<ShoppingOrder> compartments)
     {
@@ -15,6 +15,7 @@ public class Store
 
     public Store()
     {
+        Name = string.Empty;
     }
 
     public virtual IEnumerable<ShoppingOrder> Compartments => _compartments;
@@ -26,7 +27,7 @@ public class Store
         private set;
     }
 
-    public int StoreId
+    public StoreId StoreId
     {
         get;
         [UsedImplicitly]

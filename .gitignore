@@ -9,6 +9,9 @@ TestResults/
 Tests/coverage.xml
 .sonarqube/
 
+# Stryker mutation testing
+StrykerOutput/
+
 # Docker secrets — never commit API keys
 secrets/
 diff_output.txt
@@ -21,3 +24,5 @@ ShopAndEat.db-shm
 # LibMan-managed client-side libraries (restored via `libman restore` in CI)
 ShopAndEat/wwwroot/css/bootstrap/
 ShopAndEat/wwwroot/css/open-iconic/
+coverage.xml
+coverage-*.xml

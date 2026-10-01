@@ -31,17 +31,19 @@ public class AgentService(
     private bool _isProcessing;
 
 #pragma warning disable MA0046
-    public event Action OnStateChanged;
+    public event Action? OnStateChanged;
 #pragma warning restore MA0046
 
     public bool IsProcessing => _isProcessing;
 
-    public IList<Models.ChatMessage> Messages => _messages;
+    public IReadOnlyList<Models.ChatMessage> Messages => _messages;
 
-    public string SelectedShopKey => shopSessionManager.SelectedShopKey;
+    public string? SelectedShopKey => shopSessionManager.SelectedShopKey;
     public IReadOnlyList<ShopConfig> AvailableShops => shopSessionManager.AvailableShops;
 
-    public async Task InitializeAsync(string shopKey = null, CancellationToken cancellationToken = default)
+    public void AddMessage(Models.ChatMessage message) => _messages.Add(message);
+
+    public async Task InitializeAsync(string? shopKey = null, CancellationToken cancellationToken = default)
     {
         conversationManager.ResetWorkflow();
 
@@ -52,9 +54,9 @@ public class AgentService(
 
         shopSessionManager.SelectShop(shopKey);
 
-        var shop = shopSessionManager.SelectedShop;
+        var shop = shopSessionManager.SelectedShop!;
         var systemPrompt = await systemPromptBuilder.BuildSystemPromptAsync(
-            shop.Name, shop.BaseUrl, shopSessionManager.SelectedShopKey, cancellationToken);
+            shop.Name, shop.BaseUrl, shopSessionManager.SelectedShopKey!, cancellationToken);
 
         _conversationHistory.Clear();
         _conversationHistory.Add(new Microsoft.Extensions.AI.ChatMessage(ChatRole.System, systemPrompt));
@@ -72,11 +74,60 @@ public class AgentService(
         string userMessage,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        await EnsureInitializedAsync(cancellationToken);
+        BeginProcessing();
+
+        _conversationHistory.Add(new Microsoft.Extensions.AI.ChatMessage(ChatRole.User, userMessage));
+
+        var (resilientClient, shopName) = await PrepareResilientClientAsync();
+
+        var result = conversationManager.ProcessAsync(
+            _conversationHistory,
+            resilientClient,
+            () => toolDefinitionProvider.GetToolDefinitions(shopName, conversationManager.Phase),
+            shopSessionManager.SelectedShopKey!,
+            cancellationToken);
+
+        try
+        {
+            await foreach (var chunk in result.Chunks.WithCancellation(cancellationToken))
+            {
+                yield return chunk;
+            }
+        }
+        finally
+        {
+            // Appending here (not only on the happy path) ensures that messages already produced
+            // before a cancellation/exception - including tool calls that already ran with real
+            // side effects - are still recorded in the conversation history instead of being lost.
+            _conversationHistory.AddRange(result.NewMessages);
+            _isProcessing = false;
+            OnStateChanged?.Invoke();
+        }
+    }
+
+    private async Task<(ResilientChatClient Client, string ShopName)> PrepareResilientClientAsync()
+    {
+#pragma warning disable IDISP001 // Dispose created
+        var resilientClient = await CreateResilientClientAsync();
+#pragma warning restore IDISP001
+        var shopName = shopSessionManager.SelectedShop!.Name;
+
+        metrics.MessagesProcessed.Add(1);
+
+        return (resilientClient, shopName);
+    }
+
+    private async Task EnsureInitializedAsync(CancellationToken cancellationToken)
+    {
         if (!shopSessionManager.IsInitialized)
         {
             await InitializeAsync(cancellationToken: cancellationToken);
         }
+    }
 
+    private void BeginProcessing()
+    {
         _isProcessing = true;
         OnStateChanged?.Invoke();
 
@@ -86,16 +137,17 @@ public class AgentService(
         {
             conversationManager.ResetWorkflow();
         }
+    }
 
-        _conversationHistory.Add(new Microsoft.Extensions.AI.ChatMessage(ChatRole.User, userMessage));
-
+    private async Task<ResilientChatClient> CreateResilientClientAsync()
+    {
         var primaryClient = await chatClientProvider.GetChatClientAsync();
         var fallbackClient = agentOptions.Value.ModelFallbackEnabled
             ? await chatClientProvider.GetFallbackChatClientAsync()
             : null;
 
 #pragma warning disable IDISP001 // Dispose created
-        var resilientClient = new ResilientChatClient(
+        return new ResilientChatClient(
             primaryClient,
             fallbackClient,
             resilientLogger,
@@ -104,27 +156,5 @@ public class AgentService(
             metrics,
             retryPolicyFactory);
 #pragma warning restore IDISP001
-
-        var shopName = shopSessionManager.SelectedShop.Name;
-
-        metrics.MessagesProcessed.Add(1);
-
-        try
-        {
-            await foreach (var chunk in conversationManager.ProcessAsync(
-                _conversationHistory,
-                resilientClient,
-                () => toolDefinitionProvider.GetToolDefinitions(shopName, conversationManager.Phase),
-                shopSessionManager.SelectedShopKey,
-                cancellationToken))
-            {
-                yield return chunk;
-            }
-        }
-        finally
-        {
-            _isProcessing = false;
-            OnStateChanged?.Invoke();
-        }
     }
 }

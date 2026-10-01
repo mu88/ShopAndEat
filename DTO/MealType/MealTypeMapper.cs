@@ -8,8 +8,8 @@ public static class MealTypeMapper
         => new(entity.Name, entity.MealTypeId, entity.Order);
 
     public static EfMealType ToEntity(this NewMealTypeDto dto)
-        => new() { Name = dto.Name };
+        => new(dto.Name, 0);
 
     public static EfMealType ToEntity(this ExistingMealTypeDto dto)
-        => new() { Name = dto.Name, Order = dto.Order };
+        => new(dto.Name, dto.Order);
 }

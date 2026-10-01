@@ -77,16 +77,31 @@ public class SessionDtosTests
 
         // Assert
         item.OriginalIngredient.Should().Be(string.Empty);
+        item.SelectedProductName.Should().Be(string.Empty);
+        item.SelectedProductUrl.Should().Be(string.Empty);
+        item.Quantity.Should().Be(1);
+        item.Price.Should().Be(string.Empty);
     }
 
     [Test]
-    public void SessionItemDto_CanSetOriginalIngredient()
+    public void SessionItemDto_CanSetAllProperties()
     {
         // Arrange & Act
-        var item = new SessionItemDto { OriginalIngredient = "3 packs of toast" };
+        var item = new SessionItemDto
+        {
+            OriginalIngredient = "3 packs of toast",
+            SelectedProductName = "Bio Toast",
+            SelectedProductUrl = "https://example.test/toast",
+            Quantity = 3,
+            Price = "4.50",
+        };
 
         // Assert
         item.OriginalIngredient.Should().Be("3 packs of toast");
+        item.SelectedProductName.Should().Be("Bio Toast");
+        item.SelectedProductUrl.Should().Be("https://example.test/toast");
+        item.Quantity.Should().Be(3);
+        item.Price.Should().Be("4.50");
     }
 
     [Test]

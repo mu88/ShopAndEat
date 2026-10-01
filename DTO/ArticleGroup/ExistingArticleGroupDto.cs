@@ -1,8 +1,5 @@
-﻿namespace DTO.ArticleGroup;
+using DataLayer.EfClasses;
 
-public class ExistingArticleGroupDto(int articleGroupId, string name)
-{
-    public int ArticleGroupId { get; } = articleGroupId;
+namespace DTO.ArticleGroup;
 
-    public string Name { get; } = name;
-}
+public record ExistingArticleGroupDto(ArticleGroupId ArticleGroupId, string Name);

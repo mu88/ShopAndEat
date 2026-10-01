@@ -1,4 +1,5 @@
-﻿using BizLogic;
+using System.Diagnostics;
+using BizLogic;
 using BizLogic.Concrete;
 using DataLayer.EF;
 using DataLayer.EfClasses;
@@ -9,9 +10,12 @@ using DTO.Recipe;
 using DTO.Store;
 using FluentAssertions;
 using FluentAssertions.Extensions;
+using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using NUnit.Framework;
 using ServiceLayer.Concrete;
+using ServiceLayer.Diagnostics;
+using Tests.Builders;
 
 namespace Tests.Unit.ServiceLayer;
 
@@ -19,22 +23,41 @@ namespace Tests.Unit.ServiceLayer;
 [Category("Unit")]
 public class MealServiceTests
 {
+    private readonly List<Activity> _completedActivities = [];
+    private ActivityListener _activityListener = null!;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _completedActivities.Clear();
+        _activityListener = new ActivityListener
+        {
+            ShouldListenTo = source => string.Equals(source.Name, ServiceLayerDiagnostics.ActivitySourceName, StringComparison.Ordinal),
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            ActivityStopped = _completedActivities.Add,
+        };
+        ActivitySource.AddActivityListener(_activityListener);
+    }
+
+    [TearDown]
+    public void TearDown() => _activityListener.Dispose();
+
     [Test]
-    public void GetMealsForToday()
+    public async Task GetMealsForTodayAsync()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
+        await using var context = new InMemoryDbContext();
         var mealType1 = new MealType("Breakfast", 1);
         var mealType2 = new MealType("Lunch", 2);
         context.Meals.AddRange(new Meal(DateTime.Today.AddDays(-1), mealType1, new Recipe("My breakfast", 2, 2, Enumerable.Empty<Ingredient>()), 1),
             new Meal(DateTime.Today, mealType1, new Recipe("My breakfast", 2, 2, Enumerable.Empty<Ingredient>()), 1),
             new Meal(DateTime.Today, mealType2, new Recipe("My lunch", 2, 2, Enumerable.Empty<Ingredient>()), 1),
             new Meal(DateTime.Today.AddDays(1), mealType2, new Recipe("My lunch", 2, 2, Enumerable.Empty<Ingredient>()), 1));
-        context.SaveChanges();
+        await context.SaveChangesAsync();
         var testee = CreateTestee(context);
 
         // Act
-        var results = testee.GetMealsForToday();
+        var results = await testee.GetMealsForTodayAsync();
 
         // Assert
         results.Should()
@@ -44,42 +67,57 @@ public class MealServiceTests
             .And.Subject.Should()
             .SatisfyRespectively(first => first.MealType.Name.Should().Be("Breakfast"),
                 second => second.MealType.Name.Should().Be("Lunch"));
+        _completedActivities.Should().ContainSingle(activity => activity.OperationName == "MealService.GetMealsForTodayAsync");
     }
 
     [Test]
-    public void GetFutureMeals()
+    public async Task GetFutureMealsAsync()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
+        await using var context = new InMemoryDbContext();
         var lunch = new MealType("Lunch", 1);
+        var breakfast = new MealType("Breakfast", 0);
         var lunchRecipe = new Recipe("My lunch", 1, 1, Enumerable.Empty<Ingredient>());
+        var breakfastRecipe = new Recipe("My breakfast", 1, 1, Enumerable.Empty<Ingredient>());
         context.Meals.AddRange(new Meal(DateTime.Today.AddDays(-1), lunch, lunchRecipe, 1),
             new Meal(DateTime.Today, lunch, lunchRecipe, 1),
-            new Meal(DateTime.Today.AddDays(1), lunch, lunchRecipe, 1));
-        context.SaveChanges();
+            // Same future day, deliberately added in descending MealType.Order to prove ThenBy() sorts ascending.
+            new Meal(DateTime.Today.AddDays(1), lunch, lunchRecipe, 1),
+            new Meal(DateTime.Today.AddDays(1), breakfast, breakfastRecipe, 1));
+        await context.SaveChangesAsync();
         var testee = CreateTestee(context);
 
         // Act
-        var results = testee.GetFutureMeals();
+        var results = await testee.GetFutureMealsAsync();
 
         // Assert
         results.Should()
-            .HaveCount(2)
+            .HaveCount(3)
             .And.Subject.Should()
             .SatisfyRespectively(first => first.Day.Should().BeSameDateAs(DateTime.Today),
-                second => second.Day.Should().BeSameDateAs(DateTime.Today.AddDays(1)));
+                second =>
+                {
+                    second.Day.Should().BeSameDateAs(DateTime.Today.AddDays(1));
+                    second.MealType.Name.Should().Be("Breakfast");
+                },
+                third =>
+                {
+                    third.Day.Should().BeSameDateAs(DateTime.Today.AddDays(1));
+                    third.MealType.Name.Should().Be("Lunch");
+                });
+        _completedActivities.Should().ContainSingle(activity => activity.OperationName == "MealService.GetFutureMealsAsync");
     }
 
     [Test]
-    public void CreateMeal_ShouldCreateMealsForSeveralDays()
+    public async Task CreateMealAsync_ShouldCreateMealsForSeveralDays()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
-        var lunch = new MealType("Lunch", 1);
-        var lunchRecipe = new Recipe("My lunch", 1, 1, Enumerable.Empty<Ingredient>());
+        await using var context = new InMemoryDbContext();
+        var lunch = new MealTypeBuilder().WithDefaults().Build();
+        var lunchRecipe = new RecipeBuilder().WithDefaults().Build();
         context.MealTypes.Add(lunch);
         context.Recipes.Add(lunchRecipe);
-        context.SaveChanges();
+        await context.SaveChangesAsync();
         var newMealDto = new NewMealDto(4.November(2023),
             new ExistingMealTypeDto(lunch.Name, lunch.MealTypeId, lunch.Order),
             new ExistingRecipeDto(lunchRecipe.Name,
@@ -92,7 +130,7 @@ public class MealServiceTests
         var testee = CreateTestee(context);
 
         // Act
-        testee.CreateMeal(newMealDto);
+        await testee.CreateMealAsync(newMealDto);
 
         // Assert
         context.Meals.Should()
@@ -100,36 +138,141 @@ public class MealServiceTests
             .And.Subject.Select(meal => meal.Day)
             .Should()
             .BeEquivalentTo(new[] { 4.November(2023), 5.November(2023) });
+        _completedActivities.Should().ContainSingle(activity => activity.OperationName == "MealService.CreateMealAsync");
     }
 
     [Test]
-    public void GetOrderedPurchaseItems_ShouldIgnorePastMeals()
+    public async Task GetOrderedPurchaseItemsAsync_ShouldIgnorePastMeals()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
+        await using var context = new InMemoryDbContext();
         var today = new DateTime(2026, 9, 15);
-        var vegetables = new ArticleGroup("Vegetables");
+        var vegetables = new ArticleGroupBuilder().WithDefaults().Build();
+        // Store/Article kept as direct construction: they must share this exact "vegetables" instance
+        // for the ArticleGroup reference-equality match in OrderPurchaseItemsByStoreAction to succeed.
         var store = new Store("Test Store", new[] { new ShoppingOrder(vegetables, 1) });
-        var unit = new global::DataLayer.EfClasses.Unit("Piece");
-        var pastArticle = new Article { Name = "Past Tomato", ArticleGroup = vegetables };
-        var futureArticle = new Article { Name = "Future Salad", ArticleGroup = vegetables };
-        var mealType = new MealType("Lunch", 1);
+        var unit = new UnitBuilder().WithDefaults().Build();
+        var pastArticle = new Article("Past Tomato", vegetables);
+        var futureArticle = new Article("Future Salad", vegetables); // kept: article names are asserted on below
+        var mealType = new MealTypeBuilder().WithDefaults().Build();
         var pastMeal = new Meal(today.AddDays(-1), mealType, new Recipe("Past Recipe", 1, 1, new[] { new Ingredient(pastArticle, 1, unit) }), 1);
         var futureMeal = new Meal(today, mealType, new Recipe("Future Recipe", 1, 1, new[] { new Ingredient(futureArticle, 2, unit) }), 1);
         context.Stores.Add(store);
         context.Meals.AddRange(pastMeal, futureMeal);
-        context.SaveChanges();
+        await context.SaveChangesAsync();
         var testee = CreateTesteeWithRealPurchaseItemActions(context, new FixedTimeProvider(today));
 
         // Act
-        var results = testee.GetOrderedPurchaseItems(new ExistingStoreDto(store.StoreId, store.Name)).ToList();
+        var results = (await testee.GetOrderedPurchaseItemsAsync(new ExistingStoreDto(store.StoreId, store.Name))).ToList();
 
         // Assert
         results.Should().ContainSingle();
         results.Single().Article.Name.Should().Be("Future Salad");
         pastMeal.HasBeenShopped.Should().BeFalse();
         futureMeal.HasBeenShopped.Should().BeTrue();
+        _completedActivities.Should().ContainSingle(activity => activity.OperationName == "MealService.GetOrderedPurchaseItemsAsync");
     }
+
+    [Test]
+    public async Task GetOrderedPurchaseItemsAsync_ShouldPersistHasBeenShoppedFlag()
+    {
+        // Arrange — a second context on the same underlying in-memory database proves SaveChangesAsync() ran,
+        // since the first context's change tracker would otherwise mask the missing persistence.
+        var dbOptions = CreateSharedDbOptions();
+        await using var writeContext = new EfCoreContext(dbOptions);
+        var today = new DateTime(2026, 9, 15);
+        var vegetables = new ArticleGroupBuilder().WithDefaults().Build();
+        // Store/Article kept as direct construction: they must share this exact "vegetables" instance
+        // for the ArticleGroup reference-equality match in OrderPurchaseItemsByStoreAction to succeed.
+        var store = writeContext.Stores.Add(new Store("Test Store", new[] { new ShoppingOrder(vegetables, 1) })).Entity;
+        var unit = new UnitBuilder().WithDefaults().Build();
+        var futureArticle = new Article("Future Salad", vegetables);
+        var mealType = new MealTypeBuilder().WithDefaults().Build();
+        var futureMeal = writeContext.Meals.Add(
+            new Meal(today, mealType, new Recipe("Future Recipe", 1, 1, new[] { new Ingredient(futureArticle, 2, unit) }), 1)).Entity;
+        await writeContext.SaveChangesAsync();
+        var testee = CreateTesteeWithRealPurchaseItemActions(writeContext, new FixedTimeProvider(today));
+
+        // Act
+        await testee.GetOrderedPurchaseItemsAsync(new ExistingStoreDto(store.StoreId, store.Name));
+
+        // Assert
+        await using var readContext = new EfCoreContext(dbOptions);
+        readContext.Meals.Single(meal => meal.MealId == futureMeal.MealId).HasBeenShopped.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task DeleteMealAsync()
+    {
+        // Arrange
+        await using var context = new InMemoryDbContext();
+        var meal = context.Meals.Add(new MealBuilder().WithDefaults().Build()).Entity;
+        await context.SaveChangesAsync();
+        var testee = CreateTestee(context);
+
+        // Act
+        await testee.DeleteMealAsync(new DeleteMealDto(meal.MealId));
+
+        // Assert
+        context.Meals.Should().NotContain(m => m.MealId == meal.MealId);
+        _completedActivities.Should().ContainSingle(activity => activity.OperationName == "MealService.DeleteMealAsync");
+    }
+
+    [Test]
+    public async Task DeleteMealAsync_ShouldPersistDeletion()
+    {
+        // Arrange — a second context on the same underlying in-memory database proves SaveChangesAsync() ran.
+        var dbOptions = CreateSharedDbOptions();
+        await using var writeContext = new EfCoreContext(dbOptions);
+        var meal = writeContext.Meals.Add(new MealBuilder().WithDefaults().Build()).Entity;
+        await writeContext.SaveChangesAsync();
+        var testee = CreateTestee(writeContext);
+
+        // Act
+        await testee.DeleteMealAsync(new DeleteMealDto(meal.MealId));
+
+        // Assert
+        await using var readContext = new EfCoreContext(dbOptions);
+        readContext.Meals.Should().NotContain(m => m.MealId == meal.MealId);
+    }
+
+    [Test]
+    public async Task ToggleMealAsync()
+    {
+        // Arrange
+        await using var context = new InMemoryDbContext();
+        var meal = context.Meals.Add(new MealBuilder().WithDefaults().Build()).Entity;
+        await context.SaveChangesAsync();
+        var testee = CreateTestee(context);
+
+        // Act
+        await testee.ToggleMealAsync(meal.MealId.Value);
+
+        // Assert
+        context.Meals.Single(m => m.MealId == meal.MealId).HasBeenShopped.Should().BeTrue();
+        _completedActivities.Should().ContainSingle(activity => activity.OperationName == "MealService.ToggleMealAsync");
+    }
+
+    [Test]
+    public async Task ToggleMealAsync_ShouldPersistToggle()
+    {
+        // Arrange — a second context on the same underlying in-memory database proves SaveChangesAsync() ran.
+        var dbOptions = CreateSharedDbOptions();
+        await using var writeContext = new EfCoreContext(dbOptions);
+        var meal = writeContext.Meals.Add(new MealBuilder().WithDefaults().Build()).Entity;
+        await writeContext.SaveChangesAsync();
+        var testee = CreateTestee(writeContext);
+
+        // Act
+        await testee.ToggleMealAsync(meal.MealId.Value);
+
+        // Assert
+        await using var readContext = new EfCoreContext(dbOptions);
+        readContext.Meals.Single(m => m.MealId == meal.MealId).HasBeenShopped.Should().BeTrue();
+    }
+
+    private static DbContextOptions<EfCoreContext> CreateSharedDbOptions() =>
+        new DbContextOptionsBuilder<EfCoreContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
 
     private static MealService CreateTestee(EfCoreContext context)
     {

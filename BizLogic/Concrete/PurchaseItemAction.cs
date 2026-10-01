@@ -1,4 +1,4 @@
-﻿using BizDbAccess;
+using BizDbAccess;
 using DTO.PurchaseItem;
 
 namespace BizLogic.Concrete;
@@ -14,6 +14,6 @@ public class PurchaseItemAction(IPurchaseItemDbAccess purchaseItemDbAccess) : IP
     }
 
     /// <inheritdoc />
-    public void DeletePurchaseItem(DeletePurchaseItemDto deletePurchaseItemDto)
-        => purchaseItemDbAccess.DeletePurchaseItem(purchaseItemDbAccess.GetPurchaseItem(deletePurchaseItemDto.PurchaseItemId));
+    public async Task DeletePurchaseItemAsync(DeletePurchaseItemDto deletePurchaseItemDto, CancellationToken cancellationToken = default)
+        => purchaseItemDbAccess.DeletePurchaseItem(await purchaseItemDbAccess.GetPurchaseItemAsync(deletePurchaseItemDto.PurchaseItemId, cancellationToken));
 }

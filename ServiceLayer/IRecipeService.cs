@@ -1,14 +1,14 @@
-﻿using DTO.Recipe;
+using DTO.Recipe;
 
 namespace ServiceLayer;
 
 public interface IRecipeService
 {
-    IEnumerable<ExistingRecipeDto> GetAllRecipes();
+    Task<IReadOnlyList<ExistingRecipeDto>> GetAllRecipesAsync(CancellationToken cancellationToken = default);
 
-    void CreateNewRecipe(NewRecipeDto newRecipeDto);
+    Task CreateNewRecipeAsync(NewRecipeDto newRecipeDto, CancellationToken cancellationToken = default);
 
-    void DeleteRecipe(DeleteRecipeDto recipeToDelete);
+    Task DeleteRecipeAsync(DeleteRecipeDto recipeToDelete, CancellationToken cancellationToken = default);
 
-    void UpdateRecipe(UpdateRecipeDto existingRecipeDto);
+    Task UpdateRecipeAsync(UpdateRecipeDto existingRecipeDto, CancellationToken cancellationToken = default);
 }

@@ -8,7 +8,7 @@ namespace Tests.Unit.ShoppingAgent;
 [Category("Unit")]
 public class ToolResultCompressorTests
 {
-    private ToolResultCompressor _sut;
+    private ToolResultCompressor _sut = null!;
 
     [SetUp]
     public void SetUp() => _sut = new ToolResultCompressor();
@@ -62,6 +62,27 @@ public class ToolResultCompressorTests
 
         // Assert
         result.Should().Be("[]");
+    }
+
+    [Test]
+    public void Compress_ReturnsRawResultWithoutDeserializing_WhenRawResultIsNull()
+    {
+        // Act — the null-guard must short-circuit before the switch, otherwise "search_products" would
+        // route to JsonSerializer.Deserialize(null, ...), which throws ArgumentNullException (not caught).
+        var act = () => _sut.Compress("search_products", null!);
+
+        // Assert
+        act.Should().NotThrow().Which.Should().BeNull();
+    }
+
+    [Test]
+    public void Compress_ReturnsRawResult_WhenRawResultIsWhitespace()
+    {
+        // Act
+        var result = _sut.Compress("search_products", "   ");
+
+        // Assert
+        result.Should().Be("   ");
     }
 
     [Test]
@@ -151,6 +172,38 @@ public class ToolResultCompressorTests
     }
 
     [Test]
+    public void Compress_WhenSearchResultUsesLowerCasePropertyNames_StillDeserializesCaseInsensitively()
+    {
+        // Arrange — proves ReadOptions.PropertyNameCaseInsensitive = true is actually in effect;
+        // ShopProduct's properties are PascalCase, so lower-case JSON keys would fail to bind otherwise.
+        var json = """[{"name":"Bio Tofu","price":"CHF 3.95","url":"https://coop.ch/p/123"}]""";
+
+        // Act
+        var result = _sut.Compress("search_products", json);
+
+        // Assert
+        result.Should().Contain("Bio Tofu");
+        result.Should().Contain("CHF 3.95");
+        result.Should().Contain("https://coop.ch/p/123");
+    }
+
+    [Test]
+    public void Compress_WhenCartContentsHasLeadingWhitespaceBeforeArray_StillCompresses()
+    {
+        // Arrange — proves the guard checks specifically for '[' (not merely "any character"); with
+        // leading whitespace, System.Text.Json still parses the array successfully once entered,
+        // so only a real StartsWith("[") check distinguishes this from an always-true check.
+        const string json = " [{\"name\":\"Bio Tofu\",\"qty\":1,\"price\":\"CHF 3.95\"}]";
+
+        // Act
+        var result = _sut.Compress("get_cart_contents", json);
+
+        // Assert — leading-whitespace input is NOT recognized as starting with '[', so it must be
+        // returned completely unchanged (not compressed).
+        result.Should().Be(json);
+    }
+
+    [Test]
     public void Compress_WhenToolIsUnknown_ReturnsRawResult()
     {
         // Arrange
@@ -197,5 +250,322 @@ public class ToolResultCompressorTests
 
         // Assert
         result.Should().Be(notJson);
+    }
+
+    [Test]
+    public void Compress_WhenSearchResultDeserializesToNull_ReturnsRawResult()
+    {
+        // Arrange
+        const string json = "null";
+
+        // Act
+        var result = _sut.Compress("search_products", json);
+
+        // Assert
+        result.Should().Be(json);
+    }
+
+    [Test]
+    public void Compress_WhenProductDetailsDeserializesToNull_ReturnsRawResult()
+    {
+        // Arrange
+        const string json = "null";
+
+        // Act
+        var result = _sut.Compress("get_product_details", json);
+
+        // Assert
+        result.Should().Be(json);
+    }
+
+    [Test]
+    public void Compress_WhenCartContentsIsWhitespaceOnly_ReturnsRawResult()
+    {
+        // Arrange
+        const string whitespace = "   ";
+
+        // Act
+        var result = _sut.Compress("get_cart_contents", whitespace);
+
+        // Assert
+        result.Should().Be(whitespace);
+    }
+
+    [Test]
+    public void Compress_WhenCartContentsDeserializesToNull_ReturnsRawResult()
+    {
+        // Arrange
+        const string json = "[]";
+
+        // Act
+        var result = _sut.Compress("get_cart_contents", json);
+
+        // Assert
+        result.Should().Be("[]");
+    }
+
+    [Test]
+    public void Compress_WhenCartContentsDoesNotStartWithBracket_ReturnsRawResult()
+    {
+        // Arrange
+        const string json = """{"some":"object"}""";
+
+        // Act
+        var result = _sut.Compress("get_cart_contents", json);
+
+        // Assert
+        result.Should().Be(json);
+    }
+
+    [Test]
+    public void Compress_WhenCartContentsHasItemsWithMissingFields_CompressesWithoutThrowing()
+    {
+        // Arrange
+        // Characterization test: missing fields are simply omitted per item (not null-padded),
+        // present fields are preserved and converted to their compressed string representation.
+        var json = """
+            [
+              {"name":"Item1","qty":1},
+              {"name":"Item2","price":"CHF 5.00"},
+              {"qty":3,"price":"CHF 10.00"}
+            ]
+            """;
+
+        // Act
+        var result = _sut.Compress("get_cart_contents", json);
+
+        // Assert
+        result.Should().Contain("Item1");
+        result.Should().Contain("Item2");
+        result.Should().Contain("\"qty\":\"1\"");
+        result.Should().Contain("\"qty\":\"3\"");
+    }
+
+    [Test]
+    public void Compress_WhenCartContentsHasExplicitNullFields_CompressesWithoutThrowing()
+    {
+        // Arrange — an explicit JSON "null" (as opposed to a missing key) deserializes to an actual
+        // C# null in the Dictionary<string, object>, exercising the `?.ToString()` null branch.
+        var json = """
+            [
+              {"name":null,"qty":null,"price":null}
+            ]
+            """;
+
+        // Act
+        var act = () => _sut.Compress("get_cart_contents", json);
+
+        // Assert — WriteOptions ignores null values on serialize, so the null branch is exercised
+        // internally without throwing, but the resulting JSON simply omits the fields.
+        act.Should().NotThrow();
+        act().Should().Be("[{}]");
+    }
+
+    [Test]
+    public void Compress_WhenAddToCartIsWhitespaceOnly_ReturnsRawResult()
+    {
+        // Arrange
+        const string whitespace = "   ";
+
+        // Act
+        var result = _sut.Compress("add_to_cart", whitespace);
+
+        // Assert
+        result.Should().Be(whitespace);
+    }
+
+    [Test]
+    public void Compress_WhenAddToCartDeserializesToNull_ReturnsRawResult()
+    {
+        // Arrange
+        const string json = "null";
+
+        // Act
+        var result = _sut.Compress("add_to_cart", json);
+
+        // Assert
+        result.Should().Be(json);
+    }
+
+    [Test]
+    public void Compress_WhenAddToCartDoesNotStartWithBrace_ReturnsRawResult()
+    {
+        // Arrange
+        const string json = """["array"]""";
+
+        // Act
+        var result = _sut.Compress("add_to_cart", json);
+
+        // Assert
+        result.Should().Be(json);
+    }
+
+    [Test]
+    public void Compress_WhenAddToCartHasMissingFields_CompressesWithNulls()
+    {
+        // Arrange
+        var json = """
+            {
+              "success":true,
+              "quantity":2
+            }
+            """;
+
+        // Act
+        var result = _sut.Compress("add_to_cart", json);
+
+        // Assert
+        result.Should().Contain("success");
+        result.Should().NotContain("quantity");
+    }
+
+    [Test]
+    public void Compress_WhenAddToCartHasExplicitNullFields_CompressesWithoutThrowing()
+    {
+        // Arrange — explicit JSON "null" exercises the `?.ToString()` null branch on a present key.
+        var json = """
+            {
+              "success":null,
+              "message":null
+            }
+            """;
+
+        // Act
+        var act = () => _sut.Compress("add_to_cart", json);
+
+        // Assert — WriteOptions ignores null values on serialize, so the null branch is exercised
+        // internally without throwing, but the resulting JSON simply omits the fields.
+        act.Should().NotThrow();
+        act().Should().Be("{}");
+    }
+
+    [Test]
+    public void Compress_WhenRemoveFromCartIsWhitespaceOnly_ReturnsRawResult()
+    {
+        // Arrange
+        const string whitespace = "   ";
+
+        // Act
+        var result = _sut.Compress("remove_from_cart", whitespace);
+
+        // Assert
+        result.Should().Be(whitespace);
+    }
+
+    [Test]
+    public void Compress_WhenRemoveFromCartDeserializesToNull_ReturnsRawResult()
+    {
+        // Arrange
+        const string json = "null";
+
+        // Act
+        var result = _sut.Compress("remove_from_cart", json);
+
+        // Assert
+        result.Should().Be(json);
+    }
+
+    [Test]
+    public void Compress_WhenRemoveFromCartDoesNotStartWithBrace_ReturnsRawResult()
+    {
+        // Arrange
+        const string json = """["array"]""";
+
+        // Act
+        var result = _sut.Compress("remove_from_cart", json);
+
+        // Assert
+        result.Should().Be(json);
+    }
+
+    [Test]
+    public void Compress_WhenRemoveFromCartHasMissingFields_CompressesWithNulls()
+    {
+        // Arrange
+        var json = """
+            {
+              "success":false,
+              "productName":"Item"
+            }
+            """;
+
+        // Act
+        var result = _sut.Compress("remove_from_cart", json);
+
+        // Assert
+        result.Should().Contain("success");
+        result.Should().NotContain("productName");
+    }
+
+    [Test]
+    public void Compress_WhenRemoveFromCartHasExplicitNullFields_CompressesWithoutThrowing()
+    {
+        // Arrange — explicit JSON "null" exercises the `?.ToString()` null branch on a present key.
+        var json = """
+            {
+              "success":null,
+              "message":null
+            }
+            """;
+
+        // Act
+        var act = () => _sut.Compress("remove_from_cart", json);
+
+        // Assert — WriteOptions ignores null values on serialize, so the null branch is exercised
+        // internally without throwing, but the resulting JSON simply omits the fields.
+        act.Should().NotThrow();
+        act().Should().Be("{}");
+    }
+
+    [Test]
+    public void Compress_WhenProductDetailsIsMalformedJson_ReturnsRawResult()
+    {
+        // Arrange
+        const string malformed = """{"Name": [1, 2, 3]}""";
+
+        // Act
+        var result = _sut.Compress("get_product_details", malformed);
+
+        // Assert
+        result.Should().Be(malformed);
+    }
+
+    [Test]
+    public void Compress_WhenCartContentsIsMalformedJson_ReturnsRawResult()
+    {
+        // Arrange
+        const string malformed = """[{"name":}]""";
+
+        // Act
+        var result = _sut.Compress("get_cart_contents", malformed);
+
+        // Assert
+        result.Should().Be(malformed);
+    }
+
+    [Test]
+    public void Compress_WhenAddToCartIsMalformedJson_ReturnsRawResult()
+    {
+        // Arrange
+        const string malformed = """{"success":}""";
+
+        // Act
+        var result = _sut.Compress("add_to_cart", malformed);
+
+        // Assert
+        result.Should().Be(malformed);
+    }
+
+    [Test]
+    public void Compress_WhenRemoveFromCartIsMalformedJson_ReturnsRawResult()
+    {
+        // Arrange
+        const string malformed = """{"success":}""";
+
+        // Act
+        var result = _sut.Compress("remove_from_cart", malformed);
+
+        // Assert
+        result.Should().Be(malformed);
     }
 }

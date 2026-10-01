@@ -1,7 +1,7 @@
-﻿using BizDbAccess.Concrete;
-using DataLayer.EfClasses;
+using BizDbAccess.Concrete;
 using FluentAssertions;
 using NUnit.Framework;
+using Tests.Builders;
 
 namespace Tests.Unit.BizDbAccess;
 
@@ -10,37 +10,39 @@ namespace Tests.Unit.BizDbAccess;
 public class ArticleDbAccessTests
 {
     [Test]
-    public void GetArticle()
+    public async Task GetArticleAsync()
     {
         // Arrange
-        using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = inMemoryDbContext.ArticleGroups.Add(new ArticleGroup("Vegetables"));
-        var tomato = inMemoryDbContext.Articles.Add(new Article { Name = "Tomato", ArticleGroup = vegetables.Entity, IsInventory = false });
-        inMemoryDbContext.SaveChanges();
+        await using var inMemoryDbContext = new InMemoryDbContext();
+        var tomato = new ArticleBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(tomato.ArticleGroup);
+        var tomatoEntry = inMemoryDbContext.Articles.Add(tomato);
+        await inMemoryDbContext.SaveChangesAsync();
         var testee = new ArticleDbAccess(inMemoryDbContext);
 
         // Act
-        var result = testee.GetArticle(tomato.Entity.ArticleId);
+        var result = await testee.GetArticleAsync(tomatoEntry.Entity.ArticleId);
 
         // Assert
-        result.Name.Should().Be("Tomato");
+        result.Name.Should().Be(tomato.Name);
     }
 
     [Test]
-    public void GetArticles()
+    public async Task GetArticlesAsync()
     {
         // Arrange
-        using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = inMemoryDbContext.ArticleGroups.Add(new ArticleGroup("Vegetables"));
-        inMemoryDbContext.Articles.Add(new Article { Name = "Tomato", ArticleGroup = vegetables.Entity, IsInventory = false });
-        inMemoryDbContext.SaveChanges();
+        await using var inMemoryDbContext = new InMemoryDbContext();
+        var article = new ArticleBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(article.ArticleGroup);
+        inMemoryDbContext.Articles.Add(article);
+        await inMemoryDbContext.SaveChangesAsync();
         var testee = new ArticleDbAccess(inMemoryDbContext);
 
         // Act
-        var result = testee.GetArticles();
+        var result = await testee.GetArticlesAsync();
 
         // Assert
-        result.Should().Contain(x => x.Name == "Tomato");
+        result.Should().Contain(x => x.Name == article.Name);
     }
 
     [Test]
@@ -48,16 +50,17 @@ public class ArticleDbAccessTests
     {
         // Arrange
         using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = inMemoryDbContext.ArticleGroups.Add(new ArticleGroup("Vegetables"));
+        var article = new ArticleBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(article.ArticleGroup);
         inMemoryDbContext.SaveChanges();
         var testee = new ArticleDbAccess(inMemoryDbContext);
 
         // Act
-        testee.AddArticle(new Article { Name = "Tomato", ArticleGroup = vegetables.Entity, IsInventory = false });
+        testee.AddArticle(article);
         inMemoryDbContext.SaveChanges();
 
         // Assert
-        inMemoryDbContext.Articles.Should().Contain(x => x.Name == "Tomato");
+        inMemoryDbContext.Articles.Should().Contain(x => x.Name == article.Name);
     }
 
     [Test]
@@ -65,16 +68,17 @@ public class ArticleDbAccessTests
     {
         // Arrange
         using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = inMemoryDbContext.ArticleGroups.Add(new ArticleGroup("Vegetables"));
-        var tomato = inMemoryDbContext.Articles.Add(new Article { Name = "Tomato", ArticleGroup = vegetables.Entity, IsInventory = false });
+        var tomato = new ArticleBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(tomato.ArticleGroup);
+        var tomatoEntry = inMemoryDbContext.Articles.Add(tomato);
         inMemoryDbContext.SaveChanges();
         var testee = new ArticleDbAccess(inMemoryDbContext);
 
         // Act
-        testee.DeleteArticle(tomato.Entity);
+        testee.DeleteArticle(tomatoEntry.Entity);
         inMemoryDbContext.SaveChanges();
 
         // Assert
-        inMemoryDbContext.Articles.Should().NotContain(x => x.Name == "Tomato");
+        inMemoryDbContext.Articles.Should().NotContain(x => x.Name == tomato.Name);
     }
 }

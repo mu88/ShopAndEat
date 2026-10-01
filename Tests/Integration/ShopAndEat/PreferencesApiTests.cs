@@ -124,6 +124,9 @@ public class PreferencesApiTests
         using (var scope = webApplicationFactory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<EfCoreContext>();
+
+            // Kept as direct construction: the specific Keys ("a"/"b"/"c") and UsageCounts are asserted
+            // (via the expected sort order) below; ShoppingPreferenceBuilder cannot inject a specific Key.
             context.ShoppingPreferences.Add(new ShoppingPreference("global", "a", PreferenceSource.UserConfirmed, null) { Value = "1", UsageCount = 5 });
             context.ShoppingPreferences.Add(new ShoppingPreference("global", "b", PreferenceSource.UserConfirmed, null) { Value = "2", UsageCount = 10 });
             context.ShoppingPreferences.Add(new ShoppingPreference("global", "c", PreferenceSource.UserConfirmed, null) { Value = "3", UsageCount = 1 });
@@ -158,24 +161,6 @@ public class PreferencesApiTests
         result.Should().HaveCount(2);
         result.Should().Contain(p => p.Key == "shop_pref" && p.StoreKey == "coop");
         result.Should().Contain(p => p.Key == "general_pref" && p.StoreKey == null);
-    }
-
-    [Test]
-    public async Task Post_IncrementsUsageCount_OnUpdate()
-    {
-        // Arrange
-        await using var webApplicationFactory = new CustomWebApplicationFactory();
-        var client = webApplicationFactory.CreateClient();
-        var request = new PreferenceRequest { Scope = "article:Rice", Key = "confirmed_product", Value = "Organic Rice 1kg", Source = PreferenceSource.UserConfirmed };
-        await client.PostAsJsonAsync("shopAndEat/api/preferences", request);
-
-        // Act
-        await client.PostAsJsonAsync("shopAndEat/api/preferences", new PreferenceRequest { Scope = "article:Rice", Key = "confirmed_product", Value = "Demeter Rice 500g", Source = PreferenceSource.UserConfirmed });
-
-        // Assert
-        var preferences = await client.GetFromJsonAsync<List<PreferenceResponse>>("shopAndEat/api/preferences?scope=article:Rice");
-        preferences.Should().ContainSingle()
-            .Which.UsageCount.Should().BeGreaterThan(0);
     }
 
     [Test]

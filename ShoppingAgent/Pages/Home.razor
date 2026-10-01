@@ -5,6 +5,7 @@
 @using ShoppingAgent.Services
 @using ShoppingAgent.Models
 @using Markdig
+@using Ganss.Xss
 @inject IAgentService Agent
 @inject IExtensionBridge Bridge
 @inject ISessionService SessionService
@@ -12,7 +13,7 @@
 @inject IJSRuntime JS
 @inject TimeProvider TimeProvider
 @inject IMistralChatClientProvider LlmProvider
-@implements IAsyncDisposable
+@implements IDisposable
 
 <PageTitle>ShopAndEat – @L["TabTitle"]</PageTitle>
 
@@ -114,14 +115,24 @@
     private bool _copyFeedback;
     private bool _isLlmReady;
     private string _userInput = string.Empty;
-    private CancellationTokenSource _cts;
+    private CancellationTokenSource? _cts;
+    private readonly Action _onConnectionChanged;
+    private readonly Action _onAgentStateChanged;
+
+    public Home()
+    {
+        // Store the handlers as fields so the exact same delegate instances
+        // can be unsubscribed again in Dispose, avoiding a memory leak.
+        _onConnectionChanged = () => InvokeAsync(StateHasChanged);
+        _onAgentStateChanged = () => InvokeAsync(StateHasChanged);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            Bridge.OnConnectionChanged += () => InvokeAsync(StateHasChanged);
-            Agent.OnStateChanged += () => InvokeAsync(StateHasChanged);
+            Bridge.OnConnectionChanged += _onConnectionChanged;
+            Agent.OnStateChanged += _onAgentStateChanged;
 
             await Bridge.InitializeAsync(CancellationToken.None);
             await Agent.InitializeAsync(cancellationToken: CancellationToken.None);
@@ -168,22 +179,12 @@
         var input = _userInput.Trim();
         _userInput = string.Empty;
 
-        Agent.Messages.Add(new ChatMessage { Role = "user", Content = input, Timestamp = TimeProvider.GetUtcNow() });
-
-        var assistantMessage = new ChatMessage { Role = "assistant", Content = string.Empty, IsStreaming = true, Timestamp = TimeProvider.GetUtcNow() };
-        Agent.Messages.Add(assistantMessage);
-        StateHasChanged();
-        await ScrollToBottomAsync();
+        var assistantMessage = await AppendUserAndAssistantMessagesAsync(input);
 
         _cts = new CancellationTokenSource();
         try
         {
-            await foreach (var chunk in Agent.ProcessMessageAsync(input, _cts.Token))
-            {
-                assistantMessage.Content += chunk;
-                StateHasChanged();
-                await ScrollToBottomAsync();
-            }
+            await StreamResponseAsync(input, assistantMessage);
         }
         catch (OperationCanceledException)
         {
@@ -197,6 +198,28 @@
 
         assistantMessage.IsStreaming = false;
         StateHasChanged();
+    }
+
+    private async Task<ChatMessage> AppendUserAndAssistantMessagesAsync(string input)
+    {
+        Agent.AddMessage(new ChatMessage { Role = "user", Content = input, Timestamp = TimeProvider.GetUtcNow() });
+
+        var assistantMessage = new ChatMessage { Role = "assistant", Content = string.Empty, IsStreaming = true, Timestamp = TimeProvider.GetUtcNow() };
+        Agent.AddMessage(assistantMessage);
+        StateHasChanged();
+        await ScrollToBottomAsync();
+
+        return assistantMessage;
+    }
+
+    private async Task StreamResponseAsync(string input, ChatMessage assistantMessage)
+    {
+        await foreach (var chunk in Agent.ProcessMessageAsync(input, _cts!.Token))
+        {
+            assistantMessage.Content += chunk;
+            StateHasChanged();
+            await ScrollToBottomAsync();
+        }
     }
 
     private void StopProcessing()
@@ -227,7 +250,7 @@
 
     private async Task ClearChat()
     {
-        await Agent.SwitchShopAsync(Agent.SelectedShopKey);
+        await Agent.SwitchShopAsync(Agent.SelectedShopKey!);
         await JS.InvokeVoidAsync("clearDetailsStates");
         StateHasChanged();
     }
@@ -237,7 +260,7 @@
         var ingredients = await SessionService.GetIngredientListAsync();
         if (ingredients.Count == 0)
         {
-            Agent.Messages.Add(new ChatMessage { Role = "assistant", Content = L["NoIngredientsFound"].Value, Timestamp = TimeProvider.GetUtcNow() });
+            Agent.AddMessage(new ChatMessage { Role = "assistant", Content = L["NoIngredientsFound"].Value, Timestamp = TimeProvider.GetUtcNow() });
             StateHasChanged();
             return;
         }
@@ -259,6 +282,21 @@
         .UseAdvancedExtensions()
         .Build();
 
+    private static readonly HtmlSanitizer Sanitizer = CreateSanitizer();
+
+    private static HtmlSanitizer CreateSanitizer()
+    {
+        var sanitizer = new HtmlSanitizer();
+
+        // HtmlToolResultRenderer emits "class" attributes (tool-group/tool-call/tool-result) that
+        // app.css styles; the default allow-list drops "class", which silently breaks that styling.
+        // Safe to allow: all dynamic parts of the rendered HTML are already WebUtility.HtmlEncode'd,
+        // so this does not reopen the XSS hole the sanitizer exists for.
+        sanitizer.AllowedAttributes.Add("class");
+
+        return sanitizer;
+    }
+
     private static string FormatMessage(string content)
     {
         if (string.IsNullOrEmpty(content))
@@ -266,13 +304,21 @@
             return string.Empty;
         }
 
-        return Markdown.ToHtml(content, MarkdownPipeline);
+        var html = Markdown.ToHtml(content, MarkdownPipeline);
+
+        // The LLM-generated text may embed malicious HTML/JS (prompt injection); sanitize
+        // after Markdown conversion and before the result is ever wrapped in a MarkupString.
+        return Sanitizer.Sanitize(html);
     }
 
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
+        Bridge.OnConnectionChanged -= _onConnectionChanged;
+        Agent.OnStateChanged -= _onAgentStateChanged;
         _cts?.Cancel();
         _cts?.Dispose();
-        await Bridge.DisposeAsync();
+
+        // IExtensionBridge is a scoped DI service, not owned by this component — the DI container
+        // disposes it when the circuit's scope ends; disposing it here too would risk a double-dispose.
     }
 }

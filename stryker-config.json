@@ -1,0 +1,30 @@
+{
+  "stryker-config": {
+    "solution": "ShopAndEat.slnx",
+    "test-projects": [
+      "Tests/Tests.csproj"
+    ],
+    "reporters": [
+      "html",
+      "progress",
+      "dashboard"
+    ],
+    "project-info": {
+      "name": "github.com/mu88/ShopAndEat"
+    },
+    "test-case-filter": "TestCategory=Unit",
+    "ignore-methods": [
+      "logger.*",
+      "Logger.*",
+      "ServiceLogMessages.*",
+      "AgentLogMessages.*",
+      "ControllerLogMessages.*",
+      "Log*"
+    ],
+    "mutate": [
+      "!**/Program.cs",
+      "!**/Migrations/**/*.cs",
+      "!**/EfCoreContext.cs"
+    ]
+  }
+}

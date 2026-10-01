@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using ShoppingAgent.Diagnostics;
 using ShoppingAgent.Options;
 using ShoppingAgent.Services;
@@ -21,30 +22,9 @@ public static class ShoppingAgentExtensions
         IConfiguration configuration,
         Action<IServiceCollection> registerAdapters)
     {
-        services.Configure<LlmClientOptions>(configuration.GetSection(LlmClientOptions.SectionName));
-        services.Configure<AgentOptions>(configuration.GetSection(AgentOptions.SectionName));
-        services.Configure<ExtensionOptions>(configuration.GetSection(ExtensionOptions.SectionName));
-        services.Configure<ShopOptions>(configuration.GetSection(ShopOptions.SectionName));
-
-        services.AddLocalization();
-        services.AddMetrics();
-        services.AddSingleton<ShoppingAgentMetrics>();
-        services.AddSingleton(TimeProvider.System);
-
-        services.AddHttpClient<IMistralChatClientProvider, MistralChatClientProvider>();
-        services.AddScoped<IShoppingWorkflowState, ShoppingWorkflowState>();
-        services.AddScoped<IExtensionBridge, ExtensionBridge>();
-        services.AddScoped<IShopToolExecutorFactory, ShopToolExecutorFactory>();
-        services.AddScoped<ISystemPromptBuilder, SystemPromptBuilder>();
-        services.AddScoped<IToolDefinitionProvider, ToolDefinitionProvider>();
-        services.AddScoped<IShoppingListVerifier, ShoppingListVerifier>();
-        services.AddScoped<IToolCallDispatcher, ToolCallDispatcher>();
-        services.AddScoped<IToolResultRenderer, HtmlToolResultRenderer>();
-        services.AddSingleton<IToolResultCompressor, ToolResultCompressor>();
-        services.AddSingleton<ILlmRetryPolicyFactory, LlmRetryPolicyFactory>();
-        services.AddScoped<IConversationManager, ConversationManager>();
-        services.AddScoped<IShopSessionManager, ShopSessionManager>();
-        services.AddScoped<IAgentService, AgentService>();
+        AddShoppingAgentOptions(services, configuration);
+        AddShoppingAgentDiagnostics(services);
+        AddShoppingAgentServices(services);
 
         registerAdapters(services);
 
@@ -58,4 +38,42 @@ public static class ShoppingAgentExtensions
     public static RazorComponentsEndpointConventionBuilder MapShoppingAgent(
         this RazorComponentsEndpointConventionBuilder builder) =>
         builder.AddAdditionalAssemblies(typeof(Pages.Home).Assembly);
+
+    private static void AddShoppingAgentOptions(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<LlmClientOptions>(configuration.GetSection(LlmClientOptions.SectionName));
+        services.Configure<AgentOptions>(configuration.GetSection(AgentOptions.SectionName));
+        services.Configure<ExtensionOptions>(configuration.GetSection(ExtensionOptions.SectionName));
+        services.Configure<ShopOptions>(configuration.GetSection(ShopOptions.SectionName));
+
+        services.AddLocalization();
+    }
+
+    private static void AddShoppingAgentDiagnostics(IServiceCollection services)
+    {
+        // Stryker disable once all: this DI graph already provides IMeterFactory through the hosting stack, so the explicit AddMetrics() call has no observable effect here.
+        services.AddMetrics();
+        services.AddSingleton<ShoppingAgentMetrics>();
+        services.TryAddSingleton(TimeProvider.System);
+    }
+
+    private static void AddShoppingAgentServices(IServiceCollection services)
+    {
+        services.AddHttpClient<IMistralChatClientProvider, MistralChatClientProvider>();
+        services.AddScoped<IShoppingWorkflowState, ShoppingWorkflowState>();
+        services.AddScoped<IExtensionBridge, ExtensionBridge>();
+        services.AddScoped<IShopToolExecutorFactory, ShopToolExecutorFactory>();
+        services.AddScoped<ISystemPromptBuilder, SystemPromptBuilder>();
+        services.AddScoped<IToolDefinitionProvider, ToolDefinitionProvider>();
+        services.AddScoped<IShoppingListVerifier, ShoppingListVerifier>();
+        services.AddScoped<IToolCallDispatcher, ToolCallDispatcher>();
+        services.AddScoped<ILlmCommunicator, LlmCommunicator>();
+        services.AddScoped<IToolExecutionOrchestrator, ToolExecutionOrchestrator>();
+        services.AddScoped<IToolResultRenderer, HtmlToolResultRenderer>();
+        services.AddSingleton<IToolResultCompressor, ToolResultCompressor>();
+        services.AddSingleton<ILlmRetryPolicyFactory, LlmRetryPolicyFactory>();
+        services.AddScoped<IConversationManager, ConversationManager>();
+        services.AddScoped<IShopSessionManager, ShopSessionManager>();
+        services.AddScoped<IAgentService, AgentService>();
+    }
 }

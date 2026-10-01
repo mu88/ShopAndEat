@@ -1,4 +1,4 @@
-﻿using DTO.Article;
+using DTO.Article;
 
 namespace BizLogic;
 
@@ -6,7 +6,7 @@ public interface IArticleAction
 {
     ExistingArticleDto CreateArticle(NewArticleDto newArticleDto);
 
-    void DeleteArticle(DeleteArticleDto deleteArticleDto);
+    Task DeleteArticleAsync(DeleteArticleDto deleteArticleDto, CancellationToken cancellationToken = default);
 
-    IEnumerable<ExistingArticleDto> GetAllArticles();
+    Task<IReadOnlyList<ExistingArticleDto>> GetAllArticlesAsync(CancellationToken cancellationToken = default);
 }

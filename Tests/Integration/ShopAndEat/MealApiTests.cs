@@ -1,10 +1,11 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using DataLayer.EF;
 using DataLayer.EfClasses;
 using DTO.Meal;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Tests.Builders;
 
 namespace Tests.Integration.ShopAndEat;
 
@@ -16,12 +17,15 @@ public class MealApiTests
     public async Task GetMealsForToday()
     {
         // Arrange
-        var webApplicationFactory = new CustomWebApplicationFactory();
+        await using var webApplicationFactory = new CustomWebApplicationFactory();
         using (var serviceScope = webApplicationFactory.Services.CreateScope())
         {
             var context = serviceScope.ServiceProvider.GetRequiredService<EfCoreContext>();
-            context.Meals.Add(new Meal(DateTime.Today, new MealType("Breakfast", 1), new Recipe("My breakfast", 2, 2, Enumerable.Empty<Ingredient>()), 1));
-            context.Meals.Add(new Meal(DateTime.Today, new MealType("Lunch", 2), new Recipe("My lunch", 2, 2, Enumerable.Empty<Ingredient>()), 1));
+
+            // Meal/MealType kept as direct construction: Day must be DateTime.Today for the "today" filter,
+            // and MealType.Name/Order drive the asserted result order below. Recipe content is unasserted filler.
+            context.Meals.Add(new Meal(DateTime.Today, new MealType("Breakfast", 1), new RecipeBuilder().WithDefaults().Build(), 1));
+            context.Meals.Add(new Meal(DateTime.Today, new MealType("Lunch", 2), new RecipeBuilder().WithDefaults().Build(), 1));
             await context.SaveChangesAsync();
         }
 

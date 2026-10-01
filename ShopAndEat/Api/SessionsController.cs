@@ -60,14 +60,15 @@ public class SessionsController(ISessionRepository sessionRepository, TimeProvid
             return TypedResults.Problem(detail: "Cannot add items to a session that is not in progress.", statusCode: StatusCodes.Status400BadRequest, title: "Invalid Operation");
         }
 
-        var item = new ShoppingSessionItem(request.OriginalIngredient, typedId, timeProvider.GetUtcNow())
-        {
-            SelectedProductName = request.SelectedProductName,
-            SelectedProductUrl = request.SelectedProductUrl,
-            Quantity = request.Quantity,
-            Price = request.Price,
-            Status = request.Status,
-        };
+        var item = new ShoppingSessionItem(
+            request.OriginalIngredient,
+            typedId,
+            timeProvider.GetUtcNow(),
+            request.SelectedProductName,
+            request.SelectedProductUrl,
+            request.Quantity,
+            request.Price,
+            request.Status);
 
         var itemId = await sessionRepository.AddItemToSessionAsync(item, cancellationToken);
 

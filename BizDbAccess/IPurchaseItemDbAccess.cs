@@ -1,4 +1,4 @@
-﻿using DataLayer.EfClasses;
+using DataLayer.EfClasses;
 
 namespace BizDbAccess;
 
@@ -8,5 +8,5 @@ public interface IPurchaseItemDbAccess
 
     void DeletePurchaseItem(PurchaseItem purchaseItem);
 
-    PurchaseItem GetPurchaseItem(int purchaseItemId);
+    Task<PurchaseItem> GetPurchaseItemAsync(int purchaseItemId, CancellationToken cancellationToken = default);
 }

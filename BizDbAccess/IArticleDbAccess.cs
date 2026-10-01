@@ -1,4 +1,4 @@
-﻿using DataLayer.EfClasses;
+using DataLayer.EfClasses;
 
 namespace BizDbAccess;
 
@@ -8,7 +8,7 @@ public interface IArticleDbAccess
 
     void DeleteArticle(Article article);
 
-    Article GetArticle(int articleId);
+    Task<Article> GetArticleAsync(ArticleId articleId, CancellationToken cancellationToken = default);
 
-    IEnumerable<Article> GetArticles();
+    Task<IEnumerable<Article>> GetArticlesAsync(CancellationToken cancellationToken = default);
 }

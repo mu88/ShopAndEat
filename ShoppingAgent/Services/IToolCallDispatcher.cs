@@ -14,7 +14,7 @@ public interface IToolCallDispatcher
     IReadOnlyList<(string Key, string Label, string Icon, IReadOnlyList<FunctionCallContent> Tools)> GroupConsecutiveToolCalls(
         IReadOnlyList<FunctionCallContent> toolCalls);
 
-    string FormatArgs(IDictionary<string, object> args);
+    string FormatArgs(IDictionary<string, object?>? args);
 
     void ResetWorkflow();
 
@@ -31,8 +31,8 @@ public interface IToolCallDispatcher
         "get_preferences" => ("prefs", "Preferences", "💾"),
         "verify_shopping_list" => ("verify", "Cart Verification", "✅"),
         "request_clarification" => ("clarify", "Clarification Needed", "❓"),
-        "confirm_cart" => ("workflow", "Shopping Plan", "📋"),
-        "proceed_to_cart" => ("workflow", "Shopping Plan", "📋"),
+        SignalToolNames.ConfirmCart => ("workflow", "Shopping Plan", "📋"),
+        SignalToolNames.ProceedToCart => ("workflow", "Shopping Plan", "📋"),
         _ => ("other", "Processing", "🔧")
     };
 }

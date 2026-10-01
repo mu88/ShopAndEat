@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using DataLayer.EfClasses;
 using FluentAssertions;
 using NUnit.Framework;
@@ -17,7 +17,7 @@ public class PurchaseTests
         var to = DateTime.MinValue;
         var purchaseItems = new Collection<PurchaseItem>
         {
-            new(new Article { Name = "Tomato", ArticleGroup = new ArticleGroup("Vegetables"), IsInventory = false },
+            new(new Article("Tomato", new ArticleGroup("Vegetables"), isInventory: false),
                 3,
                 new global::DataLayer.EfClasses.Unit("Bag"))
         };

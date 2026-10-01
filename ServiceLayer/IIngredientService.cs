@@ -1,12 +1,12 @@
-﻿using DTO.Ingredient;
+using DTO.Ingredient;
 
 namespace ServiceLayer;
 
 public interface IIngredientService
 {
-    ExistingIngredientDto CreateIngredient(NewIngredientDto newIngredientDto);
+    Task<ExistingIngredientDto> CreateIngredientAsync(NewIngredientDto newIngredientDto, CancellationToken cancellationToken = default);
 
-    void DeleteIngredient(DeleteIngredientDto deleteIngredientDto);
+    Task DeleteIngredientAsync(DeleteIngredientDto deleteIngredientDto, CancellationToken cancellationToken = default);
 
-    IEnumerable<ExistingIngredientDto> GetAllIngredients();
+    Task<IReadOnlyList<ExistingIngredientDto>> GetAllIngredientsAsync(CancellationToken cancellationToken = default);
 }

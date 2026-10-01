@@ -1,5 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <SonarQubeAnalysisProperties  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
-    <Property Name="sonar.coverage.exclusions">**/Program.cs,**/Migrations/*.*,**/App.razor,**/MainLayout.razor,BrowserExtension/**/*,ShoppingAgent/wwwroot/**/*</Property>
+    <!-- Aligned with coverage.settings.xml: Program.cs and hand-written Migrations are NOT
+         blanket-excluded here since they are measurably well covered by Integration tests
+         (excluding them previously dropped overall coverage). The tool-generated,
+         unreachable-at-runtime EfCoreContextModelSnapshot.cs, OpenApiXmlCommentSupport.generated.cs
+         (OpenAPI XML doc interceptors), Logging.g.cs ([LoggerMessage] generator), and
+         RegexGenerator.g.cs ([GeneratedRegex] generator) are excluded, matching the local
+         dotnet-coverage config. See coverage.settings.xml for the full investigation notes. -->
+    <Property Name="sonar.coverage.exclusions">**/EfCoreContextModelSnapshot.cs,**/OpenApiXmlCommentSupport.generated.cs,**/Logging.g.cs,**/RegexGenerator.g.cs,**/App.razor,**/MainLayout.razor,BrowserExtension/**/*,ShoppingAgent/wwwroot/**/*</Property>
     <Property Name="sonar.exclusions">BrowserExtension/**/*</Property>
+    <!-- EF Core migrations auto-generate large, inherently repetitive table-rebuild boilerplate
+         (e.g. SQLite's lack of ALTER COLUMN forces full FK-drop/recreate blocks). This is expected,
+         tool-generated duplication and not a real code-quality concern, so only the duplication
+         (CPD) check is skipped here; migrations remain fully included in coverage/issue analysis. -->
+    <Property Name="sonar.cpd.exclusions">DataLayer/Migrations/**/*.cs</Property>
 </SonarQubeAnalysisProperties>

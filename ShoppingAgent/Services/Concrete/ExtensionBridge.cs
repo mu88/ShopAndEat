@@ -26,7 +26,7 @@ public sealed class ExtensionBridge : IExtensionBridge
     private readonly ILogger<ExtensionBridge> _logger;
     private readonly ExtensionOptions _extensionOptions;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<ToolResult>> _pendingCalls = new(StringComparer.Ordinal);
-    private DotNetObjectReference<ExtensionBridge> _dotNetRef;
+    private DotNetObjectReference<ExtensionBridge>? _dotNetRef;
     private bool _extensionConnected;
 
     public ExtensionBridge(IJSRuntime jsRuntime, IStringLocalizer<Messages> localizer, ILogger<ExtensionBridge> logger, IOptions<ExtensionOptions> extensionOptions)
@@ -38,7 +38,7 @@ public sealed class ExtensionBridge : IExtensionBridge
     }
 
 #pragma warning disable MA0046
-    public event Action OnConnectionChanged;
+    public event Action? OnConnectionChanged;
 #pragma warning restore MA0046
 
     public bool IsExtensionConnected => _extensionConnected;
@@ -66,32 +66,14 @@ public sealed class ExtensionBridge : IExtensionBridge
         var tcs = new TaskCompletionSource<ToolResult>();
         _pendingCalls[callId] = tcs;
 
-        var request = new { tool = toolName, args = arguments, shop = shopKey, id = callId };
-        await _jsRuntime.InvokeVoidAsync("extensionBridge.sendToolCall", cancellationToken, JsonSerializer.Serialize(request));
+        await SendToolCallAsync(toolName, arguments, shopKey, callId, cancellationToken);
 
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(TimeSpan.FromSeconds(_extensionOptions.ToolCallTimeoutSeconds));
+        using var cts = CreateTimeoutLinkedTokenSource(cancellationToken);
+        using var activity = StartToolCallActivity(toolName, shopKey, callId);
 
-        using var activity = ShoppingAgentDiagnostics.ActivitySource.StartActivity("ShoppingAgent.ExtensionBridge.Invoke");
-        activity?.SetTag("extension.tool", toolName);
-        activity?.SetTag("extension.shop", shopKey);
-        activity?.SetTag("extension.call_id", callId);
         try
         {
-            var result = await tcs.Task.WaitAsync(cts.Token);
-            activity?.SetTag("extension.success", result.Success);
-            if (!result.Success)
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error);
-            }
-
-            return result;
-        }
-        catch (OperationCanceledException)
-        {
-            ServiceLogMessages.ToolCallTimedOut(_logger, toolName, callId);
-            activity?.SetStatus(ActivityStatusCode.Error, "timeout");
-            return new ToolResult { Success = false, Error = _localizer["ToolCallTimeout"].Value };
+            return await AwaitToolResultAsync(tcs, activity, toolName, callId, cts.Token);
         }
         finally
         {
@@ -105,9 +87,11 @@ public sealed class ExtensionBridge : IExtensionBridge
         try
         {
             var result = JsonSerializer.Deserialize<ToolResult>(resultJson, JsonOptions);
-            result ??= new ToolResult { Success = false, Error = _localizer["EmptyExtensionResponse"].Value };
-
-            if (!string.IsNullOrEmpty(result.Id) && _pendingCalls.TryGetValue(result.Id, out var tcs))
+            if (result is null)
+            {
+                ResolveAllPendingCalls(new ToolResult { Success = false, Error = _localizer["EmptyExtensionResponse"].Value });
+            }
+            else if (!string.IsNullOrEmpty(result.Id) && _pendingCalls.TryGetValue(result.Id, out var tcs))
             {
                 tcs.TrySetResult(result);
             }
@@ -115,11 +99,7 @@ public sealed class ExtensionBridge : IExtensionBridge
         catch (Exception ex)
         {
             ServiceLogMessages.ToolResultParseFailed(_logger, ex.Message);
-            var error = new ToolResult { Success = false, Error = string.Format(_localizer["ParseError"], ex.Message) };
-            foreach (var entry in _pendingCalls)
-            {
-                entry.Value.TrySetResult(error);
-            }
+            ResolveAllPendingCalls(new ToolResult { Success = false, Error = string.Format(_localizer["ParseError"], ex.Message) });
         }
     }
 
@@ -153,6 +133,58 @@ public sealed class ExtensionBridge : IExtensionBridge
             }
 
             _dotNetRef.Dispose();
+            _dotNetRef = null;
+        }
+    }
+
+    private static Activity? StartToolCallActivity(string toolName, string shopKey, string callId)
+    {
+        var activity = ShoppingAgentDiagnostics.ActivitySource.StartActivity("ShoppingAgent.ExtensionBridge.Invoke");
+        activity?.SetTag("extension.tool", toolName);
+        activity?.SetTag("extension.shop", shopKey);
+        activity?.SetTag("extension.call_id", callId);
+        return activity;
+    }
+
+    private async Task SendToolCallAsync(string toolName, IDictionary<string, object> arguments, string shopKey, string callId, CancellationToken cancellationToken)
+    {
+        var request = new { tool = toolName, args = arguments, shop = shopKey, id = callId };
+        await _jsRuntime.InvokeVoidAsync("extensionBridge.sendToolCall", cancellationToken, JsonSerializer.Serialize(request));
+    }
+
+    private CancellationTokenSource CreateTimeoutLinkedTokenSource(CancellationToken cancellationToken)
+    {
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(_extensionOptions.ToolCallTimeoutSeconds));
+        return cts;
+    }
+
+    private async Task<ToolResult> AwaitToolResultAsync(TaskCompletionSource<ToolResult> tcs, Activity? activity, string toolName, string callId, CancellationToken timeoutToken)
+    {
+        try
+        {
+            var result = await tcs.Task.WaitAsync(timeoutToken);
+            activity?.SetTag("extension.success", result.Success);
+            if (!result.Success)
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, result.Error);
+            }
+
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            ServiceLogMessages.ToolCallTimedOut(_logger, toolName, callId);
+            activity?.SetStatus(ActivityStatusCode.Error, "timeout");
+            return new ToolResult { Success = false, Error = _localizer["ToolCallTimeout"].Value };
+        }
+    }
+
+    private void ResolveAllPendingCalls(ToolResult result)
+    {
+        foreach (var entry in _pendingCalls)
+        {
+            entry.Value.TrySetResult(result);
         }
     }
 }

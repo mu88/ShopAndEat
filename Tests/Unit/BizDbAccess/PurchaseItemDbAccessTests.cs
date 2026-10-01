@@ -1,7 +1,7 @@
-﻿using BizDbAccess.Concrete;
-using DataLayer.EfClasses;
+using BizDbAccess.Concrete;
 using FluentAssertions;
 using NUnit.Framework;
+using Tests.Builders;
 
 namespace Tests.Unit.BizDbAccess;
 
@@ -10,25 +10,23 @@ namespace Tests.Unit.BizDbAccess;
 public class PurchaseItemDbAccessTests
 {
     [Test]
-    public void GetPurchaseItem()
+    public async Task GetPurchaseItemAsync()
     {
         // Arrange
-        using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = new ArticleGroup("Vegetables");
-        var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
-        var piece = new global::DataLayer.EfClasses.Unit("Piece");
-        inMemoryDbContext.ArticleGroups.Add(vegetables);
-        inMemoryDbContext.Articles.Add(tomato);
-        inMemoryDbContext.Units.Add(piece);
-        var purchaseItem = inMemoryDbContext.PurchaseItems.Add(new PurchaseItem(tomato, 2, piece));
-        inMemoryDbContext.SaveChanges();
+        await using var inMemoryDbContext = new InMemoryDbContext();
+        var purchaseItem = new PurchaseItemBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(purchaseItem.Article.ArticleGroup);
+        inMemoryDbContext.Articles.Add(purchaseItem.Article);
+        inMemoryDbContext.Units.Add(purchaseItem.Unit);
+        var purchaseItemEntry = inMemoryDbContext.PurchaseItems.Add(purchaseItem);
+        await inMemoryDbContext.SaveChangesAsync();
         var testee = new PurchaseItemDbAccess(inMemoryDbContext);
 
         // Act
-        var result = testee.GetPurchaseItem(purchaseItem.Entity.PurchaseItemId);
+        var result = await testee.GetPurchaseItemAsync(purchaseItemEntry.Entity.PurchaseItemId);
 
         // Assert
-        result.Article.Name.Should().Be("Tomato");
+        result.Article.Name.Should().Be(purchaseItem.Article.Name);
     }
 
     [Test]
@@ -36,17 +34,15 @@ public class PurchaseItemDbAccessTests
     {
         // Arrange
         using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = new ArticleGroup("Vegetables");
-        var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
-        var piece = new global::DataLayer.EfClasses.Unit("Piece");
-        inMemoryDbContext.ArticleGroups.Add(vegetables);
-        inMemoryDbContext.Articles.Add(tomato);
-        inMemoryDbContext.Units.Add(piece);
+        var purchaseItem = new PurchaseItemBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(purchaseItem.Article.ArticleGroup);
+        inMemoryDbContext.Articles.Add(purchaseItem.Article);
+        inMemoryDbContext.Units.Add(purchaseItem.Unit);
         inMemoryDbContext.SaveChanges();
         var testee = new PurchaseItemDbAccess(inMemoryDbContext);
 
         // Act
-        var result = testee.AddPurchaseItem(new PurchaseItem(tomato, 2, piece));
+        var result = testee.AddPurchaseItem(purchaseItem);
         inMemoryDbContext.SaveChanges();
 
         // Assert
@@ -58,21 +54,19 @@ public class PurchaseItemDbAccessTests
     {
         // Arrange
         using var inMemoryDbContext = new InMemoryDbContext();
-        var vegetables = new ArticleGroup("Vegetables");
-        var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
-        var piece = new global::DataLayer.EfClasses.Unit("Piece");
-        inMemoryDbContext.ArticleGroups.Add(vegetables);
-        inMemoryDbContext.Articles.Add(tomato);
-        inMemoryDbContext.Units.Add(piece);
-        var purchaseItem = inMemoryDbContext.PurchaseItems.Add(new PurchaseItem(tomato, 2, piece));
+        var purchaseItem = new PurchaseItemBuilder().WithDefaults().Build();
+        inMemoryDbContext.ArticleGroups.Add(purchaseItem.Article.ArticleGroup);
+        inMemoryDbContext.Articles.Add(purchaseItem.Article);
+        inMemoryDbContext.Units.Add(purchaseItem.Unit);
+        var purchaseItemEntry = inMemoryDbContext.PurchaseItems.Add(purchaseItem);
         inMemoryDbContext.SaveChanges();
         var testee = new PurchaseItemDbAccess(inMemoryDbContext);
 
         // Act
-        testee.DeletePurchaseItem(purchaseItem.Entity);
+        testee.DeletePurchaseItem(purchaseItemEntry.Entity);
         inMemoryDbContext.SaveChanges();
 
         // Assert
-        inMemoryDbContext.PurchaseItems.Should().NotContain(purchaseItem.Entity);
+        inMemoryDbContext.PurchaseItems.Should().NotContain(purchaseItemEntry.Entity);
     }
 }

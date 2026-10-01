@@ -11,15 +11,15 @@ public class ShopSessionManager(
     IShopToolExecutorFactory shopToolExecutorFactory,
     ILogger<ShopSessionManager> logger) : IShopSessionManager
 {
-    public string SelectedShopKey { get; private set; }
+    public string? SelectedShopKey { get; private set; }
 
-    public ShopConfig SelectedShop { get; private set; }
+    public ShopConfig? SelectedShop { get; private set; }
 
     public IReadOnlyList<ShopConfig> AvailableShops => shopToolExecutorFactory.AvailableShops;
 
     public bool IsInitialized { get; private set; }
 
-    public void SelectShop(string shopKey = null)
+    public void SelectShop(string? shopKey = null)
     {
         SelectedShopKey = shopKey ?? shopToolExecutorFactory.AvailableShops[0].Key;
         SelectedShop = shopToolExecutorFactory.AvailableShops.First(shop => string.Equals(shop.Key, SelectedShopKey, StringComparison.Ordinal));

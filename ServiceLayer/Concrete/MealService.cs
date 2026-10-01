@@ -1,9 +1,11 @@
-﻿using BizLogic;
+using BizLogic;
 using DataLayer.EF;
 using DataLayer.EfClasses;
 using DTO.Meal;
 using DTO.PurchaseItem;
 using DTO.Store;
+using Microsoft.EntityFrameworkCore;
+using ServiceLayer.Diagnostics;
 
 namespace ServiceLayer.Concrete;
 
@@ -17,40 +19,56 @@ public class MealService(
     : IMealService
 {
     /// <inheritdoc />
-    public void CreateMeal(NewMealDto newMealDto)
+    public async Task CreateMealAsync(NewMealDto newMealDto, CancellationToken cancellationToken = default)
     {
-        // TODO mu88: Try to avoid this manual mapping logic
-        var recipe = simpleCrudHelper.Find<Recipe>(newMealDto.Recipe.RecipeId);
-        var mealType = simpleCrudHelper.Find<MealType>(newMealDto.MealType.MealTypeId);
+        using var activity = ServiceLayerDiagnostics.ActivitySource.StartActivity("MealService.CreateMealAsync");
+
+        // No ToEntity() on NewMealDto: creating a Meal requires resolving the referenced Recipe and
+        // MealType by ID against the database, which a pure mapper cannot do without a DbContext.
+        var recipe = await simpleCrudHelper.FindAsync<Recipe>(newMealDto.Recipe.RecipeId, cancellationToken);
+        var mealType = await simpleCrudHelper.FindAsync<MealType>(newMealDto.MealType.MealTypeId, cancellationToken);
         for (var i = 0; i < newMealDto.NumberOfDays; i++)
         {
             var newMeal = new Meal(newMealDto.Day.AddDays(i), mealType, recipe, newMealDto.NumberOfPersons);
             context.Meals.Add(newMeal);
         }
 
-        context.SaveChanges();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingMealDto> GetFutureMeals()
-        => simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>(meal => meal.ToDto())
+    public async Task<IReadOnlyList<ExistingMealDto>> GetFutureMealsAsync(CancellationToken cancellationToken = default)
+    {
+        using var activity = ServiceLayerDiagnostics.ActivitySource.StartActivity("MealService.GetFutureMealsAsync");
+        return (await simpleCrudHelper.GetAllAsDtoAsync<Meal, ExistingMealDto>(meal => meal.ToDto(), cancellationToken))
             .Where(IsInFuture)
             .OrderBy(meal => meal.Day)
-            .ThenBy(meal => meal.MealType.Order);
+            .ThenBy(meal => meal.MealType.Order)
+            .ToList();
+    }
 
     /// <inheritdoc />
-    public IEnumerable<ExistingMealDto> GetMealsForToday()
-        => simpleCrudHelper.GetAllAsDto<Meal, ExistingMealDto>(meal => meal.ToDto())
-            .Where(IsToday)
-            .OrderBy(meal => meal.MealType.Order);
-
-    /// <inheritdoc />
-    public IEnumerable<NewPurchaseItemDto> GetOrderedPurchaseItems(ExistingStoreDto existingStoreDto)
+    public async Task<IReadOnlyList<ExistingMealDto>> GetMealsForTodayAsync(CancellationToken cancellationToken = default)
     {
+        using var activity = ServiceLayerDiagnostics.ActivitySource.StartActivity("MealService.GetMealsForTodayAsync");
+        return (await simpleCrudHelper.GetAllAsDtoAsync<Meal, ExistingMealDto>(meal => meal.ToDto(), cancellationToken))
+            .Where(IsToday)
+            .OrderBy(meal => meal.MealType.Order)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<NewPurchaseItemDto>> GetOrderedPurchaseItemsAsync(
+        ExistingStoreDto existingStoreDto,
+        CancellationToken cancellationToken = default)
+    {
+        using var activity = ServiceLayerDiagnostics.ActivitySource.StartActivity("MealService.GetOrderedPurchaseItemsAsync");
         var today = GetToday();
-        var meals = context.Meals.Where(meal => !meal.HasBeenShopped && meal.Day >= today);
+        var meals = await context.Meals
+            .Where(meal => !meal.HasBeenShopped && meal.Day >= today)
+            .ToListAsync(cancellationToken);
         var recipes = getRecipesForMealsAction.GetRecipesForMeals(meals);
-        var store = simpleCrudHelper.Find<Store>(existingStoreDto.StoreId);
+        var store = await simpleCrudHelper.FindAsync<Store>(existingStoreDto.StoreId, cancellationToken);
 
         var orderedPurchaseItemsByStore =
             orderPurchaseItemsByStoreAction.OrderPurchaseItemsByStore(store,
@@ -59,30 +77,33 @@ public class MealService(
 
         foreach (var meal in meals)
         {
-            meal.HasBeenShopped = true;
+            meal.MarkAsShopped();
         }
 
-        var newPurchaseItemDtos = orderedPurchaseItemsByStore.Select(item => item.ToNewDto());
+        // Conversion is deferred (no ToList() upstream), so this LINQ chain still needs to lazy-load
+        // Article/ArticleGroup/Unit/Store.Compartments navigation properties from the tracked entities.
+        // Materialize the DTOs here, before SaveChangesAsync() runs change detection and updates entity state.
+        var newPurchaseItemDtos = orderedPurchaseItemsByStore.Select(item => item.ToNewDto()).ToList();
 
-        // TODO MUL: Investigate why conversion has to be done before calling SaveChanges()
-        context.SaveChanges();
+        await context.SaveChangesAsync(cancellationToken);
 
         return newPurchaseItemDtos;
     }
 
     /// <inheritdoc />
-    public void DeleteMeal(DeleteMealDto mealToDelete)
+    public async Task DeleteMealAsync(DeleteMealDto mealToDelete, CancellationToken cancellationToken = default)
     {
-        simpleCrudHelper.Delete<Meal>(mealToDelete.MealId);
-        context.SaveChanges();
+        using var activity = ServiceLayerDiagnostics.ActivitySource.StartActivity("MealService.DeleteMealAsync");
+        await simpleCrudHelper.DeleteAsync<Meal>(mealToDelete.MealId, cancellationToken);
     }
 
     /// <inheritdoc />
-    public void ToggleMeal(int mealId)
+    public async Task ToggleMealAsync(int mealId, CancellationToken cancellationToken = default)
     {
-        var meal = simpleCrudHelper.Find<Meal>(mealId);
-        meal.HasBeenShopped = !meal.HasBeenShopped;
-        context.SaveChanges();
+        using var activity = ServiceLayerDiagnostics.ActivitySource.StartActivity("MealService.ToggleMealAsync");
+        var meal = await simpleCrudHelper.FindAsync<Meal>(new MealId(mealId), cancellationToken);
+        meal.ToggleShopped();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     private DateTime GetToday() => timeProvider.GetLocalNow().DateTime.Date;

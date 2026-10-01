@@ -46,10 +46,122 @@ public class EfCoreContext(DbContextOptions<EfCoreContext> options) : DbContext(
     {
         base.OnModelCreating(modelBuilder);
 
+        ConfigureArticle(modelBuilder);
+        ConfigureArticleGroup(modelBuilder);
+        ConfigureIngredient(modelBuilder);
+        ConfigureMeal(modelBuilder);
         ConfigureOnlineArticleMapping(modelBuilder);
+        ConfigurePurchaseItem(modelBuilder);
+        ConfigureRecipe(modelBuilder);
+        ConfigureShoppingOrder(modelBuilder);
         ConfigureShoppingPreference(modelBuilder);
         ConfigureShoppingSession(modelBuilder);
         ConfigureShoppingSessionItem(modelBuilder);
+        ConfigureStore(modelBuilder);
+        ConfigureUnit(modelBuilder);
+    }
+
+    private static void ConfigureArticle(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Article>(entity =>
+        {
+            entity.Property(e => e.ArticleId).HasConversion(
+                id => id.Value,
+                value => new ArticleId(value))
+                .ValueGeneratedOnAdd();
+
+            // Deleting an ArticleGroup must not cascade-delete every Article referencing it; the
+            // default EF Core behavior for this required relationship is Cascade, which would
+            // silently wipe out articles. Require the group to be reassigned/emptied first.
+            entity.HasOne(article => article.ArticleGroup)
+                .WithMany()
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureIngredient(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Ingredient>(entity =>
+        {
+            // Deleting an Article or Unit must not cascade-delete every Ingredient referencing
+            // it; the default EF Core behavior for these required relationships is Cascade.
+            entity.HasOne(ingredient => ingredient.Article)
+                .WithMany()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(ingredient => ingredient.Unit)
+                .WithMany()
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigurePurchaseItem(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<PurchaseItem>(entity =>
+        {
+            // Deleting an Article or Unit must not cascade-delete every PurchaseItem referencing
+            // it; the default EF Core behavior for these required relationships is Cascade.
+            entity.HasOne(purchaseItem => purchaseItem.Article)
+                .WithMany()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(purchaseItem => purchaseItem.Unit)
+                .WithMany()
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureShoppingOrder(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ShoppingOrder>(entity =>
+        {
+            // Deleting an ArticleGroup must not cascade-delete its ShoppingOrder entry; the
+            // default EF Core behavior for this required relationship is Cascade.
+            entity.HasOne(shoppingOrder => shoppingOrder.ArticleGroup)
+                .WithMany()
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureArticleGroup(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ArticleGroup>(entity =>
+        {
+            entity.Property(e => e.ArticleGroupId).HasConversion(
+                id => id.Value,
+                value => new ArticleGroupId(value))
+                .ValueGeneratedOnAdd();
+        });
+    }
+
+    private static void ConfigureMeal(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Meal>(entity =>
+        {
+            entity.Property(e => e.MealId).HasConversion(
+                id => id.Value,
+                value => new MealId(value))
+                .ValueGeneratedOnAdd();
+
+            // Deleting a MealType must not cascade-delete every Meal referencing it; the default
+            // EF Core behavior for this required relationship is Cascade. Meal -> Recipe is left
+            // as Cascade on purpose: deleting a Recipe should delete the meals planned from it
+            // (see DeleteRecipeAsync_WithRealDatabaseCascade_DeletesMealsViaDbConstraint).
+            entity.HasOne(meal => meal.MealType)
+                .WithMany()
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureRecipe(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Recipe>(entity =>
+        {
+            entity.Property(e => e.RecipeId).HasConversion(
+                id => id.Value,
+                value => new RecipeId(value))
+                .ValueGeneratedOnAdd();
+        });
     }
 
     private static void ConfigureOnlineArticleMapping(ModelBuilder modelBuilder)
@@ -129,6 +241,28 @@ public class EfCoreContext(DbContextOptions<EfCoreContext> options) : DbContext(
             entity.Property(e => e.SelectedProductUrl).HasMaxLength(2048).IsRequired();
             entity.Property(e => e.Price).HasMaxLength(50);
             entity.Property(e => e.Status).HasMaxLength(50).IsRequired().HasConversion<string>();
+        });
+    }
+
+    private static void ConfigureStore(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Store>(entity =>
+        {
+            entity.Property(e => e.StoreId).HasConversion(
+                id => id.Value,
+                value => new StoreId(value))
+                .ValueGeneratedOnAdd();
+        });
+    }
+
+    private static void ConfigureUnit(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Unit>(entity =>
+        {
+            entity.Property(e => e.UnitId).HasConversion(
+                id => id.Value,
+                value => new UnitId(value))
+                .ValueGeneratedOnAdd();
         });
     }
 }

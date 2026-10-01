@@ -1,7 +1,8 @@
-﻿using BizLogic.Concrete;
+using BizLogic.Concrete;
 using DataLayer.EfClasses;
 using FluentAssertions;
 using NUnit.Framework;
+using Tests.Builders;
 
 namespace Tests.Unit.BizLogic;
 
@@ -13,9 +14,9 @@ public class GenerateIngredientsForRecipesActionTests
     public void GenerateComponents()
     {
         // Arrange
-        var vegetables = new ArticleGroup("Vegetables");
-        var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
-        var salad = new Article { Name = "Salad", ArticleGroup = vegetables, IsInventory = false };
+        var vegetables = new ArticleGroupBuilder().WithDefaults().Build();
+        var tomato = new Article("Tomato", vegetables, isInventory: false);
+        var salad = new Article("Salad", vegetables, isInventory: false);
         var bag = new global::DataLayer.EfClasses.Unit("Bag");
         var piece = new global::DataLayer.EfClasses.Unit("Piece");
         var ingredient1 = new Ingredient(tomato, 2, bag);
@@ -40,9 +41,9 @@ public class GenerateIngredientsForRecipesActionTests
     public void GenerateComponentsWithDifferentNumberOfPersons()
     {
         // Arrange
-        var vegetables = new ArticleGroup("Vegetables");
-        var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
-        var salad = new Article { Name = "Salad", ArticleGroup = vegetables, IsInventory = false };
+        var vegetables = new ArticleGroupBuilder().WithDefaults().Build();
+        var tomato = new Article("Tomato", vegetables, isInventory: false);
+        var salad = new Article("Salad", vegetables, isInventory: false);
         var bag = new global::DataLayer.EfClasses.Unit("Bag");
         var piece = new global::DataLayer.EfClasses.Unit("Piece");
         var ingredient1 = new Ingredient(tomato, 2, bag);
@@ -67,9 +68,9 @@ public class GenerateIngredientsForRecipesActionTests
     public void GenerateComponentsWithDifferentNumberOfDays()
     {
         // Arrange
-        var vegetables = new ArticleGroup("Vegetables");
-        var tomato = new Article { Name = "Tomato", ArticleGroup = vegetables, IsInventory = false };
-        var salad = new Article { Name = "Salad", ArticleGroup = vegetables, IsInventory = false };
+        var vegetables = new ArticleGroupBuilder().WithDefaults().Build();
+        var tomato = new Article("Tomato", vegetables, isInventory: false);
+        var salad = new Article("Salad", vegetables, isInventory: false);
         var bag = new global::DataLayer.EfClasses.Unit("Bag");
         var piece = new global::DataLayer.EfClasses.Unit("Piece");
         var ingredient1 = new Ingredient(tomato, 4, bag);

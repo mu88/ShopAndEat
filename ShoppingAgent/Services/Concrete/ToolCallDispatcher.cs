@@ -1,8 +1,10 @@
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Localization;
 using ShoppingAgent.Models;
 using ShoppingAgent.Resources;
+using ShoppingAgent.Services;
 
 namespace ShoppingAgent.Services.Concrete;
 
@@ -29,8 +31,8 @@ public class ToolCallDispatcher(
         {
             var result = toolCall.Name switch
             {
-                "confirm_cart" => HandleConfirmCart(),
-                "proceed_to_cart" => HandleProceedToCart(),
+                SignalToolNames.ConfirmCart => HandleConfirmCart(),
+                SignalToolNames.ProceedToCart => HandleProceedToCart(),
                 "request_clarification" => HandleRequestClarification(toolCall),
                 _ => await DispatchShopToolAsync(toolCall, shopKey, ct),
             };
@@ -67,7 +69,7 @@ public class ToolCallDispatcher(
         return groups.Select(g => (g.Key, g.Label, g.Icon, (IReadOnlyList<FunctionCallContent>)g.Tools)).ToList();
     }
 
-    public string FormatArgs(IDictionary<string, object> args)
+    public string FormatArgs(IDictionary<string, object?>? args)
     {
         if (args == null || args.Count == 0)
         {
@@ -79,8 +81,11 @@ public class ToolCallDispatcher(
 
     public void ResetWorkflow() => workflowState.Reset();
 
-    private static string GetArg(IDictionary<string, object> args, string key)
+    private static string GetArg(IDictionary<string, object?>? args, string key)
         => args != null && args.TryGetValue(key, out var val) ? val?.ToString() ?? string.Empty : string.Empty;
+
+    private static int ParseQuantity(FunctionCallContent toolCall) =>
+        int.TryParse(GetArg(toolCall.Arguments, "quantity"), CultureInfo.InvariantCulture, out var quantity) ? quantity : 1;
 
     private string HandleConfirmCart()
     {
@@ -97,6 +102,8 @@ public class ToolCallDispatcher(
     private string HandleRequestClarification(FunctionCallContent toolCall)
     {
         var rawItems = GetArg(toolCall.Arguments, "pending_items");
+
+        // Stryker disable once all: Split(',', RemoveEmptyEntries | TrimEntries) already yields an empty array for empty or whitespace-only input, matching the true branch.
         var items = string.IsNullOrWhiteSpace(rawItems)
             ? []
             : rawItems.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -132,7 +139,7 @@ public class ToolCallDispatcher(
 
             "add_to_cart" => await toolExecutor.AddToCartAsync(
                 GetArg(toolCall.Arguments, "product_url"),
-                int.TryParse(GetArg(toolCall.Arguments, "quantity"), System.Globalization.CultureInfo.InvariantCulture, out var q) ? q : 1,
+                ParseQuantity(toolCall),
                 ct),
 
             "remove_from_cart" => await toolExecutor.RemoveFromCartAsync(

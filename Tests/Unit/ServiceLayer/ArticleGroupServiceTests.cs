@@ -1,8 +1,11 @@
-﻿using DataLayer.EfClasses;
+using System.Diagnostics;
+using DataLayer.EfClasses;
 using DTO.ArticleGroup;
 using FluentAssertions;
 using NUnit.Framework;
 using ServiceLayer.Concrete;
+using ServiceLayer.Diagnostics;
+using Tests.Builders;
 
 namespace Tests.Unit.ServiceLayer;
 
@@ -10,52 +13,74 @@ namespace Tests.Unit.ServiceLayer;
 [Category("Unit")]
 public class ArticleGroupServiceTests
 {
+    private readonly List<Activity> _completedActivities = [];
+    private ActivityListener _activityListener = null!;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _completedActivities.Clear();
+        _activityListener = new ActivityListener
+        {
+            ShouldListenTo = source => string.Equals(source.Name, ServiceLayerDiagnostics.ActivitySourceName, StringComparison.Ordinal),
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            ActivityStopped = _completedActivities.Add,
+        };
+        ActivitySource.AddActivityListener(_activityListener);
+    }
+
+    [TearDown]
+    public void TearDown() => _activityListener.Dispose();
+
     [Test]
-    public void CreateArticleGroup()
+    public async Task CreateArticleGroupAsync()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
+        await using var context = new InMemoryDbContext();
         var testee = new ArticleGroupService(new SimpleCrudHelper(context));
         var newArticleGroupDto = new NewArticleGroupDto("Vegetables");
 
         // Act
-        testee.CreateArticleGroup(newArticleGroupDto);
+        await testee.CreateArticleGroupAsync(newArticleGroupDto);
 
         // Assert
         context.ArticleGroups.Should().Contain(articleGroup => articleGroup.Name == "Vegetables");
+        _completedActivities.Should().ContainSingle(activity => activity.OperationName == "ArticleGroupService.CreateArticleGroupAsync");
     }
 
     [Test]
-    public void DeleteArticleGroup()
+    public async Task DeleteArticleGroupAsync()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
-        var existingArticleGroup = context.ArticleGroups.Add(new ArticleGroup("Vegetables"));
-        context.SaveChanges();
+        await using var context = new InMemoryDbContext();
+        var existingArticleGroup = context.ArticleGroups.Add(new ArticleGroupBuilder().WithDefaults().Build());
+        await context.SaveChangesAsync();
         var testee = new ArticleGroupService(new SimpleCrudHelper(context));
         var deleteArticleGroupDto = new DeleteArticleGroupDto(existingArticleGroup.Entity.ArticleGroupId);
 
         // Act
-        testee.DeleteArticleGroup(deleteArticleGroupDto);
+        await testee.DeleteArticleGroupAsync(deleteArticleGroupDto);
 
         // Assert
-        context.ArticleGroups.Should().NotContain(articleGroup => articleGroup.Name == "Vegetables");
+        context.ArticleGroups.Should().NotContain(articleGroup => articleGroup.Name == existingArticleGroup.Entity.Name);
+        _completedActivities.Should().ContainSingle(activity => activity.OperationName == "ArticleGroupService.DeleteArticleGroupAsync");
     }
 
     [Test]
-    public void GetAllArticleGroups()
+    public async Task GetAllArticleGroupsAsync()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
+        await using var context = new InMemoryDbContext();
         context.ArticleGroups.Add(new ArticleGroup("Vegetables"));
         context.ArticleGroups.Add(new ArticleGroup("Dairy"));
-        context.SaveChanges();
+        await context.SaveChangesAsync();
         var testee = new ArticleGroupService(new SimpleCrudHelper(context));
 
         // Act
-        var results = testee.GetAllArticleGroups();
+        var results = await testee.GetAllArticleGroupsAsync();
 
         // Assert
         results.Should().Contain(articleGroup => articleGroup.Name == "Vegetables").And.Contain(articleGroup => articleGroup.Name == "Dairy");
+        _completedActivities.Should().ContainSingle(activity => activity.OperationName == "ArticleGroupService.GetAllArticleGroupsAsync");
     }
 }

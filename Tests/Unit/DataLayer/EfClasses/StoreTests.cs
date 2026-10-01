@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using DataLayer.EfClasses;
 using FluentAssertions;
 using NUnit.Framework;
@@ -22,6 +22,16 @@ public class StoreTests
         // Assert
         testee.Name.Should().Be(name);
         testee.Compartments.Should().BeEquivalentTo(compartments);
+    }
+
+    [Test]
+    public void DefaultConstructor_SetsNameToEmptyString()
+    {
+        // Act
+        var testee = new Store();
+
+        // Assert
+        testee.Name.Should().Be(string.Empty);
     }
 
     [Test]
@@ -52,7 +62,9 @@ public class StoreTests
         var testee = new Store(name, compartments);
 
         // Act & Assert
-        testee.Invoking(x => x.AddCompartment(compartmentToAdd)).Should().Throw<InvalidOperationException>();
+        testee.Invoking(x => x.AddCompartment(compartmentToAdd)).Should()
+            .Throw<InvalidOperationException>()
+            .WithMessage("There is already a compartment with order '30'");
     }
 
     [Test]

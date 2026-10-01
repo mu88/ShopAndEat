@@ -62,6 +62,7 @@ public class CoopToolExecutor : IShopToolExecutor
             return new ProductDetails { Name = "Error", Description = result.Error };
         }
 
+        // result.Success is true, but result.Data could still be null or invalid JSON from the browser extension; use null-coalescing fallback.
         return JsonSerializer.Deserialize<ProductDetails>(result.Data, JsonOptions) ?? new ProductDetails();
     }
 
@@ -94,7 +95,7 @@ public class CoopToolExecutor : IShopToolExecutor
     /// When <paramref name="cartEntryUid"/> is provided, the product is removed directly by ID,
     /// bypassing fragile name-based matching in the browser extension.
     /// </summary>
-    public async Task<string> RemoveFromCartAsync(string productName, string cartEntryUid = null, CancellationToken ct = default)
+    public async Task<string> RemoveFromCartAsync(string productName, string? cartEntryUid = null, CancellationToken ct = default)
     {
         var args = new Dictionary<string, object>(StringComparer.Ordinal) { ["productName"] = productName };
         if (!string.IsNullOrEmpty(cartEntryUid))

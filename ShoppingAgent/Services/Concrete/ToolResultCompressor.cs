@@ -83,18 +83,10 @@ public class ToolResultCompressor : IToolResultCompressor
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(rawResult))
-            {
-                return rawResult;
-            }
-
             if (rawResult.StartsWith("[", StringComparison.Ordinal))
             {
-                var items = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(rawResult, ReadOptions);
-                if (items is null)
-                {
-                    return rawResult;
-                }
+                // The StartsWith check above guarantees non-empty, array-shaped JSON, so Deserialize never returns null here.
+                var items = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(rawResult, ReadOptions)!;
 
                 var slim = items
                     .Select(item => new
@@ -116,56 +108,22 @@ public class ToolResultCompressor : IToolResultCompressor
         }
     }
 
-    private static string CompressAddToCart(string rawResult)
+    private static string CompressAddToCart(string rawResult) => CompressCartMutationResult(rawResult);
+
+    private static string CompressRemoveFromCart(string rawResult) => CompressCartMutationResult(rawResult);
+
+    /// <summary>
+    /// Shared compression logic for cart-mutation tool results (add_to_cart, remove_from_cart),
+    /// which both only need to keep the "success" and "message" fields.
+    /// </summary>
+    private static string CompressCartMutationResult(string rawResult)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(rawResult))
-            {
-                return rawResult;
-            }
-
             if (rawResult.StartsWith("{", StringComparison.Ordinal))
             {
-                var result = JsonSerializer.Deserialize<Dictionary<string, object>>(rawResult, ReadOptions);
-                if (result is null)
-                {
-                    return rawResult;
-                }
-
-                var slim = new
-                {
-                    success = result.TryGetValue("success", out var success) ? success?.ToString() : null,
-                    message = result.TryGetValue("message", out var message) ? message?.ToString() : null,
-                };
-
-                return JsonSerializer.Serialize(slim, WriteOptions);
-            }
-
-            return rawResult;
-        }
-        catch (JsonException)
-        {
-            return rawResult;
-        }
-    }
-
-    private static string CompressRemoveFromCart(string rawResult)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(rawResult))
-            {
-                return rawResult;
-            }
-
-            if (rawResult.StartsWith("{", StringComparison.Ordinal))
-            {
-                var result = JsonSerializer.Deserialize<Dictionary<string, object>>(rawResult, ReadOptions);
-                if (result is null)
-                {
-                    return rawResult;
-                }
+                // The StartsWith check above guarantees non-empty, object-shaped JSON, so Deserialize never returns null here.
+                var result = JsonSerializer.Deserialize<Dictionary<string, object>>(rawResult, ReadOptions)!;
 
                 var slim = new
                 {

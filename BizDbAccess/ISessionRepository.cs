@@ -6,9 +6,9 @@ public interface ISessionRepository
 {
     Task<IReadOnlyList<ShoppingSession>> GetAllSessionsAsync(int limit, CancellationToken cancellationToken = default);
 
-    Task<ShoppingSession> GetSessionByIdAsync(ShoppingSessionId id, CancellationToken cancellationToken = default);
+    Task<ShoppingSession?> GetSessionByIdAsync(ShoppingSessionId id, CancellationToken cancellationToken = default);
 
-    Task<ShoppingSession> FindSessionAsync(ShoppingSessionId id, CancellationToken cancellationToken = default);
+    Task<ShoppingSession?> FindSessionAsync(ShoppingSessionId id, CancellationToken cancellationToken = default);
 
     Task<ShoppingSessionId> CreateSessionAsync(ShoppingSession session, CancellationToken cancellationToken = default);
 

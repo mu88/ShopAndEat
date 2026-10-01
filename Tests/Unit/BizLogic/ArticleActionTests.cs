@@ -1,10 +1,12 @@
-﻿using BizDbAccess;
+using BizDbAccess;
 using BizLogic.Concrete;
 using DataLayer.EfClasses;
 using DTO.Article;
 using DTO.ArticleGroup;
+using FluentAssertions;
 using NSubstitute;
 using NUnit.Framework;
+using Tests.Builders;
 
 namespace Tests.Unit.BizLogic;
 
@@ -16,7 +18,7 @@ public class ArticleActionTests
     public void CreateArticle()
     {
         // Arrange
-        var newArticleDto = new NewArticleDto("Cheese", new ExistingArticleGroupDto(3, "Diary"), true);
+        var newArticleDto = new NewArticleDto("Cheese", new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(3), "Diary"), true);
         var articleDbAccessMock = Substitute.For<IArticleDbAccess>();
         articleDbAccessMock.AddArticle(Arg.Any<Article>()).Returns(call => call.Arg<Article>());
         var testee = new ArticleAction(articleDbAccessMock);
@@ -29,32 +31,35 @@ public class ArticleActionTests
     }
 
     [Test]
-    public void DeleteArticle()
+    public async Task DeleteArticleAsync()
     {
         // Arrange
-        var deleteArticleGroupDto = new DeleteArticleDto(3);
+        var deleteArticleGroupDto = new DeleteArticleDto(new global::DataLayer.EfClasses.ArticleId(3));
         var articleDbAccessMock = Substitute.For<IArticleDbAccess>();
-        articleDbAccessMock.GetArticle(3).Returns(new Article { Name = "Cheese", ArticleGroup = new ArticleGroup("Diary"), IsInventory = false });
+        articleDbAccessMock.GetArticleAsync(new global::DataLayer.EfClasses.ArticleId(3)).Returns(Task.FromResult(new Article("Cheese", new ArticleGroupBuilder().WithDefaults().Build(), isInventory: false)));
         var testee = new ArticleAction(articleDbAccessMock);
 
         // Act
-        testee.DeleteArticle(deleteArticleGroupDto);
+        await testee.DeleteArticleAsync(deleteArticleGroupDto);
 
         // Assert
         articleDbAccessMock.Received(1).DeleteArticle(Arg.Is<Article>(a => a.Name == "Cheese"));
     }
 
     [Test]
-    public void GetAllArticles()
+    public async Task GetAllArticlesAsync()
     {
         // Arrange
         var articleDbAccessMock = Substitute.For<IArticleDbAccess>();
+        var article = new Article("Cheese", new ArticleGroupBuilder().WithDefaults().Build(), isInventory: false);
+        articleDbAccessMock.GetArticlesAsync().Returns(Task.FromResult<IEnumerable<Article>>(new[] { article }));
         var testee = new ArticleAction(articleDbAccessMock);
 
         // Act
-        testee.GetAllArticles();
+        var result = await testee.GetAllArticlesAsync();
 
         // Assert
-        articleDbAccessMock.Received(1).GetArticles();
+        await articleDbAccessMock.Received(1).GetArticlesAsync();
+        result.Should().ContainSingle(dto => dto.Name == "Cheese");
     }
 }

@@ -15,14 +15,14 @@ public class SessionRepository(EfCoreContext context, TimeProvider timeProvider)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<ShoppingSession> GetSessionByIdAsync(ShoppingSessionId id, CancellationToken cancellationToken = default)
+    public async Task<ShoppingSession?> GetSessionByIdAsync(ShoppingSessionId id, CancellationToken cancellationToken = default)
     {
         return await context.ShoppingSessions
             .Include(session => session.Items)
             .FirstOrDefaultAsync(session => session.ShoppingSessionId == id, cancellationToken);
     }
 
-    public async Task<ShoppingSession> FindSessionAsync(ShoppingSessionId id, CancellationToken cancellationToken = default)
+    public async Task<ShoppingSession?> FindSessionAsync(ShoppingSessionId id, CancellationToken cancellationToken = default)
     {
         return await context.ShoppingSessions.FindAsync([id], cancellationToken);
     }
@@ -43,8 +43,7 @@ public class SessionRepository(EfCoreContext context, TimeProvider timeProvider)
 
     public async Task CompleteSessionAsync(ShoppingSession session, CancellationToken cancellationToken = default)
     {
-        session.Status = SessionStatus.Completed;
-        session.CompletedAt = timeProvider.GetUtcNow();
+        session.Complete(timeProvider.GetUtcNow());
         await context.SaveChangesAsync(cancellationToken);
     }
 

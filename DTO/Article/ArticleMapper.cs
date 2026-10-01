@@ -9,8 +9,8 @@ public static class ArticleMapper
         => new(entity.ArticleId, entity.Name, entity.ArticleGroup.ToDto(), entity.IsInventory);
 
     public static EfArticle ToEntity(this NewArticleDto dto)
-        => new() { Name = dto.Name, ArticleGroup = dto.ArticleGroup.ToEntity(), IsInventory = dto.IsInventory };
+        => new(dto.Name, dto.ArticleGroup.ToEntity(), dto.IsInventory);
 
     public static EfArticle ToEntity(this ExistingArticleDto dto)
-        => new() { Name = dto.Name, ArticleGroup = dto.ArticleGroup.ToEntity(), IsInventory = dto.IsInventory };
+        => new(dto.Name, dto.ArticleGroup.ToEntity(), dto.IsInventory);
 }

@@ -1,4 +1,4 @@
-﻿using DataLayer.EfClasses;
+using DataLayer.EfClasses;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -19,5 +19,15 @@ public class ArticleGroupTests
 
         // Assert
         testee.Name.Should().Be(name);
+    }
+
+    [Test]
+    public void DefaultConstructor_SetsNameToEmptyString()
+    {
+        // Act
+        var testee = new ArticleGroup();
+
+        // Assert
+        testee.Name.Should().Be(string.Empty);
     }
 }

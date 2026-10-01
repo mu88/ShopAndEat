@@ -13,7 +13,7 @@ namespace ShopAndEat.Api;
 public class PreferencesController(IPreferencesRepository preferencesRepository, ILogger<PreferencesController> logger) : ControllerBase
 {
     [HttpGet]
-    public async Task<Ok<IReadOnlyList<PreferenceResponse>>> GetAll([FromQuery] string scope = null, [FromQuery] string storeKey = null, CancellationToken cancellationToken = default)
+    public async Task<Ok<IReadOnlyList<PreferenceResponse>>> GetAll([FromQuery] string? scope = null, [FromQuery] string? storeKey = null, CancellationToken cancellationToken = default)
     {
         var preferences = await preferencesRepository.GetAllPreferencesAsync(scope, storeKey, cancellationToken);
 
@@ -33,7 +33,7 @@ public class PreferencesController(IPreferencesRepository preferencesRepository,
     }
 
     [HttpDelete]
-    public async Task<Results<NoContent, ProblemHttpResult>> Delete([FromQuery] string scope, [FromQuery] string key, [FromQuery] string storeKey = null, CancellationToken cancellationToken = default)
+    public async Task<Results<NoContent, ProblemHttpResult>> Delete([FromQuery] string scope, [FromQuery] string key, [FromQuery] string? storeKey = null, CancellationToken cancellationToken = default)
     {
         var deleted = await preferencesRepository.DeletePreferenceAsync(scope, key, storeKey, cancellationToken);
 

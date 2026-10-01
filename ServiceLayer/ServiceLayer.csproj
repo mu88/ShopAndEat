@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Nullable>disable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Tests" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="mu88.Shared" />
   </ItemGroup>

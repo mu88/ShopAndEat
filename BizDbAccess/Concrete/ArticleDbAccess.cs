@@ -1,5 +1,6 @@
-﻿using DataLayer.EF;
+using DataLayer.EF;
 using DataLayer.EfClasses;
+using Microsoft.EntityFrameworkCore;
 
 namespace BizDbAccess.Concrete;
 
@@ -11,8 +12,10 @@ public class ArticleDbAccess(EfCoreContext context) : IArticleDbAccess
     public void DeleteArticle(Article article) => context.Articles.Remove(article);
 
     /// <inheritdoc />
-    public Article GetArticle(int articleId) => context.Articles.Single(x => x.ArticleId == articleId);
+    public Task<Article> GetArticleAsync(ArticleId articleId, CancellationToken cancellationToken = default)
+        => context.Articles.SingleAsync(article => article.ArticleId == articleId, cancellationToken);
 
     /// <inheritdoc />
-    public IEnumerable<Article> GetArticles() => context.Articles;
+    public async Task<IEnumerable<Article>> GetArticlesAsync(CancellationToken cancellationToken = default)
+        => await context.Articles.ToListAsync(cancellationToken);
 }

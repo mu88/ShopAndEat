@@ -1,4 +1,5 @@
 using BizDbAccess;
+using DataLayer.EF;
 using DataLayer.EfClasses;
 using DTO.Article;
 using DTO.ArticleGroup;
@@ -12,6 +13,7 @@ using NUnit.Framework;
 using ServiceLayer;
 using ShopAndEat.Features.ShoppingAgent.Adapters;
 using ShoppingAgent.Services;
+using Tests.Builders;
 using EfUnit = DataLayer.EfClasses.Unit;
 
 namespace Tests.Unit.ShopAndEat.Features.ShoppingAgent;
@@ -45,16 +47,29 @@ public class ServerSessionAdapterTests
     {
         // Arrange
         var sessionRepo = Substitute.For<ISessionRepository>();
-        var session = new ShoppingSession("Milk", DateTimeOffset.UtcNow);
+        var session = new ShoppingSessionBuilder().WithDefaults().Build();
         sessionRepo.FindSessionAsync(new ShoppingSessionId(10), default).Returns(session);
         var testee = CreateTestee(sessionRepo: sessionRepo);
 
         // Act
-        await testee.AddSessionItemAsync(10, new SessionItemDto { OriginalIngredient = "1L Milk" });
+        await testee.AddSessionItemAsync(10, new SessionItemDto
+        {
+            OriginalIngredient = "1L Milk",
+            SelectedProductName = "Bio Milch",
+            SelectedProductUrl = "https://example.test/milch",
+            Quantity = 2,
+            Price = "2.50",
+        });
 
-        // Assert
+        // Assert — proves all DTO fields are forwarded, not just OriginalIngredient (which, due to the
+        // private setters introduced for immutability, can never be corrected after construction).
         await sessionRepo.Received(1).AddItemToSessionAsync(
-            Arg.Is<ShoppingSessionItem>(i => i.OriginalIngredient == "1L Milk"),
+            Arg.Is<ShoppingSessionItem>(i =>
+                i.OriginalIngredient == "1L Milk" &&
+                i.SelectedProductName == "Bio Milch" &&
+                i.SelectedProductUrl == "https://example.test/milch" &&
+                i.Quantity == 2 &&
+                i.Price == "2.50"),
             default);
     }
 
@@ -63,7 +78,7 @@ public class ServerSessionAdapterTests
     {
         // Arrange
         var sessionRepo = Substitute.For<ISessionRepository>();
-        sessionRepo.FindSessionAsync(Arg.Any<ShoppingSessionId>(), default).Returns((ShoppingSession)null);
+        sessionRepo.FindSessionAsync(Arg.Any<ShoppingSessionId>(), default).Returns((ShoppingSession?)null);
         var testee = CreateTestee(sessionRepo: sessionRepo);
 
         // Act
@@ -78,7 +93,7 @@ public class ServerSessionAdapterTests
     {
         // Arrange
         var sessionRepo = Substitute.For<ISessionRepository>();
-        var session = new ShoppingSession("ingredients", DateTimeOffset.UtcNow);
+        var session = new ShoppingSessionBuilder().WithDefaults().Build();
         sessionRepo.FindSessionAsync(new ShoppingSessionId(5), default).Returns(session);
         var testee = CreateTestee(sessionRepo: sessionRepo);
 
@@ -94,7 +109,7 @@ public class ServerSessionAdapterTests
     {
         // Arrange
         var sessionRepo = Substitute.For<ISessionRepository>();
-        sessionRepo.FindSessionAsync(Arg.Any<ShoppingSessionId>(), default).Returns((ShoppingSession)null);
+        sessionRepo.FindSessionAsync(Arg.Any<ShoppingSessionId>(), default).Returns((ShoppingSession?)null);
         var testee = CreateTestee(sessionRepo: sessionRepo);
 
         // Act
@@ -124,15 +139,15 @@ public class ServerSessionAdapterTests
     {
         // Arrange
         await using var db = new InMemoryDbContext();
-        db.Stores.Add(new Store("Coop", Array.Empty<ShoppingOrder>()));
+        db.Stores.Add(new StoreBuilder().WithDefaults().Build());
         await db.SaveChangesAsync();
 
         var mealService = Substitute.For<IMealService>();
-        var articleGroup = new ExistingArticleGroupDto(1, "Dairy");
-        var article = new ExistingArticleDto(1, "Milk", articleGroup, false);
-        var unit = new ExistingUnitDto(1, "liter");
-        mealService.GetOrderedPurchaseItems(Arg.Any<ExistingStoreDto>())
-            .Returns([new NewPurchaseItemDto(article, unit, 2.0)]);
+        var articleGroup = new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(1), "Dairy");
+        var article = new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(1), "Milk", articleGroup, false);
+        var unit = new ExistingUnitDto(new global::DataLayer.EfClasses.UnitId(1), "liter");
+        mealService.GetOrderedPurchaseItemsAsync(Arg.Any<ExistingStoreDto>())
+            .Returns(Task.FromResult<IReadOnlyList<NewPurchaseItemDto>>([new NewPurchaseItemDto(article, unit, 2.0)]));
         var testee = CreateTestee(db: db, mealService: mealService);
 
         // Act
@@ -143,6 +158,32 @@ public class ServerSessionAdapterTests
         result[0].Article.Should().Be("Milk");
         result[0].Quantity.Should().Be(2.0);
         result[0].Unit.Should().Be("liter");
+    }
+
+    [Test]
+    public async Task GetIngredientListAsync_WithMultipleStores_UsesFirstStoreOrderedByIdAscending()
+    {
+        // Arrange — a Sqlite (not InMemory-provider) database is used because ordering by StoreId
+        // (a readonly record struct without IComparable) requires real SQL translation of ORDER BY;
+        // the InMemory provider would need to compare StoreId instances client-side and throw.
+        await using var db = new SqliteDbContext();
+        var secondStore = db.Stores.Add(new StoreBuilder().WithDefaults().Build()).Entity;
+        var firstStore = db.Stores.Add(new StoreBuilder().WithDefaults().Build()).Entity;
+        await db.SaveChangesAsync();
+
+        var mealService = Substitute.For<IMealService>();
+        mealService.GetOrderedPurchaseItemsAsync(Arg.Any<ExistingStoreDto>())
+            .Returns(Task.FromResult<IReadOnlyList<NewPurchaseItemDto>>([]));
+        var testee = CreateTestee(db: db, mealService: mealService);
+
+        // Act
+        await testee.GetIngredientListAsync();
+
+        // Assert
+        var expectedFirstStoreId = new[] { firstStore.StoreId, secondStore.StoreId }.Min(id => id.Value);
+        await mealService.Received(1).GetOrderedPurchaseItemsAsync(
+            Arg.Is<ExistingStoreDto>(dto => dto.StoreId.Value == expectedFirstStoreId),
+            Arg.Any<CancellationToken>());
     }
 
     [Test]
@@ -167,10 +208,8 @@ public class ServerSessionAdapterTests
         // Arrange
         var sessionRepo = Substitute.For<ISessionRepository>();
         var startedAt = new DateTimeOffset(2025, 1, 15, 10, 0, 0, TimeSpan.Zero);
-        var session = new ShoppingSession("Milk, Eggs", startedAt)
-        {
-            Status = SessionStatus.Completed,
-        };
+        var session = new ShoppingSession("Milk, Eggs", startedAt);
+        session.Complete(startedAt.AddHours(1));
         sessionRepo.GetAllSessionsAsync(20, default).Returns([session]);
         var testee = CreateTestee(sessionRepo: sessionRepo);
 
@@ -185,9 +224,9 @@ public class ServerSessionAdapterTests
     }
 
     private static ServerSessionAdapter CreateTestee(
-        ISessionRepository sessionRepo = null,
-        IMealService mealService = null,
-        InMemoryDbContext db = null)
+        ISessionRepository? sessionRepo = null,
+        IMealService? mealService = null,
+        EfCoreContext? db = null)
     {
         return new ServerSessionAdapter(
             sessionRepo ?? Substitute.For<ISessionRepository>(),

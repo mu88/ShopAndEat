@@ -1,8 +1,5 @@
-﻿namespace DTO.Unit;
+using DataLayer.EfClasses;
 
-public class ExistingUnitDto(int unitId, string name)
-{
-    public int UnitId { get; } = unitId;
+namespace DTO.Unit;
 
-    public string Name { get; } = name;
-}
+public record ExistingUnitDto(UnitId UnitId, string Name);

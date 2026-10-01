@@ -15,33 +15,21 @@ public class ArticleMappingRepository(EfCoreContext context, TimeProvider timePr
 
         if (existingMapping != null)
         {
-            existingMapping.StoreProductName = mapping.StoreProductName;
-            existingMapping.StoreProductPrice = mapping.StoreProductPrice;
-            existingMapping.Confidence = mapping.Confidence;
-            existingMapping.MatchMethod = mapping.MatchMethod;
-            existingMapping.QuantityPerUnit = mapping.QuantityPerUnit;
-            existingMapping.LastUsedAt = timeProvider.GetUtcNow();
-            existingMapping.FeedbackCount++;
+            existingMapping.RecordMatch(mapping.StoreProductName, mapping.StoreProductPrice, mapping.Confidence, mapping.MatchMethod, mapping.QuantityPerUnit, timeProvider.GetUtcNow());
+            existingMapping.RecordFeedback();
         }
         else
         {
             var now = timeProvider.GetUtcNow();
-            var newMapping = new OnlineArticleMapping(mapping.ArticleName, mapping.StoreKey, mapping.StoreProductCode, now)
-            {
-                StoreProductName = mapping.StoreProductName,
-                StoreProductPrice = mapping.StoreProductPrice,
-                Confidence = mapping.Confidence,
-                MatchMethod = mapping.MatchMethod,
-                QuantityPerUnit = mapping.QuantityPerUnit,
-                LastUsedAt = now,
-            };
+            var newMapping = new OnlineArticleMapping(mapping.ArticleName, mapping.StoreKey, mapping.StoreProductCode, now);
+            newMapping.RecordMatch(mapping.StoreProductName, mapping.StoreProductPrice, mapping.Confidence, mapping.MatchMethod, mapping.QuantityPerUnit, now);
             context.OnlineArticleMappings.Add(newMapping);
         }
 
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<OnlineArticleMapping> GetMappingAsync(string storeKey, string articleName, CancellationToken cancellationToken = default)
+    public async Task<OnlineArticleMapping?> GetMappingAsync(string storeKey, string articleName, CancellationToken cancellationToken = default)
     {
         return await context.OnlineArticleMappings
             .Where(mapping => mapping.StoreKey == storeKey && mapping.ArticleName == articleName)
