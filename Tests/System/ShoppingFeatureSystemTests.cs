@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using DTO.ShoppingPreference;
@@ -10,18 +11,10 @@ namespace Tests.System;
 [Category("System")]
 public class ShoppingFeatureSystemTests
 {
-    private static HttpClient _httpClient = null!;
+    private static readonly HttpClient _httpClient = new() { BaseAddress = SystemTestsFixture.AppBaseAddress };
 
     private CancellationTokenSource _cancellationTokenSource = null!;
     private CancellationToken _cancellationToken;
-
-    [OneTimeSetUp]
-    public static void OneTimeSetup()
-    {
-        // Shared across all tests in this class (not per-test) to avoid socket exhaustion from
-        // creating a new HttpClient per test (IDISP014) - BaseAddress never changes between tests.
-        _httpClient = new HttpClient { BaseAddress = SystemTestsFixture.AppBaseAddress };
-    }
 
     [OneTimeTearDown]
     public static void OneTimeTeardown()
@@ -126,7 +119,7 @@ public class ShoppingFeatureSystemTests
     {
         var preferences = await GetAllPreferences();
         preferences.Should().HaveCount(expectedCount,
-            $"because there should be {expectedCount} preference(s) at this point in the test");
+            $"because there should be {expectedCount.ToString(CultureInfo.InvariantCulture)} preference(s) at this point in the test");
     }
 
     private async Task<HttpResponseMessage> GetUnits()

@@ -16,7 +16,7 @@ public class UnitsApiTests
     {
         // Arrange
         await using var factory = new CustomWebApplicationFactory();
-        using (var scope = factory.Services.CreateScope())
+        await using (var scope = factory.Services.CreateAsyncScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<EfCoreContext>();
             context.Units.Add(new EfUnit("kg"));

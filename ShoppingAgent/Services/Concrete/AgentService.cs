@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,6 +14,10 @@ namespace ShoppingAgent.Services.Concrete;
 /// Thin orchestrator that delegates to specialised services for prompt building,
 /// tool definitions, tool dispatch, conversation management, and shop session handling.
 /// </summary>
+[method: SuppressMessage(
+    "Major Code Smell",
+    "S107:Methods should not have too many parameters",
+    Justification = "DI composition root wiring 11 specialised, single-responsibility services; an aggregate parameter object would only exist to satisfy this rule.")]
 public class AgentService(
     IMistralChatClientProvider chatClientProvider,
     ISystemPromptBuilder systemPromptBuilder,

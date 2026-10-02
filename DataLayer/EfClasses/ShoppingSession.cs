@@ -26,7 +26,7 @@ public class ShoppingSession
     /// <summary>The original ingredient list provided by the user.</summary>
     public string IngredientList { get; private set; } = string.Empty;
 
-    public virtual ICollection<ShoppingSessionItem> Items { get; set; } = new List<ShoppingSessionItem>();
+    public virtual ICollection<ShoppingSessionItem> Items { get; set; } = [];
 
     /// <summary>Marks this session as completed, stamping <see cref="CompletedAt"/> atomically with <see cref="Status"/> so they can never drift out of sync.</summary>
     public void Complete(DateTimeOffset completedAt)

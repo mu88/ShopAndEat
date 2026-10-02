@@ -45,11 +45,11 @@ public class HomePageTests
         }
 
         var preferencesMock = Substitute.For<IPreferencesService>();
-        preferencesMock.GetAllPreferencesAsync(Arg.Any<string>()).Returns(new List<PreferenceDto>());
+        preferencesMock.GetAllPreferencesAsync(Arg.Any<string>()).Returns([]);
 
         var sessionMock = Substitute.For<ISessionService>();
-        sessionMock.GetUnitsAsync().Returns(new List<string>());
-        sessionMock.GetIngredientListAsync().Returns(new List<IngredientItem>());
+        sessionMock.GetUnitsAsync().Returns([]);
+        sessionMock.GetIngredientListAsync().Returns([]);
 
         var factoryMock = Substitute.For<IShopToolExecutorFactory>();
 #pragma warning disable SA1010
@@ -119,7 +119,7 @@ public class HomePageTests
 
         // Act
         await cut.Find("textarea").InputAsync("Hello World");
-        cut.Find(".send-button").Click();
+        await cut.Find(".send-button").ClickAsync();
 
         // Assert
         await cut.WaitForAssertionAsync(() =>
@@ -137,7 +137,7 @@ public class HomePageTests
 
         // Act
         await cut.Find("textarea").InputAsync("Find milk");
-        cut.Find(".send-button").Click();
+        await cut.Find(".send-button").ClickAsync();
 
         // Assert
         await cut.WaitForAssertionAsync(() =>

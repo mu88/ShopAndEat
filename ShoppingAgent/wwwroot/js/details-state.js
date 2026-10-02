@@ -19,7 +19,7 @@
         if (openDetails.size === 0) return;
         isRestoring = true;
         document.querySelectorAll('#chatMessages details').forEach(function (d) {
-            var key = getKey(d);
+            const key = getKey(d);
             if (key && openDetails.has(key)) {
                 d.open = true;
             }
@@ -32,7 +32,7 @@
     };
 
     function getKey(details) {
-        var summary = details.querySelector(':scope > summary');
+        const summary = details.querySelector(':scope > summary');
         return summary ? summary.textContent.trim() : null;
     }
 })();

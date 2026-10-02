@@ -18,7 +18,7 @@ public class MealApiTests
     {
         // Arrange
         await using var webApplicationFactory = new CustomWebApplicationFactory();
-        using (var serviceScope = webApplicationFactory.Services.CreateScope())
+        await using (var serviceScope = webApplicationFactory.Services.CreateAsyncScope())
         {
             var context = serviceScope.ServiceProvider.GetRequiredService<EfCoreContext>();
 

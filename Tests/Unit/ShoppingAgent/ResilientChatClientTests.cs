@@ -343,10 +343,10 @@ public class ResilientChatClientTests
                 Arg.Any<IEnumerable<AiChatMessage>>(),
                 Arg.Any<ChatOptions>(),
                 Arg.Any<CancellationToken>())
-            .Returns(_ =>
+            .Returns(async _ =>
             {
-                cts.Cancel();
-                return Task.FromException<ChatResponse>(new OperationCanceledException());
+                await cts.CancelAsync();
+                return await Task.FromException<ChatResponse>(new OperationCanceledException());
             });
 
         var testee = CreateTestee(primaryMock, retryMaxAttempts: 3);

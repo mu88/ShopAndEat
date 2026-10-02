@@ -138,7 +138,7 @@ public class ExtensionBridgeTests
         testee.OnExtensionConnected();
 
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var result = await testee.ExecuteToolAsync("search", new Dictionary<string, object>(StringComparer.Ordinal), "coop", cts.Token);
@@ -584,8 +584,12 @@ public class ExtensionBridgeTests
             return new ValueTask<TValue>(default(TValue)!);
         }
 
+        // Fake test double intentionally ignores the CancellationToken (MA0040 false positive: there is no
+        // other overload to delegate to that would meaningfully honour cancellation here).
+#pragma warning disable MA0040
         public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
             => InvokeAsync<TValue>(identifier, args);
+#pragma warning restore MA0040
 #pragma warning restore SA1011
     }
 }

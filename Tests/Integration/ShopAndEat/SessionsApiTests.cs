@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -56,7 +57,7 @@ public class SessionsApiTests
         var id = body.GetProperty("shoppingSessionId").GetInt32();
 
         // Act
-        var result = await client.GetFromJsonAsync<SessionDetailResponse>($"{BasePath}/{id}");
+        var result = await client.GetFromJsonAsync<SessionDetailResponse>($"{BasePath}/{id.ToString(CultureInfo.InvariantCulture)}");
 
         // Assert
         result.Should().NotBeNull();
@@ -99,7 +100,7 @@ public class SessionsApiTests
         };
 
         // Act
-        var itemResponse = await client.PostAsJsonAsync($"{BasePath}/{id}/items", itemRequest);
+        var itemResponse = await client.PostAsJsonAsync($"{BasePath}/{id.ToString(CultureInfo.InvariantCulture)}/items", itemRequest);
 
         // Assert
         itemResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -116,7 +117,7 @@ public class SessionsApiTests
         var createResponse = await client.PostAsJsonAsync(BasePath, new CreateSessionRequest { IngredientList = "1 Apple" });
         var body = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
         var id = body.GetProperty("shoppingSessionId").GetInt32();
-        await client.PatchAsync($"{BasePath}/{id}/complete", null);
+        await client.PatchAsync($"{BasePath}/{id.ToString(CultureInfo.InvariantCulture)}/complete", null);
         var itemRequest = new AddSessionItemRequest
         {
             OriginalIngredient = "1 Apple",
@@ -127,7 +128,7 @@ public class SessionsApiTests
         };
 
         // Act
-        var itemResponse = await client.PostAsJsonAsync($"{BasePath}/{id}/items", itemRequest);
+        var itemResponse = await client.PostAsJsonAsync($"{BasePath}/{id.ToString(CultureInfo.InvariantCulture)}/items", itemRequest);
 
         // Assert
         itemResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -144,11 +145,11 @@ public class SessionsApiTests
         var id = body.GetProperty("shoppingSessionId").GetInt32();
 
         // Act
-        var completeResponse = await client.PatchAsync($"{BasePath}/{id}/complete", null);
+        var completeResponse = await client.PatchAsync($"{BasePath}/{id.ToString(CultureInfo.InvariantCulture)}/complete", null);
 
         // Assert
         completeResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        var session = await client.GetFromJsonAsync<SessionDetailResponse>($"{BasePath}/{id}");
+        var session = await client.GetFromJsonAsync<SessionDetailResponse>($"{BasePath}/{id.ToString(CultureInfo.InvariantCulture)}");
         session!.Status.Should().Be("Completed");
         session.CompletedAt.Should().NotBeNull();
     }
@@ -164,11 +165,11 @@ public class SessionsApiTests
         var id = body.GetProperty("shoppingSessionId").GetInt32();
 
         // Act
-        var deleteResponse = await client.DeleteAsync($"{BasePath}/{id}");
+        var deleteResponse = await client.DeleteAsync($"{BasePath}/{id.ToString(CultureInfo.InvariantCulture)}");
 
         // Assert
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        var getResponse = await client.GetAsync($"{BasePath}/{id}");
+        var getResponse = await client.GetAsync($"{BasePath}/{id.ToString(CultureInfo.InvariantCulture)}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 

@@ -121,7 +121,7 @@ public class PreferencesApiTests
     {
         // Arrange
         await using var webApplicationFactory = new CustomWebApplicationFactory();
-        using (var scope = webApplicationFactory.Services.CreateScope())
+        await using (var scope = webApplicationFactory.Services.CreateAsyncScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<EfCoreContext>();
 

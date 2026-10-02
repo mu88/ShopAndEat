@@ -9,18 +9,10 @@ namespace Tests.System;
 [Category("System")]
 public class SystemTests
 {
-    private static HttpClient _httpClient = null!;
+    private static readonly HttpClient _httpClient = new() { BaseAddress = SystemTestsFixture.AppBaseAddress };
 
     private CancellationTokenSource _cancellationTokenSource = null!;
     private CancellationToken _cancellationToken;
-
-    [OneTimeSetUp]
-    public static void OneTimeSetup()
-    {
-        // Shared across all tests in this class (not per-test) to avoid socket exhaustion from
-        // creating a new HttpClient per test (IDISP014) - BaseAddress never changes between tests.
-        _httpClient = new HttpClient { BaseAddress = SystemTestsFixture.AppBaseAddress };
-    }
 
     [OneTimeTearDown]
     public static void OneTimeTeardown()

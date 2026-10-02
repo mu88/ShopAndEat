@@ -91,7 +91,7 @@ public class AgentServiceTests
             "call_1",
             "search_products",
             new Dictionary<string, object?>(global::System.StringComparer.Ordinal) { ["search_term"] = "Tofu" });
-        var assistantMessage = new AiChatMessage(ChatRole.Assistant, new List<AIContent> { toolCallContent });
+        var assistantMessage = new AiChatMessage(ChatRole.Assistant, [toolCallContent]);
         var firstResponse = new ChatResponse([assistantMessage]);
 
         // Second call: return final text
@@ -264,7 +264,7 @@ public class AgentServiceTests
         // Arrange
         var chatClientMock = Substitute.For<IChatClient>();
         var preferencesMock = Substitute.For<IPreferencesService>();
-        preferencesMock.GetAllPreferencesAsync(Arg.Any<string>()).Returns(new List<PreferenceDto>());
+        preferencesMock.GetAllPreferencesAsync(Arg.Any<string>()).Returns([]);
         var testee = CreateTestee(chatClientMock, preferencesService: preferencesMock);
 
         var toolCallContent = new FunctionCallContent(
@@ -276,7 +276,7 @@ public class AgentServiceTests
                 ["key"] = "confirmed_product",
                 ["value"] = "Organic Tofu, https://coop.ch/p/123",
             });
-        var assistantMessage = new AiChatMessage(ChatRole.Assistant, new List<AIContent> { toolCallContent });
+        var assistantMessage = new AiChatMessage(ChatRole.Assistant, [toolCallContent]);
         var firstResponse = new ChatResponse([assistantMessage]);
         var finalResponse = new ChatResponse([new AiChatMessage(ChatRole.Assistant, "Preference saved.")]);
 
@@ -308,7 +308,7 @@ public class AgentServiceTests
         // Arrange
         var chatClientMock = Substitute.For<IChatClient>();
         var preferencesMock = Substitute.For<IPreferencesService>();
-        preferencesMock.GetAllPreferencesAsync(Arg.Any<string>()).Returns(new List<PreferenceDto>());
+        preferencesMock.GetAllPreferencesAsync(Arg.Any<string>()).Returns([]);
         preferencesMock.DeletePreferenceAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>()).Returns(true);
         var testee = CreateTestee(chatClientMock, preferencesService: preferencesMock);
 
@@ -320,7 +320,7 @@ public class AgentServiceTests
                 ["scope"] = "article:Tofu",
                 ["key"] = "confirmed_product",
             });
-        var assistantMessage = new AiChatMessage(ChatRole.Assistant, new List<AIContent> { toolCallContent });
+        var assistantMessage = new AiChatMessage(ChatRole.Assistant, [toolCallContent]);
         var firstResponse = new ChatResponse([assistantMessage]);
         var finalResponse = new ChatResponse([new AiChatMessage(ChatRole.Assistant, "Deleted.")]);
 
@@ -359,7 +359,7 @@ public class AgentServiceTests
                 ["product_url"] = "https://coop.ch/p/123",
                 ["quantity"] = "2",
             });
-        var assistantMessage = new AiChatMessage(ChatRole.Assistant, new List<AIContent> { toolCallContent });
+        var assistantMessage = new AiChatMessage(ChatRole.Assistant, [toolCallContent]);
         var firstResponse = new ChatResponse([assistantMessage]);
         var finalResponse = new ChatResponse([new AiChatMessage(ChatRole.Assistant, "Done.")]);
 
@@ -395,7 +395,7 @@ public class AgentServiceTests
             "call_cart",
             "add_to_cart",
             new Dictionary<string, object?>(global::System.StringComparer.Ordinal));
-        var assistantMessage = new AiChatMessage(ChatRole.Assistant, new List<AIContent> { toolCallContent });
+        var assistantMessage = new AiChatMessage(ChatRole.Assistant, [toolCallContent]);
         var firstResponse = new ChatResponse([assistantMessage]);
         var finalResponse = new ChatResponse([new AiChatMessage(ChatRole.Assistant, "Done.")]);
 
@@ -423,7 +423,7 @@ public class AgentServiceTests
         var chatClientMock = Substitute.For<IChatClient>();
         var toolExecutorMock = Substitute.For<IShopToolExecutor>();
         toolExecutorMock.SearchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new List<ShopProduct>());
+            .Returns([]);
         var testee = CreateTesteeWithDependencies(
             chatClientMock,
             toolExecutor: toolExecutorMock,
@@ -434,7 +434,7 @@ public class AgentServiceTests
             "call_search",
             "search_products",
             new Dictionary<string, object?>(global::System.StringComparer.Ordinal) { ["search_term"] = "Tofu" });
-        var assistantMessage = new AiChatMessage(ChatRole.Assistant, new List<AIContent> { toolCallContent });
+        var assistantMessage = new AiChatMessage(ChatRole.Assistant, [toolCallContent]);
         var toolResponse = new ChatResponse([assistantMessage]);
         var llmCallCount = 0;
 
@@ -879,7 +879,7 @@ public class AgentServiceTests
         var preferencesMock = preferencesService ?? Substitute.For<IPreferencesService>();
         if (preferencesService == null)
         {
-            preferencesMock.GetAllPreferencesAsync(Arg.Any<string>()).Returns(new List<PreferenceDto>());
+            preferencesMock.GetAllPreferencesAsync(Arg.Any<string>()).Returns([]);
         }
 
         var chatClientProviderMock = Substitute.For<IMistralChatClientProvider>();
@@ -898,10 +898,10 @@ public class AgentServiceTests
         });
 
         var sessionMock = Substitute.For<ISessionService>();
-        sessionMock.GetUnitsAsync().Returns(new List<string>());
+        sessionMock.GetUnitsAsync().Returns([]);
 
         var factoryMock = Substitute.For<IShopToolExecutorFactory>();
-        factoryMock.AvailableShops.Returns(new List<ShopConfig> { new("coop", "Coop", "https://www.coop.ch", "https://www.coop.ch/de/cart") });
+        factoryMock.AvailableShops.Returns([new("coop", "Coop", "https://www.coop.ch", "https://www.coop.ch/de/cart")]);
         factoryMock.GetExecutor("coop").Returns(toolExecutor);
 
         var meterFactory = Substitute.For<IMeterFactory>();

@@ -299,10 +299,14 @@ public class ChatClientProviderTests
         result.Should().BeFalse();
     }
 
+    // A fresh HttpClient per call is intentional here: each test may use a different endpoint/options
+    // combination and genuinely does not perform real network I/O (IDISP014 false positive for this factory).
+#pragma warning disable IDISP014
     private static MistralChatClientProvider CreateTestee(string? endpoint = null, ILogger<MistralChatClientProvider>? logger = null) =>
         new(new HttpClient(),
             logger ?? NullLogger<MistralChatClientProvider>.Instance,
             Options.Create(new LlmClientOptions { ApiKey = "test-key-123", Endpoint = endpoint ?? "https://api.mistral.ai/v1" }));
+#pragma warning restore IDISP014
 
     // Each test supplies its own fake handler to simulate a distinct HTTP scenario, so a
     // shared HttpClient instance across tests is not viable here (IDISP014 false positive).

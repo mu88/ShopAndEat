@@ -254,7 +254,7 @@
     border-radius: 12px;
     line-height: 1.5;
     font-size: 0.95rem;
-    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .chat-message.user .message-text {

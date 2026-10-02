@@ -1,4 +1,5 @@
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -49,7 +50,7 @@ public sealed class LlmIntegrationFixture : IDisposable
                 _ =>
                 {
                     var sessionMock = Substitute.For<ISessionService>();
-                    sessionMock.GetUnitsAsync().Returns(new List<string>());
+                    sessionMock.GetUnitsAsync().Returns([]);
                     return sessionMock;
                 });
         });
@@ -58,11 +59,11 @@ public sealed class LlmIntegrationFixture : IDisposable
         services.AddScoped<IShopToolExecutorFactory>(sp =>
         {
             var factoryMock = Substitute.For<IShopToolExecutorFactory>();
-            factoryMock.AvailableShops.Returns(new List<ShopConfig>
-            {
+            factoryMock.AvailableShops.Returns(
+            [
                 new("coop", "Coop", "https://www.coop.ch", "https://www.coop.ch/de/cart"),
                 new("migros", "Migros", "https://www.migros.ch", "https://www.migros.ch/de/warenkorb"),
-            });
+            ]);
 
             _scriptedToolExecutor = new ScriptedShopToolExecutor();
             factoryMock.GetExecutor(Arg.Any<string>()).Returns(_scriptedToolExecutor);
@@ -135,7 +136,7 @@ public sealed class LlmIntegrationFixture : IDisposable
 /// </summary>
 public sealed class ScriptedShopToolExecutor : IShopToolExecutor
 {
-    private readonly List<ToolCall> _recordedCalls = new();
+    private readonly List<ToolCall> _recordedCalls = [];
     private readonly Dictionary<string, List<ShopProduct>> _searchScripts = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ProductDetails> _detailsScripts = new(StringComparer.OrdinalIgnoreCase);
 
@@ -185,7 +186,7 @@ public sealed class ScriptedShopToolExecutor : IShopToolExecutor
         }
 
         // Return empty results if no script defined
-        return Task.FromResult((IReadOnlyList<ShopProduct>)new List<ShopProduct>());
+        return Task.FromResult((IReadOnlyList<ShopProduct>)[]);
     }
 
     public Task<ProductDetails> GetProductDetailsAsync(string productUrl, CancellationToken ct = default)
@@ -215,7 +216,7 @@ public sealed class ScriptedShopToolExecutor : IShopToolExecutor
             Arguments = new { product_url = productUrl, quantity }
         });
 
-        return Task.FromResult($"added:{quantity}");
+        return Task.FromResult($"added:{quantity.ToString(CultureInfo.InvariantCulture)}");
     }
 
     public Task<string> RemoveFromCartAsync(string productName, string? cartEntryUid = null, CancellationToken ct = default)

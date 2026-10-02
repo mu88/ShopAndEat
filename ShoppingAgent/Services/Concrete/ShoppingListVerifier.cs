@@ -11,6 +11,15 @@ namespace ShoppingAgent.Services.Concrete;
 /// </summary>
 public partial class ShoppingListVerifier : IShoppingListVerifier
 {
+    // Matches leading patterns like "3 Packungen", "75 Gramm", "1 Stück (klein)", "2x", etc.
+    // MA0009 suppressed: Pattern \d+[\.,]?\d* is optional (the optional units and trailing content never backtrack), so matching always succeeds immediately.
+#pragma warning disable MA0009
+    [GeneratedRegex(
+        @"^\d+[\.,]?\d*\s*(?:x\s*)?(?:Packung(?:en)?|Stück|Pack|Dosen?|Flaschen?|Glas|Gläser|Gramm|Kilogramm|kg|g|Liter|Milliliter|ml|l|Bund|Blatt|Scheiben?|Portion(?:en)?|St\b)?\.?\s*(?:\([^)]*\))?\s*",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture)]
+    private static partial Regex LeadingQuantityPattern { get; }
+#pragma warning restore MA0009
+
     public IReadOnlyList<string> FindMissingItems(string shoppingList, string cartContents)
     {
         if (string.IsNullOrWhiteSpace(shoppingList) || string.IsNullOrWhiteSpace(cartContents))
@@ -31,7 +40,7 @@ public partial class ShoppingListVerifier : IShoppingListVerifier
                 continue;
             }
 
-            var keyword = LeadingQuantityPattern().Replace(trimmed, string.Empty).Trim();
+            var keyword = LeadingQuantityPattern.Replace(trimmed, string.Empty).Trim();
             if (string.IsNullOrEmpty(keyword))
             {
                 continue;
@@ -56,13 +65,4 @@ public partial class ShoppingListVerifier : IShoppingListVerifier
         var words = keyword.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return words.Any(word => word.Length > 3 && cartLower.Contains(word.ToLowerInvariant(), StringComparison.Ordinal));
     }
-
-    // Matches leading patterns like "3 Packungen", "75 Gramm", "1 Stück (klein)", "2x", etc.
-    // MA0009 suppressed: Pattern \d+[\.,]?\d* is optional (the optional units and trailing content never backtrack), so matching always succeeds immediately.
-#pragma warning disable MA0009
-    [GeneratedRegex(
-        @"^\d+[\.,]?\d*\s*(?:x\s*)?(?:Packung(?:en)?|Stück|Pack|Dosen?|Flaschen?|Glas|Gläser|Gramm|Kilogramm|kg|g|Liter|Milliliter|ml|l|Bund|Blatt|Scheiben?|Portion(?:en)?|St\b)?\.?\s*(?:\([^)]*\))?\s*",
-        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture)]
-    private static partial Regex LeadingQuantityPattern();
-#pragma warning restore MA0009
 }

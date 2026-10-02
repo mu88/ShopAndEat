@@ -83,7 +83,7 @@ public class ToolResultCompressor : IToolResultCompressor
     {
         try
         {
-            if (rawResult.StartsWith("[", StringComparison.Ordinal))
+            if (rawResult.StartsWith('['))
             {
                 // The StartsWith check above guarantees non-empty, array-shaped JSON, so Deserialize never returns null here.
                 var items = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(rawResult, ReadOptions)!;
@@ -120,7 +120,7 @@ public class ToolResultCompressor : IToolResultCompressor
     {
         try
         {
-            if (rawResult.StartsWith("{", StringComparison.Ordinal))
+            if (rawResult.StartsWith('{'))
             {
                 // The StartsWith check above guarantees non-empty, object-shaped JSON, so Deserialize never returns null here.
                 var result = JsonSerializer.Deserialize<Dictionary<string, object>>(rawResult, ReadOptions)!;

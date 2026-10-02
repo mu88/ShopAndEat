@@ -739,7 +739,7 @@ public class ToolCallDispatcherTests
             "You MUST output the table and questions as text before calling request_clarification. " +
             "NEVER skip the table output, even if most rows are unchanged.");
         _workflowStateMock.Received(1).MoveToAwaitingClarification(
-            Arg.Is<IEnumerable<string>>(items => items.SequenceEqual(new[] { "Garlic", "Lemon" })));
+            Arg.Is<IEnumerable<string>>(items => items.SequenceEqual(GarlicLemonItems)));
     }
 
     [Test]

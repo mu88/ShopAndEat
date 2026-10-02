@@ -53,15 +53,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("tofu", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Organic Tofu 400g",
-                Price = "4.50",
-                Url = "https://coop.ch/p/tofu-organic",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("tofu", [new() { Name = "Organic Tofu 400g", Price = "4.50", Url = "https://coop.ch/p/tofu-organic" }]);
 
         // Act — simple search query
         var chunks = new List<string>();
@@ -83,15 +75,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         await _fixture.AgentService.InitializeAsync("coop");
 
         const string productUrl = "https://coop.ch/p/tofu-organic";
-        _fixture.ToolExecutor.ScriptSearch("tofu", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Organic Tofu 400g",
-                Price = "4.50",
-                Url = productUrl,
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("tofu", [new() { Name = "Organic Tofu 400g", Price = "4.50", Url = productUrl }]);
 
         _fixture.ToolExecutor.ScriptDetails(productUrl, new ProductDetails
         {
@@ -124,15 +108,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("milk", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Organic Milk 1L",
-                Price = "2.80",
-                Url = "https://coop.ch/p/milk-organic",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("milk", [new() { Name = "Organic Milk 1L", Price = "2.80", Url = "https://coop.ch/p/milk-organic" }]);
 
         // Act — ask agent to save preference
         var chunks = new List<string>();
@@ -179,15 +155,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("bread", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Whole Wheat Bread 500g",
-                Price = "3.20",
-                Url = "https://coop.ch/p/bread-wheat",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("bread", [new() { Name = "Whole Wheat Bread 500g", Price = "3.20", Url = "https://coop.ch/p/bread-wheat" }]);
 
         // Act — ask for ambiguous item
         var chunks = new List<string>();
@@ -209,15 +177,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("bread", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Whole Wheat Bread 500g",
-                Price = "3.20",
-                Url = "https://coop.ch/p/bread-wheat",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("bread", [new() { Name = "Whole Wheat Bread 500g", Price = "3.20", Url = "https://coop.ch/p/bread-wheat" }]);
 
         // Act — first message then a clarification reply
         var chunks1 = new List<string>();
@@ -249,15 +209,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("apple", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Organic Apples 1kg",
-                Price = "5.99",
-                Url = "https://coop.ch/p/apples",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("apple", [new() { Name = "Organic Apples 1kg", Price = "5.99", Url = "https://coop.ch/p/apples" }]);
 
         // Act — request purchase
         var chunks = new List<string>();
@@ -278,15 +230,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("apple", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Organic Apples 1kg",
-                Price = "5.99",
-                Url = "https://coop.ch/p/apples",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("apple", [new() { Name = "Organic Apples 1kg", Price = "5.99", Url = "https://coop.ch/p/apples" }]);
 
         // Act — initial request and then confirmation
         var chunks1 = new List<string>();
@@ -318,15 +262,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         await _fixture.AgentService.InitializeAsync("coop");
 
         const string productUrl = "https://coop.ch/p/cheese";
-        _fixture.ToolExecutor.ScriptSearch("cheese", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Swiss Cheese 200g",
-                Price = "6.50",
-                Url = productUrl,
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("cheese", [new() { Name = "Swiss Cheese 200g", Price = "6.50", Url = productUrl }]);
 
         // Act — request to add to cart
         var chunks = new List<string>();
@@ -404,15 +340,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("egg", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Eggs 10 pieces",
-                Price = "3.99",
-                Url = "https://coop.ch/p/eggs",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("egg", [new() { Name = "Eggs 10 pieces", Price = "3.99", Url = "https://coop.ch/p/eggs" }]);
 
         // Act — ask to verify cart matches shopping list
         var chunks = new List<string>();
@@ -459,15 +387,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("milk", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Fresh Milk 1L",
-                Price = "2.99",
-                Url = "https://coop.ch/p/milk",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("milk", [new() { Name = "Fresh Milk 1L", Price = "2.99", Url = "https://coop.ch/p/milk" }]);
 
         // Act — start conversation, switch shop, resume
         var chunks1 = new List<string>();
@@ -478,15 +398,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
 
         await _fixture.AgentService.SwitchShopAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("bread", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Fresh Bread 400g",
-                Price = "2.50",
-                Url = "https://coop.ch/p/bread",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("bread", [new() { Name = "Fresh Bread 400g", Price = "2.50", Url = "https://coop.ch/p/bread" }]);
 
         var chunks2 = new List<string>();
         await foreach (var chunk in _fixture.AgentService.ProcessMessageAsync("Now get bread"))
@@ -511,15 +423,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("banana", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Yellow Bananas per kg",
-                Price = "2.19",
-                Url = "https://coop.ch/p/banana",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("banana", [new() { Name = "Yellow Bananas per kg", Price = "2.19", Url = "https://coop.ch/p/banana" }]);
 
         _fixture.ToolExecutor.ScriptDetails("https://coop.ch/p/banana", new ProductDetails
         {
@@ -549,15 +453,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         await _fixture.AgentService.InitializeAsync("coop");
 
         const string productUrl = "https://coop.ch/p/orange";
-        _fixture.ToolExecutor.ScriptSearch("orange", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Orange Juice 1L",
-                Price = "3.50",
-                Url = productUrl,
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("orange", [new() { Name = "Orange Juice 1L", Price = "3.50", Url = productUrl }]);
 
         // Act — search, potentially add, confirm, navigate (multi-turn workflow)
         var chunks1 = new List<string>();
@@ -596,7 +492,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("unobtainium", new List<ShopProduct>());
+        _fixture.ToolExecutor.ScriptSearch("unobtainium", []);
 
         // Act — search for non-existent item
         var chunks = new List<string>();
@@ -617,25 +513,9 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("apple", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Apples 1kg",
-                Price = "3.99",
-                Url = "https://coop.ch/p/apple",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("apple", [new() { Name = "Apples 1kg", Price = "3.99", Url = "https://coop.ch/p/apple" }]);
 
-        _fixture.ToolExecutor.ScriptSearch("orange", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Oranges 1kg",
-                Price = "4.50",
-                Url = "https://coop.ch/p/orange",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("orange", [new() { Name = "Oranges 1kg", Price = "4.50", Url = "https://coop.ch/p/orange" }]);
 
         // Act — multiple consecutive requests
         var all = new List<string>();
@@ -690,15 +570,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("milk", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Fresh Milk 1L",
-                Price = "2.99",
-                Url = "https://coop.ch/p/milk",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("milk", [new() { Name = "Fresh Milk 1L", Price = "2.99", Url = "https://coop.ch/p/milk" }]);
 
         // Act — ask for confirmation
         var chunks = new List<string>();
@@ -724,15 +596,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("butter", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Butter 250g",
-                Price = "3.50",
-                Url = "https://coop.ch/p/butter",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("butter", [new() { Name = "Butter 250g", Price = "3.50", Url = "https://coop.ch/p/butter" }]);
 
         // Act — move through workflow phases
         var chunks1 = new List<string>();
@@ -764,15 +628,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("cheese", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Swiss Cheese 200g",
-                Price = "6.50",
-                Url = "https://coop.ch/p/cheese",
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("cheese", [new() { Name = "Swiss Cheese 200g", Price = "6.50", Url = "https://coop.ch/p/cheese" }]);
 
         // Act — move through workflow
         var chunks1 = new List<string>();
@@ -809,15 +665,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         await _fixture.AgentService.InitializeAsync("coop");
 
         const string productUrl = "https://coop.ch/p/yogurt";
-        _fixture.ToolExecutor.ScriptSearch("yogurt", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Plain Yogurt 500g",
-                Price = "2.50",
-                Url = productUrl,
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("yogurt", [new() { Name = "Plain Yogurt 500g", Price = "2.50", Url = productUrl }]);
 
         _fixture.ToolExecutor.ScriptDetails(productUrl, new ProductDetails
         {
@@ -847,15 +695,7 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         await _fixture.AgentService.InitializeAsync("coop");
 
         const string productUrl = "https://coop.ch/p/honey";
-        _fixture.ToolExecutor.ScriptSearch("honey", new List<ShopProduct>
-        {
-            new()
-            {
-                Name = "Organic Honey 500ml",
-                Price = "8.99",
-                Url = productUrl,
-            }
-        });
+        _fixture.ToolExecutor.ScriptSearch("honey", [new() { Name = "Organic Honey 500ml", Price = "8.99", Url = productUrl }]);
 
         // Act — search, add, view, and remove (multi-turn workflow)
         var chunks1 = new List<string>();
@@ -890,15 +730,9 @@ public sealed class ShoppingAgentLlmTests : IDisposable
         // Arrange
         await _fixture.AgentService.InitializeAsync("coop");
 
-        _fixture.ToolExecutor.ScriptSearch("pasta", new List<ShopProduct>
-        {
-            new() { Name = "Pasta 500g", Price = "1.50", Url = "https://coop.ch/p/pasta" }
-        });
+        _fixture.ToolExecutor.ScriptSearch("pasta", [new() { Name = "Pasta 500g", Price = "1.50", Url = "https://coop.ch/p/pasta" }]);
 
-        _fixture.ToolExecutor.ScriptSearch("tomato", new List<ShopProduct>
-        {
-            new() { Name = "Tomato Sauce 300ml", Price = "2.20", Url = "https://coop.ch/p/tomato" }
-        });
+        _fixture.ToolExecutor.ScriptSearch("tomato", [new() { Name = "Tomato Sauce 300ml", Price = "2.20", Url = "https://coop.ch/p/tomato" }]);
 
         // Act
         var chunks1 = new List<string>();

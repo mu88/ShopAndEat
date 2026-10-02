@@ -51,36 +51,36 @@ public sealed class ResilientChatClient : IChatClient
     }
 
     public async Task<ChatResponse> GetResponseAsync(
-        IEnumerable<ChatMessage> chatMessages,
+        IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         if (!_agentOptions.RetryEnabled)
         {
-            return await _primaryClient.GetResponseAsync(chatMessages, options, cancellationToken);
+            return await _primaryClient.GetResponseAsync(messages, options, cancellationToken);
         }
 
-        var messages = chatMessages.ToList();
+        var messageList = messages.ToList();
         try
         {
             return await _chatResponsePipeline.ExecuteAsync(
-                async token => await _primaryClient.GetResponseAsync(messages, options, token),
+                async token => await _primaryClient.GetResponseAsync(messageList, options, token),
                 cancellationToken);
         }
         catch (ClientResultException ex) when (IsRateLimited(ex))
         {
-            return await HandleRetriesExhaustedAsync(messages, options, ex, cancellationToken);
+            return await HandleRetriesExhaustedAsync(messageList, options, ex, cancellationToken);
         }
     }
 
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
-        IEnumerable<ChatMessage> chatMessages,
+        IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (!_agentOptions.RetryEnabled)
         {
-            await foreach (var chunk in _primaryClient.GetStreamingResponseAsync(chatMessages, options, cancellationToken))
+            await foreach (var chunk in _primaryClient.GetStreamingResponseAsync(messages, options, cancellationToken))
             {
                 yield return chunk;
             }
@@ -88,20 +88,20 @@ public sealed class ResilientChatClient : IChatClient
             yield break;
         }
 
-        var messages = chatMessages.ToList();
+        var messageList = messages.ToList();
         IAsyncEnumerable<ChatResponseUpdate> response;
         try
         {
             response = await _streamingStartPipeline.ExecuteAsync(
-                token => ValueTask.FromResult(_primaryClient.GetStreamingResponseAsync(messages, options, token)),
+                token => ValueTask.FromResult(_primaryClient.GetStreamingResponseAsync(messageList, options, token)),
                 cancellationToken);
         }
         catch (ClientResultException ex) when (IsRateLimited(ex))
         {
-            response = await HandleRetriesExhaustedStreamAsync(messages, options, ex, cancellationToken);
+            response = await HandleRetriesExhaustedStreamAsync(messageList, options, ex, cancellationToken);
         }
 
-        await foreach (var chunk in response)
+        await foreach (var chunk in response.WithCancellation(cancellationToken))
         {
             yield return chunk;
         }

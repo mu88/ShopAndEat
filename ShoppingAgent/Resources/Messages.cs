@@ -11,4 +11,6 @@ namespace ShoppingAgent.Resources;
 /// Without this class, injecting <c>IStringLocalizer&lt;Messages&gt;</c> from within
 /// ShoppingAgent would not resolve the correct .resx files.
 /// </remarks>
+#pragma warning disable MA0206 // "class Messages;" would trigger StyleCop SA1106 (empty statement) - braces are required here.
 public class Messages { }
+#pragma warning restore MA0206
