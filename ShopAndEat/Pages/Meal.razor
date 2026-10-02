@@ -17,7 +17,7 @@
 @inject TimeProvider TimeProvider
 @* TODO mu88: Build translator *@
 
-<select @onchange="SelectedStoreChanged">
+<select @onchange="SelectedStoreChanged" data-testid="meal-store-select">
     @foreach (var store in Stores)
     {
         <option value="@store.Name">@store.Name</option>
@@ -26,11 +26,11 @@
 
 @if (SelectedStore == null)
 {
-    <button class="btn btn-primary" disabled>Get shopping list</button>
+    <button class="btn btn-primary" disabled data-testid="get-shopping-list-button">Get shopping list</button>
 }
 else
 {
-    <button class="btn btn-primary" @onclick="GetShoppingListAsync">Get shopping list</button>
+    <button class="btn btn-primary" @onclick="GetShoppingListAsync" data-testid="get-shopping-list-button">Get shopping list</button>
 }
 
 <hr>
@@ -53,33 +53,33 @@ else
         {
             @if (meal.Day.Date == Today)
             {
-                <tr style="background-color:#00FF00">
+                <tr style="background-color:#00FF00" data-testid="meal-row-@meal.MealId.Value">
                     <td>@meal.Day.ToShortDateString() (@meal.Day.ToString("dddd"))</td>
                     <td>@meal.MealType.Name</td>
                     <td>@meal.Recipe.Name</td>
-                    <td>@meal.HasBeenShopped</td>
+                    <td data-testid="meal-has-been-shopped-@meal.MealId.Value">@meal.HasBeenShopped</td>
                     <td>@meal.NumberOfPersons</td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))">❌</button>
+                        <button class="btn btn-primary" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))" data-testid="delete-meal-button-@meal.MealId.Value">❌</button>
                     </td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => ToggleAsync(meal.MealId.Value))">🔃</button>
+                        <button class="btn btn-primary" @onclick="@(_ => ToggleAsync(meal.MealId.Value))" data-testid="toggle-meal-button-@meal.MealId.Value">🔃</button>
                     </td>
                 </tr>
             }
             else
             {
-                <tr>
+                <tr data-testid="meal-row-@meal.MealId.Value">
                     <td>@meal.Day.ToShortDateString() (@meal.Day.ToString("dddd"))</td>
                     <td>@meal.MealType.Name</td>
                     <td>@meal.Recipe.Name</td>
-                    <td>@meal.HasBeenShopped</td>
+                    <td data-testid="meal-has-been-shopped-@meal.MealId.Value">@meal.HasBeenShopped</td>
                     <td>@meal.NumberOfPersons</td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))">❌</button>
+                        <button class="btn btn-primary" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))" data-testid="delete-meal-button-@meal.MealId.Value">❌</button>
                     </td>
                     <td>
-                        <button class="btn btn-primary" @onclick="@(_ => ToggleAsync(meal.MealId.Value))">🔃</button>
+                        <button class="btn btn-primary" @onclick="@(_ => ToggleAsync(meal.MealId.Value))" data-testid="toggle-meal-button-@meal.MealId.Value">🔃</button>
                     </td>
                 </tr>
             }
@@ -94,7 +94,7 @@ else
     <p>
         <label>
             Recipe:
-            <select @onchange="SelectedRecipeChanged">
+            <select @onchange="SelectedRecipeChanged" data-testid="meal-recipe-select">
                 <option>Choose Recipe...</option>
                 @foreach (var recipe in Recipes.OrderBy(x => x.Name))
                 {
@@ -106,7 +106,7 @@ else
     <p>
         <label>
             Meal type:
-            <InputSelect @bind-Value="_mealModel.MealTypeName">
+            <InputSelect @bind-Value="_mealModel.MealTypeName" data-testid="meal-type-select">
                 <option>Choose Meal Type...</option>
                 @foreach (var mealType in MealTypes.OrderBy(x => x.Name))
                 {
@@ -118,23 +118,23 @@ else
     <p>
         <label>
             Date:
-            <InputDate @bind-Value="_mealModel.Date"/>
+            <InputDate @bind-Value="_mealModel.Date" data-testid="meal-date-input"/>
         </label>
     </p>
     <p>
         <label>
             Number of Persons:
-            <InputNumber @bind-Value="_mealModel.NumberOfPersons"/>
+            <InputNumber @bind-Value="_mealModel.NumberOfPersons" data-testid="meal-persons-input"/>
         </label>
     </p>
     <p>
         <label>
             Number of Days:
-            <InputNumber @bind-Value="_mealModel.NumberOfDays"/>
+            <InputNumber @bind-Value="_mealModel.NumberOfDays" data-testid="meal-days-input"/>
         </label>
     </p>
 
-    <button type="submit">Save</button>
+    <button type="submit" data-testid="meal-save-button">Save</button>
 </EditForm>
 
 <hr>

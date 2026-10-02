@@ -1,66 +1,32 @@
 using System.Net;
 using System.Net.Http.Json;
-using Docker.DotNet;
-using Docker.DotNet.Models;
-using DotNet.Testcontainers.Containers;
 using DTO.ShoppingPreference;
 using DTO.ShoppingSession;
 using FluentAssertions;
 using NUnit.Framework;
-using NUnit.Framework.Interfaces;
 
 namespace Tests.System;
 
 [Category("System")]
 public class ShoppingFeatureSystemTests
 {
-    private static CancellationTokenSource _cancellationTokenSource = null!;
-    private static CancellationToken _cancellationToken;
-    private static DockerClient _dockerClient = null!;
-    private static IContainer _container = null!;
-    private static HttpClient _httpClient = null!;
+    private CancellationTokenSource _cancellationTokenSource = null!;
+    private CancellationToken _cancellationToken;
+    private HttpClient _httpClient = null!;
 
-    [OneTimeSetUp]
-    public static async Task OneTimeSetup()
+    [SetUp]
+    public void Setup()
     {
-        _cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        _cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(2));
         _cancellationToken = _cancellationTokenSource.Token;
-        _dockerClient = new DockerClientBuilder().Build();
-
-        var containerImageTag = DockerTestInfrastructure.GenerateContainerImageTag();
-        await DockerTestInfrastructure.BuildDockerImageOfAppAsync(containerImageTag, _cancellationToken);
-        _container = await DockerTestInfrastructure.StartAppInContainersAsync(containerImageTag, _cancellationToken);
-        _httpClient = new HttpClient { BaseAddress = DockerTestInfrastructure.GetAppBaseAddress(_container) };
+        _httpClient = new HttpClient { BaseAddress = SystemTestsFixture.AppBaseAddress };
     }
 
-    [OneTimeTearDown]
-    public static async Task OneTimeTeardown()
+    [TearDown]
+    public void Teardown()
     {
         _httpClient?.Dispose();
-
-        try
-        {
-            if (_container is not null)
-            {
-                await _container.StopAsync(CancellationToken.None);
-                await _container.DisposeAsync();
-
-                // Only delete the image when tests passed (keep for investigation on failure)
-                var allPassed = TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Passed;
-                if (allPassed && !string.IsNullOrWhiteSpace(_container.Image.FullName))
-                {
-                    await _dockerClient.Images.DeleteImageAsync(
-                        _container.Image.FullName,
-                        new ImageDeleteParameters { Force = true },
-                        CancellationToken.None);
-                }
-            }
-        }
-        finally
-        {
-            _dockerClient?.Dispose();
-            _cancellationTokenSource?.Dispose();
-        }
+        _cancellationTokenSource?.Dispose();
     }
 
     [Test]
@@ -107,8 +73,7 @@ public class ShoppingFeatureSystemTests
         response.StatusCode.Should().Be(HttpStatusCode.OK, "because the Blazor Server shopping page should be served");
 
         // With InteractiveServer render mode, the first response is SSR pre-rendered,
-        // so the component markup (including localised text) must be present immediately —
-        // unlike WASM where the server returned an empty shell and rendering happened in-browser.
+        // so the component markup (including localised text) must be present immediately.
         html.Should().Contain("Shopping Assistant", "because the Home component is pre-rendered SSR and its content must be in the initial HTML");
         html.Should().Contain("blazor.server.js", "because the Blazor Server runtime script must be referenced for subsequent interactivity");
     }
@@ -123,34 +88,34 @@ public class ShoppingFeatureSystemTests
         response.StatusCode.Should().Be(HttpStatusCode.OK, "because the Blazor Server runtime (blazor.server.js) must be loadable for the shopping page to work");
     }
 
-    private static async Task CreatePreference(string scope, string key, string value)
+    private async Task CreatePreference(string scope, string key, string value)
     {
         var request = new PreferenceRequest { Scope = scope, Key = key, Value = value };
-        var content = global::System.Net.Http.Json.JsonContent.Create(request);
+        var content = JsonContent.Create(request);
         var response = await _httpClient.PostAsync("/shopAndEat/api/preferences", content, _cancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK, $"because creating preference '{scope}/{key}' should succeed");
     }
 
-    private static async Task<List<PreferenceResponse>> GetAllPreferences()
+    private async Task<List<PreferenceResponse>> GetAllPreferences()
     {
         var preferences = await _httpClient.GetFromJsonAsync<List<PreferenceResponse>>("/shopAndEat/api/preferences", _cancellationToken);
         preferences.Should().NotBeNull("because GET preferences should return a valid response");
         return preferences!;
     }
 
-    private static async Task DeletePreference(string scope, string key)
+    private async Task DeletePreference(string scope, string key)
     {
         var response = await _httpClient.DeleteAsync($"/shopAndEat/api/preferences?scope={Uri.EscapeDataString(scope)}&key={Uri.EscapeDataString(key)}", _cancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.NoContent, $"because deleting preference '{scope}/{key}' should succeed");
     }
 
-    private static async Task VerifyPreferencesCount(int expectedCount)
+    private async Task VerifyPreferencesCount(int expectedCount)
     {
         var preferences = await GetAllPreferences();
         preferences.Should().HaveCount(expectedCount,
             $"because there should be {expectedCount} preference(s) at this point in the test");
     }
 
-    private static async Task<HttpResponseMessage> GetUnits()
+    private async Task<HttpResponseMessage> GetUnits()
         => await _httpClient.GetAsync("/shopAndEat/api/units", _cancellationToken);
 }

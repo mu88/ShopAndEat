@@ -355,7 +355,7 @@ public class RecipeTests : BunitContext
         // Assert
         var markup = cut.Markup;
         markup.Should().Contain("<form");
-        markup.Should().Contain("<button type=\"submit\">");
+        markup.Should().Contain("<button type=\"submit\" data-testid=\"recipe-save-button\">");
     }
 
     [Test]
@@ -371,7 +371,7 @@ public class RecipeTests : BunitContext
 
         // Assert
         var markup = cut.Markup;
-        markup.Should().Contain("<button type=\"submit\">Save</button>");
+        markup.Should().Contain("<button type=\"submit\" data-testid=\"recipe-save-button\">Save</button>");
     }
 
     [Test]

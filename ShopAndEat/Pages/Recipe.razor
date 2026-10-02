@@ -20,19 +20,19 @@
     <p>
         <label>
             Name:
-            <InputText @bind-Value="_recipeModel.Name"/>
+            <InputText @bind-Value="_recipeModel.Name" data-testid="recipe-name-input"/>
         </label>
     </p>
     <p>
         <label>
             Number of Days:
-            <InputNumber @bind-Value="_recipeModel.NumberOfDays"/>
+            <InputNumber @bind-Value="_recipeModel.NumberOfDays" data-testid="recipe-days-input"/>
         </label>
     </p>
     <p>
         <label>
             Number of Persons:
-            <InputNumber @bind-Value="_recipeModel.NumberOfPersons"/>
+            <InputNumber @bind-Value="_recipeModel.NumberOfPersons" data-testid="recipe-persons-input"/>
         </label>
     </p>
     <p>
@@ -49,10 +49,10 @@
 
             <tr>
                 <td>
-                    <input type="number" step=0.1 min=0 @bind="@SelectedQuantities[ingredientNumber]"/>
+                    <input type="number" step=0.1 min=0 @bind="@SelectedQuantities[ingredientNumber]" data-testid="ingredient-quantity-@ingredientNumber"/>
                 </td>
                 <td>
-                    <select @bind="@SelectedUnitIds[ingredientNumber]">
+                    <select @bind="@SelectedUnitIds[ingredientNumber]" data-testid="ingredient-unit-@ingredientNumber">
                         <option>Choose Unit...</option>
                         @foreach (var unit in Units.OrderBy(x => x.Name))
                         {
@@ -61,7 +61,7 @@
                     </select>
                 </td>
                 <td>
-                    <select @bind="@SelectedArticleIds[ingredientNumber]">
+                    <select @bind="@SelectedArticleIds[ingredientNumber]" data-testid="ingredient-article-@ingredientNumber">
                         <option>Choose Article...</option>
                         @foreach (var article in Articles.OrderBy(x => x.Name))
                         {
@@ -72,11 +72,11 @@
             </tr>
         }
     </table>
-    <label @onclick="AddIngredient">Add another ingredient</label>
-    <label @onclick="DeleteLastIngredient">Delete last ingredient</label>
+    <label @onclick="AddIngredient" data-testid="add-ingredient-link">Add another ingredient</label>
+    <label @onclick="DeleteLastIngredient" data-testid="delete-last-ingredient-link">Delete last ingredient</label>
     </p>
 
-    <button type="submit">Save</button>
+    <button type="submit" data-testid="recipe-save-button">Save</button>
 </EditForm>
 
 <table class="table table-striped">
@@ -90,13 +90,13 @@
     <tbody>
         @foreach (var recipe in Recipes)
         {
-            <tr>
+            <tr data-testid="recipe-row-@recipe.RecipeId.Value">
                 <td>@recipe.Name</td>
                 <td>
-                    <button class="btn btn-primary" @onclick="@(e => DeleteRecipeAsync(recipe.RecipeId.Value))">❌</button>
+                    <button class="btn btn-primary" @onclick="@(e => DeleteRecipeAsync(recipe.RecipeId.Value))" data-testid="delete-recipe-button-@recipe.RecipeId.Value">❌</button>
                 </td>
                 <td>
-                    <button class="btn btn-primary" @onclick="@(e => EditRecipeAsync(recipe.RecipeId.Value))">🖊</button>
+                    <button class="btn btn-primary" @onclick="@(e => EditRecipeAsync(recipe.RecipeId.Value))" data-testid="edit-recipe-button-@recipe.RecipeId.Value">🖊</button>
                 </td>
             </tr>
         }

@@ -17,13 +17,13 @@
     <p>
         <label>
             Name:
-            <InputText @bind-Value="_articleModel.ArticleName"/>
+            <InputText @bind-Value="_articleModel.ArticleName" data-testid="article-name-input"/>
         </label>
     </p>
     <p>
         <label>
             Article Group:
-            <InputSelect @bind-Value="_articleModel.ArticleGroupName">
+            <InputSelect @bind-Value="_articleModel.ArticleGroupName" data-testid="article-group-select">
                 <option>Choose Article Group...</option>
                 @foreach (var articleGroup in ArticleGroups.OrderBy(x => x.Name))
                 {
@@ -35,11 +35,11 @@
     <p>
         <label>
             Is Inventory:
-            <InputCheckbox @bind-Value="_articleModel.IsInventory"/>
+            <InputCheckbox @bind-Value="_articleModel.IsInventory" data-testid="article-is-inventory-checkbox"/>
         </label>
     </p>
 
-    <button type="submit">Save</button>
+    <button type="submit" data-testid="article-save-button">Save</button>
 </EditForm>
 
 <table class="table table-striped">
@@ -56,15 +56,15 @@
     <tbody>
         @foreach (var article in Articles)
         {
-            <tr>
+            <tr data-testid="article-row-@article.ArticleId.Value">
                 <td>@article.Name</td>
                 <td>@article.ArticleGroup.Name</td>
                 <td>@article.IsInventory</td>
                 <td>
-                    <button class="btn btn-primary" @onclick="@(_ => DeleteArticleAsync(article.ArticleId.Value))">❌</button>
+                    <button class="btn btn-primary" @onclick="@(_ => DeleteArticleAsync(article.ArticleId.Value))" data-testid="delete-article-button-@article.ArticleId.Value">❌</button>
                 </td>
                 <td>
-                    <button class="btn btn-primary" @onclick="@(_ => EditArticleAsync(article.ArticleId.Value))">🖊</button>
+                    <button class="btn btn-primary" @onclick="@(_ => EditArticleAsync(article.ArticleId.Value))" data-testid="edit-article-button-@article.ArticleId.Value">🖊</button>
                 </td>
             </tr>
         }
