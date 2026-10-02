@@ -202,12 +202,12 @@ public class SystemTestsFixture
         {
             if (seedDbTask.IsCompletedSuccessfully)
             {
-                _seededDbFilePath = seedDbTask.Result;
+                _seededDbFilePath = await seedDbTask;
             }
 
             if (playwrightContainerTask.IsCompletedSuccessfully)
             {
-                _playwrightContainer = playwrightContainerTask.Result;
+                _playwrightContainer = await playwrightContainerTask;
             }
         }
 

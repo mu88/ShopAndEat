@@ -9,8 +9,24 @@ namespace Tests.System;
 [Category("System")]
 public class SystemTests
 {
+    private static HttpClient _httpClient = null!;
+
     private CancellationTokenSource _cancellationTokenSource = null!;
     private CancellationToken _cancellationToken;
+
+    [OneTimeSetUp]
+    public static void OneTimeSetup()
+    {
+        // Shared across all tests in this class (not per-test) to avoid socket exhaustion from
+        // creating a new HttpClient per test (IDISP014) - BaseAddress never changes between tests.
+        _httpClient = new HttpClient { BaseAddress = SystemTestsFixture.AppBaseAddress };
+    }
+
+    [OneTimeTearDown]
+    public static void OneTimeTeardown()
+    {
+        _httpClient.Dispose();
+    }
 
     [SetUp]
     public void Setup()
@@ -28,12 +44,11 @@ public class SystemTests
     [Test]
     public async Task AppRunningInDocker_ShouldBeHealthy()
     {
-        // Arrange
-        var httpClient = new HttpClient { BaseAddress = SystemTestsFixture.AppBaseAddress };
+        // Arrange - uses the shared _httpClient created in OneTimeSetup
 
         // Act
-        var healthCheckResponse = await httpClient.GetAsync("healthz", _cancellationToken);
-        var appResponse = await httpClient.GetAsync("/", _cancellationToken);
+        var healthCheckResponse = await _httpClient.GetAsync("healthz", _cancellationToken);
+        var appResponse = await _httpClient.GetAsync("/", _cancellationToken);
 
         // Assert
         healthCheckResponse.Should().Be200Ok();
@@ -44,41 +59,38 @@ public class SystemTests
     [Test]
     public async Task ShoppingFeature_ShouldBeAccessibleInDocker()
     {
-        // Arrange
-        var httpClient = new HttpClient { BaseAddress = SystemTestsFixture.AppBaseAddress };
-
-        // Act & Assert - Preferences CRUD roundtrip
-        var getPreferences1 = await httpClient.GetAsync("/shopAndEat/api/preferences", _cancellationToken);
+        // Arrange & Act & Assert - Preferences CRUD roundtrip, uses the shared _httpClient from OneTimeSetup
+        var getPreferences1 = await _httpClient.GetAsync("/shopAndEat/api/preferences", _cancellationToken);
         getPreferences1.Should().Be200Ok();
         using var doc1 = JsonDocument.Parse(await getPreferences1.Content.ReadAsStringAsync(_cancellationToken));
         doc1.RootElement.GetArrayLength().Should().BeGreaterThanOrEqualTo(0);
 
-        var postPreferences = await httpClient.PostAsync(
+        var postPreferences = await _httpClient.PostAsync(
             "/shopAndEat/api/preferences",
             new StringContent("""{"scope":"test","key":"testKey","value":"testValue"}""", Encoding.UTF8, "application/json"),
             _cancellationToken);
         postPreferences.Should().Be200Ok();
 
-        var getPreferences2 = await httpClient.GetAsync("/shopAndEat/api/preferences", _cancellationToken);
+        var getPreferences2 = await _httpClient.GetAsync("/shopAndEat/api/preferences", _cancellationToken);
         getPreferences2.Should().Be200Ok();
         using var doc2 = JsonDocument.Parse(await getPreferences2.Content.ReadAsStringAsync(_cancellationToken));
         doc2.RootElement.GetArrayLength().Should().BeGreaterThanOrEqualTo(1);
 
-        var deletePreferences = await httpClient.DeleteAsync("/shopAndEat/api/preferences?scope=test&key=testKey", _cancellationToken);
+        var deletePreferences = await _httpClient.DeleteAsync("/shopAndEat/api/preferences?scope=test&key=testKey", _cancellationToken);
         deletePreferences.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var getPreferences3 = await httpClient.GetAsync("/shopAndEat/api/preferences", _cancellationToken);
+        var getPreferences3 = await _httpClient.GetAsync("/shopAndEat/api/preferences", _cancellationToken);
         getPreferences3.Should().Be200Ok();
 
         // Act & Assert - Sessions and Units
-        var getSessions = await httpClient.GetAsync("/shopAndEat/api/shopping/sessions", _cancellationToken);
+        var getSessions = await _httpClient.GetAsync("/shopAndEat/api/shopping/sessions", _cancellationToken);
         getSessions.Should().Be200Ok();
 
-        var getUnits = await httpClient.GetAsync("/shopAndEat/api/units", _cancellationToken);
+        var getUnits = await _httpClient.GetAsync("/shopAndEat/api/units", _cancellationToken);
         getUnits.Should().Be200Ok();
 
         // Act & Assert - WASM static files
-        var shoppingPage = await httpClient.GetAsync("/shopAndEat/shopping/", _cancellationToken);
+        var shoppingPage = await _httpClient.GetAsync("/shopAndEat/shopping/", _cancellationToken);
         shoppingPage.Should().Be200Ok();
         (await shoppingPage.Content.ReadAsStringAsync(_cancellationToken)).Should().ContainAny("blazor", "_framework");
     }

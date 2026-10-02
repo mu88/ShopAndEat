@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using FluentAssertions;
 using Microsoft.Playwright;
@@ -7,7 +6,6 @@ using NUnit.Framework;
 namespace Tests.System;
 
 [Category("System")]
-[SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP014:Use a single instance of HttpClient", Justification = "System tests create isolated HttpClient instances per test by design")]
 public class ShoppingWorkflowUiSystemTests
 {
     private IPage? _page;
@@ -73,7 +71,7 @@ public class ShoppingWorkflowUiSystemTests
         await _page.SelectOptionAsync("[data-testid='article-group-select']", SystemTestsFixture.SeededArticleGroupName);
         await _page.ClickAsync("[data-testid='article-save-button']");
 
-        await Task.Delay(500);
+        await Task.Delay(500, _cancellationToken);
     }
 
     private async Task VerifyArticleExistsViaUiAsync(string articleName)
@@ -105,7 +103,7 @@ public class ShoppingWorkflowUiSystemTests
         await _page.SelectOptionAsync("[data-testid='ingredient-article-0']", articleName);
 
         await _page.ClickAsync("[data-testid='recipe-save-button']");
-        await Task.Delay(500);
+        await Task.Delay(500, _cancellationToken);
     }
 
     private async Task VerifyRecipeExistsViaUiAsync(string recipeName)
@@ -129,7 +127,7 @@ public class ShoppingWorkflowUiSystemTests
         await _page.WaitForSelectorAsync("[data-testid='meal-recipe-select']", new() { Timeout = 15000 });
 
         await _page.SelectOptionAsync("[data-testid='meal-recipe-select']", recipeName);
-        await Task.Delay(200);
+        await Task.Delay(200, _cancellationToken);
 
         await _page.SelectOptionAsync("[data-testid='meal-type-select']", SystemTestsFixture.SeededMealTypeName);
         await _page.FillAsync("[data-testid='meal-date-input']", mealDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
@@ -137,10 +135,10 @@ public class ShoppingWorkflowUiSystemTests
         await _page.FillAsync("[data-testid='meal-days-input']", days.ToString(CultureInfo.InvariantCulture));
 
         await _page.ClickAsync("[data-testid='meal-save-button']");
-        await Task.Delay(500);
+        await Task.Delay(500, _cancellationToken);
 
         var mealRows = await _page.QuerySelectorAllAsync("[data-testid^='meal-row-']");
-        var mealRow = mealRows.Last();
+        var mealRow = mealRows[^1];
         var mealRowTestId = await mealRow.GetAttributeAsync("data-testid");
 
         if (mealRowTestId != null && mealRowTestId.StartsWith("meal-row-", StringComparison.Ordinal))
@@ -179,7 +177,7 @@ public class ShoppingWorkflowUiSystemTests
         await _page.SelectOptionAsync("[data-testid='meal-store-select']", SystemTestsFixture.SeededStoreName);
         await _page.ClickAsync("[data-testid='get-shopping-list-button']");
 
-        await Task.Delay(1000);
+        await Task.Delay(1000, _cancellationToken);
     }
 
     private async Task VerifyMealIsMarkedAsShoppedViaUiAsync(int mealId)
@@ -189,9 +187,10 @@ public class ShoppingWorkflowUiSystemTests
             WaitUntil = WaitUntilState.NetworkIdle
         });
 
-        await _page.WaitForSelectorAsync($"[data-testid='meal-has-been-shopped-{mealId}']", new() { Timeout = 5000 });
+        var mealIdText = mealId.ToString(CultureInfo.InvariantCulture);
+        await _page.WaitForSelectorAsync($"[data-testid='meal-has-been-shopped-{mealIdText}']", new() { Timeout = 5000 });
 
-        var shopCheckElement = await _page.QuerySelectorAsync($"[data-testid='meal-has-been-shopped-{mealId}']");
+        var shopCheckElement = await _page.QuerySelectorAsync($"[data-testid='meal-has-been-shopped-{mealIdText}']");
         var shopText = await shopCheckElement!.TextContentAsync();
 
         shopText!.Should().Contain("True", "because the meal should be marked as shopped after generating the shopping list");
@@ -204,10 +203,11 @@ public class ShoppingWorkflowUiSystemTests
             WaitUntil = WaitUntilState.NetworkIdle
         });
 
-        await _page.WaitForSelectorAsync($"[data-testid='toggle-meal-button-{mealId}']", new() { Timeout = 5000 });
+        var mealIdText = mealId.ToString(CultureInfo.InvariantCulture);
+        await _page.WaitForSelectorAsync($"[data-testid='toggle-meal-button-{mealIdText}']", new() { Timeout = 5000 });
 
-        await _page.ClickAsync($"[data-testid='toggle-meal-button-{mealId}']");
-        await Task.Delay(500);
+        await _page.ClickAsync($"[data-testid='toggle-meal-button-{mealIdText}']");
+        await Task.Delay(500, _cancellationToken);
     }
 
     private async Task VerifyMealIsNotMarkedAsShoppedViaUiAsync(int mealId)
@@ -217,9 +217,10 @@ public class ShoppingWorkflowUiSystemTests
             WaitUntil = WaitUntilState.NetworkIdle
         });
 
-        await _page.WaitForSelectorAsync($"[data-testid='meal-has-been-shopped-{mealId}']", new() { Timeout = 5000 });
+        var mealIdText = mealId.ToString(CultureInfo.InvariantCulture);
+        await _page.WaitForSelectorAsync($"[data-testid='meal-has-been-shopped-{mealIdText}']", new() { Timeout = 5000 });
 
-        var shopCheckElement = await _page.QuerySelectorAsync($"[data-testid='meal-has-been-shopped-{mealId}']");
+        var shopCheckElement = await _page.QuerySelectorAsync($"[data-testid='meal-has-been-shopped-{mealIdText}']");
         var shopText = await shopCheckElement!.TextContentAsync();
 
         shopText!.Should().Contain("False", "because the meal should no longer be marked as shopped after toggling");

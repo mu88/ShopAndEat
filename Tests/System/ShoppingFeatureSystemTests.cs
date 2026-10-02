@@ -10,22 +10,35 @@ namespace Tests.System;
 [Category("System")]
 public class ShoppingFeatureSystemTests
 {
+    private static HttpClient _httpClient = null!;
+
     private CancellationTokenSource _cancellationTokenSource = null!;
     private CancellationToken _cancellationToken;
-    private HttpClient _httpClient = null!;
+
+    [OneTimeSetUp]
+    public static void OneTimeSetup()
+    {
+        // Shared across all tests in this class (not per-test) to avoid socket exhaustion from
+        // creating a new HttpClient per test (IDISP014) - BaseAddress never changes between tests.
+        _httpClient = new HttpClient { BaseAddress = SystemTestsFixture.AppBaseAddress };
+    }
+
+    [OneTimeTearDown]
+    public static void OneTimeTeardown()
+    {
+        _httpClient.Dispose();
+    }
 
     [SetUp]
     public void Setup()
     {
         _cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(2));
         _cancellationToken = _cancellationTokenSource.Token;
-        _httpClient = new HttpClient { BaseAddress = SystemTestsFixture.AppBaseAddress };
     }
 
     [TearDown]
     public void Teardown()
     {
-        _httpClient?.Dispose();
         _cancellationTokenSource?.Dispose();
     }
 
