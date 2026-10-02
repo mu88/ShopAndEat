@@ -17,6 +17,7 @@
     <PackageReference Include="nunit" />
     <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Testcontainers.Playwright" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BizDbAccess\BizDbAccess.csproj" />
@@ -26,6 +27,11 @@
     <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
     <ProjectReference Include="..\ShopAndEat\ShopAndEat.csproj" />
     <ProjectReference Include="..\ShoppingAgent\ShoppingAgent.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="testData\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <AssemblyAttribute Include="NUnit.Framework.FixtureLifeCycle">

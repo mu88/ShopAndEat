@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Playwright;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
+using Testcontainers.Playwright;
 
 namespace Tests.System;
 
@@ -23,9 +24,7 @@ namespace Tests.System;
 public class SystemTestsFixture
 {
     private const string AppNetworkAlias = "app";
-    private const string PlaywrightVersion = "1.48.0";
     private const string AppContainerPort = "8080";
-    private const int PlaywrightServerPort = 3000;
     private const string SeededDbFileName = "ShopAndEat.db";
     private const string AppDbDirectoryInContainer = "/tmp";
 
@@ -67,7 +66,7 @@ public class SystemTestsFixture
     private CancellationTokenSource _cancellationTokenSource = null!;
     private INetwork? _network;
     private IContainer? _appContainer;
-    private IContainer? _playwrightContainer;
+    private PlaywrightContainer? _playwrightContainer;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
 
@@ -214,11 +213,10 @@ public class SystemTestsFixture
         _appContainer = await StartAppContainerAsync(imageTag, _seededDbFilePath!);
     }
 
-    private static async Task<(IPlaywright Playwright, IBrowser Browser)> ConnectToPlaywrightAsync(IContainer playwrightContainer)
+    private static async Task<(IPlaywright Playwright, IBrowser Browser)> ConnectToPlaywrightAsync(PlaywrightContainer playwrightContainer)
     {
         var playwright = await Playwright.CreateAsync();
-        var playwrightPort = playwrightContainer.GetMappedPublicPort(PlaywrightServerPort);
-        var browser = await playwright.Chromium.ConnectAsync($"ws://localhost:{playwrightPort}");
+        var browser = await playwright.Chromium.ConnectAsync(playwrightContainer.GetConnectionString());
         return (playwright, browser);
     }
 
@@ -255,16 +253,12 @@ public class SystemTestsFixture
         return container;
     }
 
-    private async Task<IContainer> StartPlaywrightContainerAsync()
+    private async Task<PlaywrightContainer> StartPlaywrightContainerAsync()
     {
         Console.WriteLine("Building and starting Playwright container");
 
-        var container = new ContainerBuilder($"mcr.microsoft.com/playwright:v{PlaywrightVersion}-noble")
+        var container = new PlaywrightBuilder(TestcontainerImages.GetImageReference("playwright"))
             .WithNetwork(_network)
-            .WithPortBinding(PlaywrightServerPort, assignRandomHostPort: true)
-            .WithCommand("/bin/sh", "-c", $"npx -y playwright@{PlaywrightVersion} run-server --port {PlaywrightServerPort} --host 0.0.0.0")
-            .WithWaitStrategy(Wait.ForUnixContainer()
-                .UntilHttpRequestIsSucceeded(r => r.ForPort(PlaywrightServerPort).ForPath("/")))
             .Build();
 
         await container.StartAsync(_cancellationTokenSource.Token);

@@ -38,6 +38,7 @@
     <PackageVersion Include="bunit" Version="2.9.0" />
     <PackageVersion Include="Markdig" Version="1.3.2" />
     <PackageVersion Include="Testcontainers" Version="4.15.0" />
+    <PackageVersion Include="Testcontainers.Playwright" Version="4.15.0" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.48.0" />
   </ItemGroup>
   <ItemGroup>

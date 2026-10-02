@@ -1,0 +1,3 @@
+{
+  "playwright": { "image": "mcr.microsoft.com/playwright", "tag": "v1.48.0-noble" }
+}
