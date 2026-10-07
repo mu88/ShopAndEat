@@ -1,21 +1,21 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using CliWrap;
-using CliWrap.Buffered;
 using DataLayer.EF;
 using DataLayer.EfClasses;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
-using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Playwright;
+using mu88.Shared.Testing.Docker;
+using mu88.Shared.Testing.Playwright;
+using mu88.Shared.Testing.Testcontainers;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
-using Testcontainers.Playwright;
 
 namespace Tests.System;
 
@@ -27,6 +27,7 @@ public class SystemTestsFixture
     private const string AppContainerPort = "8080";
     private const string SeededDbFileName = "ShopAndEat.db";
     private const string AppDbDirectoryInContainer = "/tmp";
+    private const string DockerfilePath = "testData/system/Dockerfile";
 
     // "/home/app/db" (the production connection string's directory, see appsettings.json) is only
     // created by the docker-compose bind mount in production - it doesn't exist in the plain app
@@ -66,14 +67,13 @@ public class SystemTestsFixture
     private CancellationTokenSource _cancellationTokenSource = null!;
     private INetwork? _network;
     private IContainer? _appContainer;
-    private PlaywrightContainer? _playwrightContainer;
-    private IPlaywright? _playwright;
-    private IBrowser? _browser;
+    private PlaywrightSession? _playwrightSession;
 
     private static async Task BuildDockerImageOfAppAsync(string containerImageTag)
     {
-        var result = await DockerTestInfrastructure.BuildDockerImageOfAppAsync(containerImageTag, CancellationToken.None);
-        result.Should().BeTrue();
+        var rootDirectory = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.Parent ?? throw new NullReferenceException();
+        var projectFile = Path.Join(rootDirectory.FullName, "ShopAndEat", "ShopAndEat.csproj");
+        await DockerImageBuilder.BuildAsync(projectFile, containerImageTag, "shopandeat", rootDirectory.FullName, CancellationToken.None);
     }
 
     // Prepares a fully migrated + seeded SQLite DB file on the host, using the real DataLayer
@@ -172,8 +172,7 @@ public class SystemTestsFixture
             AppBaseAddress = new Uri($"http://localhost:{appHostPort}/shopAndEat");
             AppInternalAddress = new Uri($"http://{AppNetworkAlias}:{AppContainerPort}/shopAndEat");
 
-            (_playwright, _browser) = await ConnectToPlaywrightAsync(_playwrightContainer!);
-            Browser = _browser;
+            Browser = _playwrightSession!.Browser;
         }
         catch
         {
@@ -191,11 +190,14 @@ public class SystemTestsFixture
     {
         var imageBuildTask = BuildDockerImageOfAppAsync(imageTag);
         var seedDbTask = CreateSeededDatabaseFileAsync(_cancellationTokenSource.Token);
-        var playwrightContainerTask = StartPlaywrightContainerAsync();
+        var playwrightSessionTask = PlaywrightSession.StartAsync(
+            TestcontainerImages.GetImageFromDockerfile(DockerfilePath, "playwright"),
+            _network!,
+            _cancellationTokenSource.Token);
 
         try
         {
-            await Task.WhenAll(imageBuildTask, seedDbTask, playwrightContainerTask);
+            await Task.WhenAll(imageBuildTask, seedDbTask, playwrightSessionTask);
         }
         finally
         {
@@ -204,20 +206,13 @@ public class SystemTestsFixture
                 _seededDbFilePath = await seedDbTask;
             }
 
-            if (playwrightContainerTask.IsCompletedSuccessfully)
+            if (playwrightSessionTask.IsCompletedSuccessfully)
             {
-                _playwrightContainer = await playwrightContainerTask;
+                _playwrightSession = await playwrightSessionTask;
             }
         }
 
         _appContainer = await StartAppContainerAsync(imageTag, _seededDbFilePath!);
-    }
-
-    private static async Task<(IPlaywright Playwright, IBrowser Browser)> ConnectToPlaywrightAsync(PlaywrightContainer playwrightContainer)
-    {
-        var playwright = await Playwright.CreateAsync();
-        var browser = await playwright.Chromium.ConnectAsync(playwrightContainer.GetConnectionString());
-        return (playwright, browser);
     }
 
     [OneTimeTearDown]
@@ -253,20 +248,6 @@ public class SystemTestsFixture
         return container;
     }
 
-    private async Task<PlaywrightContainer> StartPlaywrightContainerAsync()
-    {
-        Console.WriteLine("Building and starting Playwright container");
-
-        var container = new PlaywrightBuilder(TestcontainerImages.GetImageReference("playwright"))
-            .WithNetwork(_network)
-            .Build();
-
-        await container.StartAsync(_cancellationTokenSource.Token);
-        Console.WriteLine("Playwright container started");
-
-        return container;
-    }
-
     private async Task Cleanup()
     {
         await _cancellationTokenSource.CancelAsync();
@@ -275,19 +256,9 @@ public class SystemTestsFixture
         // in-flight test operations, but Testcontainers cleanup calls need a fresh, non-cancelled token.
         using var cleanupCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
-        if (_browser != null)
+        if (_playwrightSession != null)
         {
-            await _browser.CloseAsync();
-        }
-
-        if (_playwright != null)
-        {
-            _playwright.Dispose();
-        }
-
-        if (_playwrightContainer != null)
-        {
-            await _playwrightContainer.DisposeAsync();
+            await _playwrightSession.DisposeAsync();
         }
 
         if (_appContainer != null)
