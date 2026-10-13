@@ -22,7 +22,7 @@ namespace Tests.System;
 [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1204:StaticElementsMustAppearBeforeInstanceElements", Justification = "Test fixture organization")]
 public class SystemTestsFixture
 {
-    private const string AppNetworkAlias = "app";
+    private const string AppNetworkAlias = "shopandeat-app";
     private const string AppContainerPort = "8080";
     private const string SeededDbFileName = "ShopAndEat.db";
     private const string AppDbDirectoryInContainer = "/tmp";
