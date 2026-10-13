@@ -27,15 +27,15 @@ public class SimpleCrudHelperTests
     }
 
     [Test]
-    public void FindAsync_WithStronglyTypedId_WhenEntityDoesNotExist_ThrowsKeyNotFoundException()
+    public async Task FindAsync_WithStronglyTypedId_WhenEntityDoesNotExist_ThrowsKeyNotFoundException()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
+        await using var context = new InMemoryDbContext();
         var testee = new SimpleCrudHelper(context);
         var missingUnitId = new UnitId(-1);
 
         // Act & Assert
-        Assert.ThrowsAsync<KeyNotFoundException>(async () => await testee.FindAsync<global::DataLayer.EfClasses.Unit>(missingUnitId));
+        await Assert.ThrowsAsync<KeyNotFoundException>(async () => await testee.FindAsync<global::DataLayer.EfClasses.Unit>(missingUnitId));
     }
 
     [Test]
@@ -56,14 +56,14 @@ public class SimpleCrudHelperTests
     }
 
     [Test]
-    public void FindAsync_WithIntId_WhenEntityDoesNotExist_ThrowsKeyNotFoundException()
+    public async Task FindAsync_WithIntId_WhenEntityDoesNotExist_ThrowsKeyNotFoundException()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
+        await using var context = new InMemoryDbContext();
         var testee = new SimpleCrudHelper(context);
 
         // Act & Assert
-        var exception = Assert.ThrowsAsync<KeyNotFoundException>(async () => await testee.FindAsync<Ingredient>(-1));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(async () => await testee.FindAsync<Ingredient>(-1));
         exception!.Message.Should().Be("No Ingredient entity found for key '-1'.");
     }
 
@@ -84,26 +84,26 @@ public class SimpleCrudHelperTests
     }
 
     [Test]
-    public void DeleteAsync_WithStronglyTypedId_WhenEntityDoesNotExist_ThrowsKeyNotFoundException()
+    public async Task DeleteAsync_WithStronglyTypedId_WhenEntityDoesNotExist_ThrowsKeyNotFoundException()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
+        await using var context = new InMemoryDbContext();
         var testee = new SimpleCrudHelper(context);
         var missingUnitId = new UnitId(-1);
 
         // Act & Assert
-        Assert.ThrowsAsync<KeyNotFoundException>(async () => await testee.DeleteAsync<global::DataLayer.EfClasses.Unit>(missingUnitId));
+        await Assert.ThrowsAsync<KeyNotFoundException>(async () => await testee.DeleteAsync<global::DataLayer.EfClasses.Unit>(missingUnitId));
     }
 
     [Test]
-    public void DeleteAsync_WithIntId_WhenEntityDoesNotExist_ThrowsKeyNotFoundException()
+    public async Task DeleteAsync_WithIntId_WhenEntityDoesNotExist_ThrowsKeyNotFoundException()
     {
         // Arrange
-        using var context = new InMemoryDbContext();
+        await using var context = new InMemoryDbContext();
         var testee = new SimpleCrudHelper(context);
 
         // Act & Assert
-        var exception = Assert.ThrowsAsync<KeyNotFoundException>(async () => await testee.DeleteAsync<Ingredient>(-1));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(async () => await testee.DeleteAsync<Ingredient>(-1));
         exception!.Message.Should().Be("No Ingredient entity found for key '-1'.");
     }
 }
