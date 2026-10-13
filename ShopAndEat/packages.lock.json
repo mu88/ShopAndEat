@@ -452,7 +452,7 @@
       "bizdbaccess": {
         "type": "Project",
         "dependencies": {
-          "DataLayer": "[6.0.0, )",
+          "DataLayer": "[6.1.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.10, )",
           "mu88.Shared": "[8.4.0, )"
         }
@@ -460,9 +460,9 @@
       "bizlogic": {
         "type": "Project",
         "dependencies": {
-          "BizDbAccess": "[6.0.0, )",
-          "DTO": "[6.0.0, )",
-          "DataLayer": "[6.0.0, )",
+          "BizDbAccess": "[6.1.0, )",
+          "DTO": "[6.1.0, )",
+          "DataLayer": "[6.1.0, )",
           "mu88.Shared": "[8.4.0, )"
         }
       },
@@ -478,16 +478,16 @@
       "dto": {
         "type": "Project",
         "dependencies": {
-          "DataLayer": "[6.0.0, )",
+          "DataLayer": "[6.1.0, )",
           "mu88.Shared": "[8.4.0, )"
         }
       },
       "servicelayer": {
         "type": "Project",
         "dependencies": {
-          "BizLogic": "[6.0.0, )",
-          "DTO": "[6.0.0, )",
-          "DataLayer": "[6.0.0, )",
+          "BizLogic": "[6.1.0, )",
+          "DTO": "[6.1.0, )",
+          "DataLayer": "[6.1.0, )",
           "mu88.Shared": "[8.4.0, )"
         }
       },

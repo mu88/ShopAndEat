@@ -13,7 +13,6 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Playwright;
 using mu88.Shared.Testing.Docker;
 using mu88.Shared.Testing.Playwright;
-using mu88.Shared.Testing.Testcontainers;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 
@@ -27,7 +26,6 @@ public class SystemTestsFixture
     private const string AppContainerPort = "8080";
     private const string SeededDbFileName = "ShopAndEat.db";
     private const string AppDbDirectoryInContainer = "/tmp";
-    private const string DockerfilePath = "testData/system/Dockerfile";
 
     // "/home/app/db" (the production connection string's directory, see appsettings.json) is only
     // created by the docker-compose bind mount in production - it doesn't exist in the plain app
@@ -191,7 +189,7 @@ public class SystemTestsFixture
         var imageBuildTask = BuildDockerImageOfAppAsync(imageTag);
         var seedDbTask = CreateSeededDatabaseFileAsync(_cancellationTokenSource.Token);
         var playwrightSessionTask = PlaywrightSession.StartAsync(
-            TestcontainerImages.GetImageFromDockerfile(DockerfilePath, "playwright"),
+            PlaywrightImages.GetServerImageTag(),
             _network!,
             _cancellationTokenSource.Token);
 
