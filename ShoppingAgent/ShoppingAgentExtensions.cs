@@ -74,6 +74,7 @@ public static class ShoppingAgentExtensions
         services.AddSingleton<ILlmRetryPolicyFactory, LlmRetryPolicyFactory>();
         services.AddScoped<IConversationManager, ConversationManager>();
         services.AddScoped<IShopSessionManager, ShopSessionManager>();
+        services.AddLlmResiliencePipelines();
         services.AddScoped<IAgentService, AgentService>();
     }
 }

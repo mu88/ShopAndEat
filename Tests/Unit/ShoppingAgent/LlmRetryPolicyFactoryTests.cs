@@ -4,6 +4,7 @@ using System.Diagnostics.Metrics;
 using System.Net;
 using FluentAssertions;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -11,6 +12,7 @@ using NSubstitute;
 using NUnit.Framework;
 using ShoppingAgent.Diagnostics;
 using ShoppingAgent.Options;
+using ShoppingAgent.Services;
 using ShoppingAgent.Services.Concrete;
 
 namespace Tests.Unit.ShoppingAgent;
@@ -101,7 +103,7 @@ public class LlmRetryPolicyFactoryTests
             RetryMaxAttempts = 3,
             RetryBaseDelayMs = 1,
         });
-        var factory = new LlmRetryPolicyFactory(llmOptions, metrics, NullLogger<LlmRetryPolicyFactory>.Instance);
+        var factory = CreateTestee(3, 1, metrics);
         var pipeline = factory.CreateChatResponsePipeline();
         var attempts = 0;
 
@@ -138,7 +140,7 @@ public class LlmRetryPolicyFactoryTests
     [Test]
     public async Task CreateChatResponsePipeline_When429_LogsCorrectOneBasedAttemptNumber()
     {
-        // Arrange — proves attempt = args.AttemptNumber + 1 (one-based); Polly's AttemptNumber for
+        // Arrange — proves attempt = args.AttemptNumber + 1 (one-based); the resilience pipeline's AttemptNumber for
         // the first retry is 0, so the logged attempt for that retry must be 1, not -1.
         var meterFactory = Substitute.For<IMeterFactory>();
         meterFactory.Create(Arg.Any<MeterOptions>()).Returns(callInfo => new Meter(callInfo.Arg<MeterOptions>()));
@@ -150,7 +152,7 @@ public class LlmRetryPolicyFactoryTests
             RetryBaseDelayMs = 1,
         });
         var testLogger = new TestLogger<LlmRetryPolicyFactory>();
-        var factory = new LlmRetryPolicyFactory(llmOptions, metrics, testLogger);
+        var factory = CreateTestee(3, 1, metrics, testLogger);
         var pipeline = factory.CreateChatResponsePipeline();
         var attempts = 0;
 
@@ -183,7 +185,7 @@ public class LlmRetryPolicyFactoryTests
             RetryMaxAttempts = 3,
             RetryBaseDelayMs = 1,
         });
-        var factory = new LlmRetryPolicyFactory(llmOptions, metrics, NullLogger<LlmRetryPolicyFactory>.Instance);
+        var factory = CreateTestee(3, 1, metrics);
         var pipeline = factory.CreateStreamingStartPipeline();
         var attempts = 0;
 
@@ -220,7 +222,7 @@ public class LlmRetryPolicyFactoryTests
     [Test]
     public async Task CreateStreamingStartPipeline_When429_LogsCorrectOneBasedAttemptNumber()
     {
-        // Arrange — proves attempt = args.AttemptNumber + 1 (one-based) for the streaming pipeline too.
+        // Arrange — proves attempt = args.AttemptNumber + 1 (one-based) for the streaming resilience pipeline too.
         var meterFactory = Substitute.For<IMeterFactory>();
         meterFactory.Create(Arg.Any<MeterOptions>()).Returns(callInfo => new Meter(callInfo.Arg<MeterOptions>()));
         var metrics = new ShoppingAgentMetrics(meterFactory);
@@ -231,7 +233,7 @@ public class LlmRetryPolicyFactoryTests
             RetryBaseDelayMs = 1,
         });
         var testLogger = new TestLogger<LlmRetryPolicyFactory>();
-        var factory = new LlmRetryPolicyFactory(llmOptions, metrics, testLogger);
+        var factory = CreateTestee(3, 1, metrics, testLogger);
         var pipeline = factory.CreateStreamingStartPipeline();
         var attempts = 0;
 
@@ -257,19 +259,33 @@ public class LlmRetryPolicyFactoryTests
         yield break;
     }
 
-    private static LlmRetryPolicyFactory CreateTestee(int retryMaxAttempts, int retryBaseDelayMs)
+    private static LlmRetryPolicyFactory CreateTestee(
+        int retryMaxAttempts,
+        int retryBaseDelayMs,
+        ShoppingAgentMetrics? metrics = null,
+        ILogger<LlmRetryPolicyFactory>? logger = null)
     {
-        var meterFactory = Substitute.For<IMeterFactory>();
-        meterFactory.Create(Arg.Any<MeterOptions>()).Returns(callInfo => new Meter(callInfo.Arg<MeterOptions>()));
-        var metrics = new ShoppingAgentMetrics(meterFactory);
-        var llmOptions = Options.Create(new LlmClientOptions
+        metrics ??= CreateMetrics();
+        var services = new ServiceCollection();
+        services.AddSingleton(Options.Create(new LlmClientOptions
         {
             ApiKey = "test-key",
             RetryMaxAttempts = retryMaxAttempts,
             RetryBaseDelayMs = retryBaseDelayMs,
-        });
+        }));
+        services.AddSingleton(metrics);
+        services.AddSingleton(logger ?? NullLogger<LlmRetryPolicyFactory>.Instance);
+        services.AddLlmResiliencePipelines();
+        services.AddSingleton<ILlmRetryPolicyFactory, LlmRetryPolicyFactory>();
 
-        return new LlmRetryPolicyFactory(llmOptions, metrics, NullLogger<LlmRetryPolicyFactory>.Instance);
+        return (LlmRetryPolicyFactory)services.BuildServiceProvider().GetRequiredService<ILlmRetryPolicyFactory>();
+    }
+
+    private static ShoppingAgentMetrics CreateMetrics()
+    {
+        var meterFactory = Substitute.For<IMeterFactory>();
+        meterFactory.Create(Arg.Any<MeterOptions>()).Returns(callInfo => new Meter(callInfo.Arg<MeterOptions>()));
+        return new ShoppingAgentMetrics(meterFactory);
     }
 
     private static ClientResultException CreateRateLimitException()

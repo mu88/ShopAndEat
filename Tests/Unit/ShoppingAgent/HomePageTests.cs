@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 using NSubstitute;
 using NUnit.Framework;
+using Polly.Registry;
 using ShoppingAgent.Diagnostics;
 using ShoppingAgent.Models;
 using ShoppingAgent.Options;
@@ -87,11 +88,9 @@ public class HomePageTests
         ctx.Services.AddSingleton(Options.Create(new LlmClientOptions { ApiKey = "test-key" }));
         ctx.Services.AddSingleton(Options.Create(new AgentOptions()));
         ctx.Services.AddSingleton(Options.Create(new ExtensionOptions()));
+        ctx.Services.AddLlmResiliencePipelines();
         ctx.Services.AddSingleton<ILlmRetryPolicyFactory>(serviceProvider =>
-            new LlmRetryPolicyFactory(
-                serviceProvider.GetRequiredService<IOptions<LlmClientOptions>>(),
-                serviceProvider.GetRequiredService<ShoppingAgentMetrics>(),
-                NullLogger<LlmRetryPolicyFactory>.Instance));
+            new LlmRetryPolicyFactory(serviceProvider.GetRequiredService<ResiliencePipelineProvider<string>>()));
         ctx.Services.AddSingleton<ISystemPromptBuilder, SystemPromptBuilder>();
         ctx.Services.AddSingleton<IToolDefinitionProvider, ToolDefinitionProvider>();
         ctx.Services.AddSingleton<IShoppingListVerifier, ShoppingListVerifier>();

@@ -1,11 +1,14 @@
 using System.Diagnostics.Metrics;
 using FluentAssertions;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using NUnit.Framework;
+using Polly.Registry;
 using ShoppingAgent.Diagnostics;
 using ShoppingAgent.Models;
 using ShoppingAgent.Options;
@@ -917,7 +920,7 @@ public class AgentServiceTests
         var toolCallDispatcher = new ToolCallDispatcher(factoryMock, preferencesMock, Substitute.For<IShoppingListVerifier>(), localizerMock, workflowStateMock);
         var conversationManagerInstance = conversationManager ?? CreateConversationManager(toolCallDispatcher, localizerMock, metrics, agentOptions, llmOptions);
         var shopSessionManager = new ShopSessionManager(factoryMock, NullLogger<ShopSessionManager>.Instance);
-        var retryPolicyFactory = new LlmRetryPolicyFactory(llmOptions, metrics, NullLogger<LlmRetryPolicyFactory>.Instance);
+        var retryPolicyFactory = CreateRetryPolicyFactory(llmOptions, metrics);
 
         var testee = new AgentService(
             chatClientProviderMock,
@@ -933,6 +936,18 @@ public class AgentServiceTests
             NullLogger<ResilientChatClient>.Instance);
 
         return (testee, chatClientProviderMock, metrics);
+    }
+
+    private static LlmRetryPolicyFactory CreateRetryPolicyFactory(
+        IOptions<LlmClientOptions> llmOptions,
+        ShoppingAgentMetrics metrics)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(llmOptions);
+        services.AddSingleton(metrics);
+        services.AddSingleton<ILogger<LlmRetryPolicyFactory>>(NullLogger<LlmRetryPolicyFactory>.Instance);
+        services.AddLlmResiliencePipelines();
+        return new LlmRetryPolicyFactory(services.BuildServiceProvider().GetRequiredService<ResiliencePipelineProvider<string>>());
     }
 
     private static ConversationManager CreateConversationManager(

@@ -12,7 +12,7 @@
     <PackageReference Include="HtmlSanitizer" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
     <PackageReference Include="Microsoft.Extensions.Localization" />
-    <PackageReference Include="Polly.Core" />
+    <PackageReference Include="Microsoft.Extensions.Resilience" />
     <PackageReference Include="Markdig" />
     <PackageReference Include="mu88.Shared" />
   </ItemGroup>
