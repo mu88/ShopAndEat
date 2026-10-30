@@ -101,10 +101,10 @@
                 <td>
                     <div class="btn-group" role="group">
                         <button class="btn btn-danger btn-sm" @onclick="@(e => DeleteRecipeAsync(recipe.RecipeId.Value))" data-testid="delete-recipe-button-@recipe.RecipeId.Value" title="Delete">
-                            <span class="oi oi-trash" aria-hidden="true"></span>
+                            <span class="icon icon-trash" aria-hidden="true"></span>
                         </button>
                         <button class="btn btn-warning btn-sm" @onclick="@(e => EditRecipeAsync(recipe.RecipeId.Value))" data-testid="edit-recipe-button-@recipe.RecipeId.Value" title="Edit">
-                            <span class="oi oi-pencil" aria-hidden="true"></span>
+                            <span class="icon icon-pencil" aria-hidden="true"></span>
                         </button>
                     </div>
                 </td>

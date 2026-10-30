@@ -127,15 +127,15 @@
     font-weight: 600;
 }
 
-.chat-header h1 .oi {
+.chat-header h1 .icon {
     margin-right: 0.25rem;
 }
 
-.shop-selector > .oi {
+.shop-selector > .icon {
     margin-right: 0.25rem;
 }
 
-.status-badge > .oi {
+.status-badge > .icon {
     margin-right: 0.2rem;
 }
 

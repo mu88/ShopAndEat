@@ -270,7 +270,7 @@ public class RecipeTests : BunitContext
 
         // Assert
         var buttons = cut.FindAll("button");
-        var deleteButton = buttons.FirstOrDefault(b => b.QuerySelector(".oi-trash") is not null);
+        var deleteButton = buttons.FirstOrDefault(b => b.QuerySelector(".icon-trash") is not null);
         deleteButton.Should().NotBeNull();
     }
 
@@ -292,7 +292,7 @@ public class RecipeTests : BunitContext
 
         // Assert
         var buttons = cut.FindAll("button");
-        var editButton = buttons.FirstOrDefault(b => b.QuerySelector(".oi-pencil") is not null);
+        var editButton = buttons.FirstOrDefault(b => b.QuerySelector(".icon-pencil") is not null);
         editButton.Should().NotBeNull();
     }
 
@@ -498,7 +498,7 @@ public class RecipeTests : BunitContext
         var cut = Render<Recipe>();
 
         // Act
-        var deleteButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".oi-trash") is not null);
+        var deleteButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".icon-trash") is not null);
         if (deleteButton is not null)
         {
             await deleteButton.ClickAsync();
@@ -524,7 +524,7 @@ public class RecipeTests : BunitContext
         var cut = Render<Recipe>();
 
         // Act
-        var editButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".oi-pencil") is not null);
+        var editButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".icon-pencil") is not null);
         if (editButton is not null)
         {
             await editButton.ClickAsync();
@@ -601,7 +601,7 @@ public class RecipeTests : BunitContext
         _unitService.GetAllUnitsAsync().Returns(GetResult(Array.Empty<ExistingUnitDto>()));
 
         var cut = Render<Recipe>();
-        var editButton = cut.FindAll("button.btn").First(b => b.QuerySelector(".oi-pencil") is not null);
+        var editButton = cut.FindAll("button.btn").First(b => b.QuerySelector(".icon-pencil") is not null);
         await editButton.ClickAsync();
         cut.Render();
 
@@ -629,7 +629,7 @@ public class RecipeTests : BunitContext
             .Do(callInfo => capturedDto = callInfo.Arg<UpdateRecipeDto>());
 
         var cut = Render<Recipe>();
-        var editButton = cut.FindAll("button.btn").First(b => b.QuerySelector(".oi-pencil") is not null);
+        var editButton = cut.FindAll("button.btn").First(b => b.QuerySelector(".icon-pencil") is not null);
         await editButton.ClickAsync();
         cut.Render();
         await cut.Find("input[type=number][step='0.1']").ChangeAsync("2.5");

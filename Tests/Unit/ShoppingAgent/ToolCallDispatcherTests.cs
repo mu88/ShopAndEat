@@ -522,8 +522,8 @@ public class ToolCallDispatcherTests
         result.Should().Contain(", ");
     }
 
-    [TestCase("search_products", "search", "Product Search", "magnifying-glass")]
-    [TestCase("get_product_details", "search", "Product Search", "magnifying-glass")]
+    [TestCase("search_products", "search", "Product Search", "search")]
+    [TestCase("get_product_details", "search", "Product Search", "search")]
     [TestCase("add_to_cart", "cart", "Shopping Cart", "cart")]
     [TestCase("remove_from_cart", "cart", "Shopping Cart", "cart")]
     [TestCase("get_cart_contents", "cart", "Shopping Cart", "cart")]

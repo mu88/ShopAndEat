@@ -16,22 +16,6 @@
           ]
         }
       ]
-    },
-    {
-      "library": "open-iconic@1.1.1",
-      "provider": "jsdelivr",
-      "destination": "ShopAndEat/wwwroot/css/open-iconic",
-      "files": [
-        "font/css/open-iconic-bootstrap.min.css",
-        "font/fonts/open-iconic.eot",
-        "font/fonts/open-iconic.otf",
-        "font/fonts/open-iconic.svg",
-        "font/fonts/open-iconic.ttf",
-        "font/fonts/open-iconic.woff",
-        "README.md",
-        "FONT-LICENSE",
-        "ICON-LICENSE"
-      ]
     }
   ]
 }

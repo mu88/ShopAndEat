@@ -35,7 +35,7 @@ public class HtmlToolResultRendererTests
     public void RenderToolGroupStart_ProducesCorrectHtml()
     {
         // Arrange
-        var icon = "magnifying-glass";
+        var icon = "search";
         var label = "Product Search";
 
         // Act
@@ -43,7 +43,7 @@ public class HtmlToolResultRendererTests
 
         // Assert
         result.Should().Contain("<details class=\"tool-group\">");
-        result.Should().Contain("<summary><span class=\"oi oi-magnifying-glass\" aria-hidden=\"true\"></span> Product Search</summary>");
+        result.Should().Contain("<summary><span class=\"icon icon-search\" aria-hidden=\"true\"></span> Product Search</summary>");
     }
 
     [Test]
@@ -58,7 +58,7 @@ public class HtmlToolResultRendererTests
 
         // Assert
         result.Should().Contain("<details class=\"tool-call\">");
-        result.Should().Contain("<summary><span class=\"oi oi-wrench\" aria-hidden=\"true\"></span> search_products(search_term=milk)</summary>");
+        result.Should().Contain("<summary><span class=\"icon icon-wrench\" aria-hidden=\"true\"></span> search_products(search_term=milk)</summary>");
     }
 
     [Test]
@@ -254,14 +254,14 @@ public class HtmlToolResultRendererTests
     {
         // Arrange — groupIcon/groupLabel come from IToolCallDispatcher.GetToolGroup's fixed switch
         // expression, never from the LLM or scraped content.
-        var groupIcon = "magnifying-glass";
+        var groupIcon = "search";
         var groupLabel = "<script>alert(1)</script>";
 
         // Act
         var result = _sut.RenderToolGroupStart(groupIcon, groupLabel);
 
         // Assert — icon names come from a developer-authored mapping and labels are encoded.
-        result.Should().Contain("<summary><span class=\"oi oi-magnifying-glass\" aria-hidden=\"true\"></span> &lt;script&gt;alert(1)&lt;/script&gt;</summary>");
+        result.Should().Contain("<summary><span class=\"icon icon-search\" aria-hidden=\"true\"></span> &lt;script&gt;alert(1)&lt;/script&gt;</summary>");
         result.Should().NotContain("<script>");
     }
 }

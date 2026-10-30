@@ -20,8 +20,8 @@ public interface IToolCallDispatcher
 
     static (string Key, string Label, string Icon) GetToolGroup(string toolName) => toolName switch
     {
-        "search_products" => ("search", "Product Search", "magnifying-glass"),
-        "get_product_details" => ("search", "Product Search", "magnifying-glass"),
+        "search_products" => ("search", "Product Search", "search"),
+        "get_product_details" => ("search", "Product Search", "search"),
         "add_to_cart" => ("cart", "Shopping Cart", "cart"),
         "remove_from_cart" => ("cart", "Shopping Cart", "cart"),
         "get_cart_contents" => ("cart", "Shopping Cart", "cart"),

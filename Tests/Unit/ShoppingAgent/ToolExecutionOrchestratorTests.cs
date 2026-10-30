@@ -128,7 +128,7 @@ public class ToolExecutionOrchestratorTests
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent])]);
+            .Returns([("search", "Searching", "search", [toolCallContent])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns("search_term=Tofu");
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
             .Returns(("2 products found", true));
@@ -177,7 +177,7 @@ public class ToolExecutionOrchestratorTests
         var toolResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent])]);
+            .Returns([("search", "Searching", "search", [toolCallContent])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns("search_term=Tofu");
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
             .Returns(("Search failed", false));
@@ -218,7 +218,7 @@ public class ToolExecutionOrchestratorTests
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent])]);
+            .Returns([("search", "Searching", "search", [toolCallContent])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns(string.Empty);
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
             .Returns(("failed", false));
@@ -252,7 +252,7 @@ public class ToolExecutionOrchestratorTests
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent])]);
+            .Returns([("search", "Searching", "search", [toolCallContent])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns("search_term=Tofu");
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
             .Returns(("2 products found", true));
@@ -296,7 +296,7 @@ public class ToolExecutionOrchestratorTests
         var toolResponse = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent])]);
+            .Returns([("search", "Searching", "search", [toolCallContent])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns("search_term=Tofu");
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
             .Returns(("Search failed", false));
@@ -512,7 +512,7 @@ public class ToolExecutionOrchestratorTests
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent1, toolCallContent2])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent1, toolCallContent2])]);
+            .Returns([("search", "Searching", "search", [toolCallContent1, toolCallContent2])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns(string.Empty);
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
             .Returns(("ok", true));
@@ -545,7 +545,7 @@ public class ToolExecutionOrchestratorTests
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent])]);
+            .Returns([("search", "Searching", "search", [toolCallContent])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns(string.Empty);
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
             .Returns(("failed", false));
@@ -573,7 +573,7 @@ public class ToolExecutionOrchestratorTests
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent])]);
+            .Returns([("search", "Searching", "search", [toolCallContent])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns(string.Empty);
         _rendererMock.RenderToolGroupStart(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
 
@@ -603,7 +603,7 @@ public class ToolExecutionOrchestratorTests
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent])]);
+            .Returns([("search", "Searching", "search", [toolCallContent])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns(string.Empty);
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
             .Returns(("ok", true));
@@ -635,7 +635,7 @@ public class ToolExecutionOrchestratorTests
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent])]);
+            .Returns([("search", "Searching", "search", [toolCallContent])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns(string.Empty);
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
             .Returns(("failed", false));
@@ -667,7 +667,7 @@ public class ToolExecutionOrchestratorTests
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent1, toolCallContent2])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent1, toolCallContent2])]);
+            .Returns([("search", "Searching", "search", [toolCallContent1, toolCallContent2])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns(string.Empty);
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
             .Returns(("failed", false));
@@ -700,7 +700,7 @@ public class ToolExecutionOrchestratorTests
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
             .Returns(
             [
-                ("search", "Searching", "magnifying-glass", [toolCallContent1]),
+                ("search", "Searching", "search", [toolCallContent1]),
                 ("workflow", "Shopping Plan", "clipboard", [toolCallContent2]),
             ]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns(string.Empty);
@@ -738,7 +738,7 @@ public class ToolExecutionOrchestratorTests
         var toolCallB = new FunctionCallContent("call-2", "a", new Dictionary<string, object?> { ["x"] = "bc" });
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns(callInfo => [("group", "Group", "magnifying-glass", (IReadOnlyList<FunctionCallContent>)callInfo.Arg<List<FunctionCallContent>>())]);
+            .Returns(callInfo => [("group", "Group", "search", (IReadOnlyList<FunctionCallContent>)callInfo.Arg<List<FunctionCallContent>>())]);
         _dispatcherMock.FormatArgs(Arg.Is<IDictionary<string, object?>>(args => Equals(args["x"], "c"))).Returns("c");
         _dispatcherMock.FormatArgs(Arg.Is<IDictionary<string, object?>>(args => Equals(args["x"], "bc"))).Returns("bc");
         _dispatcherMock.DispatchAsync(Arg.Any<FunctionCallContent>(), "coop", Arg.Any<CancellationToken>())
@@ -775,7 +775,7 @@ public class ToolExecutionOrchestratorTests
         var response = new ChatResponse([new ChatMessage(ChatRole.Assistant, [toolCallContent])]);
 
         _dispatcherMock.GroupConsecutiveToolCalls(Arg.Any<List<FunctionCallContent>>())
-            .Returns([("search", "Searching", "magnifying-glass", [toolCallContent])]);
+            .Returns([("search", "Searching", "search", [toolCallContent])]);
         _dispatcherMock.FormatArgs(Arg.Any<IDictionary<string, object?>>()).Returns(string.Empty);
 
         var history = new List<ChatMessage> { new(ChatRole.User, "Search Tofu") };

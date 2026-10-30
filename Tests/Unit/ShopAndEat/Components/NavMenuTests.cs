@@ -179,11 +179,24 @@ public class NavMenuTests : BunitContext
         var cut = Render<NavMenu>();
 
         // Act
-        var spans = cut.FindAll(".oi");
+        var spans = cut.FindAll(".icon");
 
         // Assert
         spans.Should().NotBeEmpty();
         spans.Should().HaveCountGreaterThanOrEqualTo(3);
+    }
+
+    [Test]
+    public void Render_NavLinksShouldUseSemanticIcons()
+    {
+        // Arrange
+        var cut = Render<NavMenu>();
+
+        // Assert
+        cut.Find("a[href='meal'] .icon").ClassName.Should().Contain("icon-utensils");
+        cut.Find("a[href='recipe'] .icon").ClassName.Should().Contain("icon-cooking-pot");
+        cut.Find("a[href='article'] .icon").ClassName.Should().Contain("icon-can");
+        cut.Find("a[href='shopping'] .icon").ClassName.Should().Contain("icon-shopping-cart");
     }
 
     [Test]
@@ -196,7 +209,7 @@ public class NavMenuTests : BunitContext
         var markup = cut.Markup;
 
         // Assert
-        markup.Should().Contain("oi-cart");
+        markup.Should().Contain("icon-shopping-cart");
     }
 
     [Test]

@@ -456,7 +456,7 @@ public class MealTests : BunitContext
 
         // Assert
         var buttons = cut.FindAll("button.btn");
-        var deleteButton = buttons.FirstOrDefault(b => b.QuerySelector(".oi-trash") is not null);
+        var deleteButton = buttons.FirstOrDefault(b => b.QuerySelector(".icon-trash") is not null);
         deleteButton.Should().NotBeNull();
     }
 
@@ -482,7 +482,7 @@ public class MealTests : BunitContext
 
         // Assert
         var buttons = cut.FindAll("button.btn");
-        var toggleButton = buttons.FirstOrDefault(b => b.QuerySelector(".oi-loop-circular") is not null);
+        var toggleButton = buttons.FirstOrDefault(b => b.QuerySelector(".icon-refresh") is not null);
         toggleButton.Should().NotBeNull();
     }
 
@@ -569,7 +569,7 @@ public class MealTests : BunitContext
         var cut = Render<Meal>();
 
         // Act
-        var deleteButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".oi-trash") is not null);
+        var deleteButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".icon-trash") is not null);
         if (deleteButton is not null)
         {
             await deleteButton.ClickAsync();
@@ -599,7 +599,7 @@ public class MealTests : BunitContext
         var cut = Render<Meal>();
 
         // Act
-        var toggleButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".oi-loop-circular") is not null);
+        var toggleButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".icon-refresh") is not null);
         if (toggleButton is not null)
         {
             await toggleButton.ClickAsync();
@@ -629,7 +629,7 @@ public class MealTests : BunitContext
         var cut = Render<Meal>();
 
         // Act
-        var deleteButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".oi-trash") is not null);
+        var deleteButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".icon-trash") is not null);
         deleteButton.Should().NotBeNull();
         await deleteButton!.ClickAsync();
 
@@ -657,7 +657,7 @@ public class MealTests : BunitContext
         var cut = Render<Meal>();
 
         // Act
-        var toggleButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".oi-loop-circular") is not null);
+        var toggleButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".icon-refresh") is not null);
         toggleButton.Should().NotBeNull();
         await toggleButton!.ClickAsync();
 

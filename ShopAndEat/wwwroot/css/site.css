@@ -1,5 +1,5 @@
-/* import Open Iconic icons*/
-@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
+/* import Lucide icons*/
+@import url('lucide.css');
 
 /* set font*/
 html, body {
@@ -256,11 +256,8 @@ thead.table-light,
   color: white;
 }
 
-.sidebar .oi {
-  width: auto;
-  margin: 0;
+.sidebar .icon {
   font-size: 1.5rem;
-  top: 0;
 }
 
 /* labels stay available to screen readers when hidden visually */
@@ -361,9 +358,9 @@ thead.table-light,
     border-radius: 4px;
   }
 
-  .sidebar .oi {
-    width: 2rem;
-    font-size: 1.1rem;
+  .sidebar .icon {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
   }
 
   .sidebar .nav-link-text {

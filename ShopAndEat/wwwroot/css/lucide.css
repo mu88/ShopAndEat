@@ -1,0 +1,31 @@
+/* Lucide icons (ISC, see lucide/LICENSE), rendered as CSS masks so they inherit the text color and size */
+.icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  background-color: currentColor;
+  mask: var(--icon) center / contain no-repeat;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+}
+
+.icon-utensils { --icon: url('lucide/utensils.svg'); }
+.icon-cooking-pot { --icon: url('lucide/cooking-pot.svg'); }
+.icon-can { --icon: url('lucide/can.svg'); }
+.icon-shopping-cart { --icon: url('lucide/shopping-cart.svg'); }
+.icon-trash { --icon: url('lucide/trash.svg'); }
+.icon-pencil { --icon: url('lucide/pencil.svg'); }
+.icon-refresh { --icon: url('lucide/refresh-cw.svg'); }
+.icon-map-pin { --icon: url('lucide/map-pin.svg'); }
+.icon-link { --icon: url('lucide/link.svg'); }
+.icon-warning { --icon: url('lucide/triangle-alert.svg'); }
+.icon-circle-check { --icon: url('lucide/circle-check.svg'); }
+.icon-check { --icon: url('lucide/check.svg'); }
+.icon-user { --icon: url('lucide/user.svg'); }
+.icon-chat { --icon: url('lucide/message-square.svg'); }
+.icon-download { --icon: url('lucide/cloud-download.svg'); }
+.icon-clipboard { --icon: url('lucide/clipboard.svg'); }
+.icon-arrow-right { --icon: url('lucide/arrow-right.svg'); }
+.icon-stop { --icon: url('lucide/square.svg'); }
+.icon-search { --icon: url('lucide/search.svg'); }
+.icon-wrench { --icon: url('lucide/wrench.svg'); }

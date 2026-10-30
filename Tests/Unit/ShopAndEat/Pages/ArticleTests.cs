@@ -197,7 +197,7 @@ public class ArticleTests : BunitContext
         // Assert
         var buttons = cut.FindAll("button.btn");
         buttons.Should().NotBeEmpty();
-        var deleteButton = buttons.FirstOrDefault(b => b.QuerySelector(".oi-trash") is not null);
+        var deleteButton = buttons.FirstOrDefault(b => b.QuerySelector(".icon-trash") is not null);
         deleteButton.Should().NotBeNull();
     }
 
@@ -216,7 +216,7 @@ public class ArticleTests : BunitContext
 
         // Assert
         var buttons = cut.FindAll("button.btn");
-        var editButton = buttons.FirstOrDefault(b => b.QuerySelector(".oi-pencil") is not null);
+        var editButton = buttons.FirstOrDefault(b => b.QuerySelector(".icon-pencil") is not null);
         editButton.Should().NotBeNull();
     }
 
@@ -374,7 +374,7 @@ public class ArticleTests : BunitContext
         var cut = Render<Article>();
 
         // Act
-        var deleteButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".oi-trash") is not null);
+        var deleteButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".icon-trash") is not null);
         if (deleteButton is not null)
         {
             await deleteButton.ClickAsync();
@@ -397,7 +397,7 @@ public class ArticleTests : BunitContext
         var cut = Render<Article>();
 
         // Act
-        var editButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".oi-pencil") is not null);
+        var editButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".icon-pencil") is not null);
         if (editButton is not null)
         {
             await editButton.ClickAsync();
@@ -441,7 +441,7 @@ public class ArticleTests : BunitContext
         _articleGroupService.GetAllArticleGroupsAsync().Returns(GetResult(new[] { articleGroup }));
 
         var cut = Render<Article>();
-        var editButton = cut.FindAll("button.btn").First(b => b.QuerySelector(".oi-pencil") is not null);
+        var editButton = cut.FindAll("button.btn").First(b => b.QuerySelector(".icon-pencil") is not null);
         await editButton.ClickAsync();
         cut.Render();
 
