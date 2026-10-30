@@ -3,8 +3,6 @@
 bin
 obj
 *.user
-<<<<<<< HEAD
-
 # Build & test artifacts
 TestResults/
 Tests/coverage.xml
