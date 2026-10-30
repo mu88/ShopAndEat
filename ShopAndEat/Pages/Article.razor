@@ -61,10 +61,14 @@
                 <td>@article.ArticleGroup.Name</td>
                 <td>@article.IsInventory</td>
                 <td>
-                    <button class="btn btn-danger btn-sm" @onclick="@(_ => DeleteArticleAsync(article.ArticleId.Value))" data-testid="delete-article-button-@article.ArticleId.Value">❌</button>
+                    <button class="btn btn-danger btn-sm" @onclick="@(_ => DeleteArticleAsync(article.ArticleId.Value))" data-testid="delete-article-button-@article.ArticleId.Value" title="Delete article" aria-label="Delete article">
+                        <span class="oi oi-trash" aria-hidden="true"></span>
+                    </button>
                 </td>
                 <td>
-                    <button class="btn btn-warning btn-sm" @onclick="@(_ => EditArticleAsync(article.ArticleId.Value))" data-testid="edit-article-button-@article.ArticleId.Value">🖊</button>
+                    <button class="btn btn-warning btn-sm" @onclick="@(_ => EditArticleAsync(article.ArticleId.Value))" data-testid="edit-article-button-@article.ArticleId.Value" title="Edit article" aria-label="Edit article">
+                        <span class="oi oi-pencil" aria-hidden="true"></span>
+                    </button>
                 </td>
             </tr>
         }

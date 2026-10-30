@@ -29,24 +29,30 @@
 
 <div class="chat-container">
     <header class="chat-header">
-        <h1>@L["AppTitle"]</h1>
+        <h1>
+            <span class="oi oi-cart" aria-hidden="true"></span>
+            @L["AppTitle"]
+        </h1>
         <div class="header-actions">
             <div class="shop-selector">
+                <span class="oi oi-location" aria-hidden="true"></span>
                 <select @onchange="OnShopChanged" disabled="@Agent.IsProcessing">
                     @foreach (var shop in Agent.AvailableShops)
                     {
                         <option value="@shop.Key" selected="@(shop.Key == Agent.SelectedShopKey)">
-                            🛒 @shop.Name
+                            @shop.Name
                         </option>
                     }
                 </select>
             </div>
             <div class="status-indicators">
                 <span class="status-badge @(Bridge.IsExtensionConnected ? "connected" : "disconnected")">
+                    <span class="oi @(Bridge.IsExtensionConnected ? "oi-link-intact" : "oi-warning")" aria-hidden="true"></span>
                     @(Bridge.IsExtensionConnected ? L["ExtensionConnected"] : L["ExtensionNotConnected"])
                 </span>
                 <span class="status-badge @(_isLlmReady ? "connected" : "disconnected")">
-                    @L["LlmReady"]
+                    <span class="oi @(_isLlmReady ? "oi-circle-check" : "oi-warning")" aria-hidden="true"></span>
+                    @(_isLlmReady ? L["LlmReady"] : L["LlmNotReachable"])
                 </span>
             </div>
         </div>
@@ -56,7 +62,7 @@
         @if (Agent.Messages.Count == 0)
         {
             <div class="welcome-message">
-                <p>@L["WelcomeMessage"]</p>
+                <p><span class="welcome-icon" aria-hidden="true">👋</span> @L["WelcomeMessage"]</p>
                 <p class="hint">@L["WelcomeHint"]</p>
             </div>
         }
@@ -65,7 +71,9 @@
         {
             <div class="chat-message @message.Role">
                 <div class="message-content">
-                    <span class="message-role">@(message.Role == "user" ? "👤" : "🤖")</span>
+                    <span class="message-role" role="img" aria-label="@(message.Role == "user" ? "User" : "Assistant")">
+                        <span class="oi @(message.Role == "user" ? "oi-person" : "oi-chat")" aria-hidden="true"></span>
+                    </span>
                     <div class="message-text">@((MarkupString)FormatMessage(message.Content))</div>
                 </div>
                 @if (message.IsStreaming)
@@ -82,15 +90,18 @@
         <div class="input-toolbar">
             <button class="toolbar-btn" data-testid="load-meal-plan" @onclick="LoadFromMealPlan" disabled="@Agent.IsProcessing"
                     title="@L["LoadFromMealPlan"]">
-                📥 @L["LoadFromMealPlan"]
+                <span class="oi oi-cloud-download" aria-hidden="true"></span>
+                @L["LoadFromMealPlan"]
             </button>
             <button class="toolbar-btn" data-testid="copy-chat" @onclick="CopyChat" disabled="@(Agent.Messages.Count == 0)"
                     title="@L["CopyChat"]">
-                @(_copyFeedback ? "✅" : "📋") @L["CopyChat"]
+                <span class="oi @(_copyFeedback ? "oi-circle-check" : "oi-clipboard")" aria-hidden="true"></span>
+                @L["CopyChat"]
             </button>
             <button class="toolbar-btn" data-testid="clear-chat" @onclick="ClearChat" disabled="@Agent.IsProcessing"
                     title="@L["ClearChat"]">
-                🗑️ @L["ClearChat"]
+                <span class="oi oi-trash" aria-hidden="true"></span>
+                @L["ClearChat"]
             </button>
         </div>
         <div class="input-row">
@@ -100,13 +111,14 @@
                       placeholder="@L["InputPlaceholder"]"
                       disabled="@Agent.IsProcessing"
                       rows="1"></textarea>
-            <button class="send-button" @onclick="SendMessage" disabled="@(Agent.IsProcessing || string.IsNullOrWhiteSpace(_userInput))">
-                📤
+            <button class="send-button" @onclick="SendMessage" disabled="@(Agent.IsProcessing || string.IsNullOrWhiteSpace(_userInput))"
+                    title="@L["SendMessage"]" aria-label="@L["SendMessage"]">
+                <span class="oi oi-arrow-thick-right" aria-hidden="true"></span>
             </button>
             @if (Agent.IsProcessing)
             {
-                <button class="stop-button" @onclick="StopProcessing" title="@L["StopProcessing"]">
-                    ⏹️
+                <button class="stop-button" @onclick="StopProcessing" title="@L["StopProcessing"]" aria-label="@L["StopProcessing"]">
+                    <span class="oi oi-media-stop" aria-hidden="true"></span>
                 </button>
             }
         </div>
@@ -193,7 +205,7 @@
         }
         catch (OperationCanceledException)
         {
-            assistantMessage.Content += $"\n\n⛔ {L["ProcessingStopped"]}";
+            assistantMessage.Content += $"\n\n{L["ProcessingStopped"]}";
         }
         finally
         {
@@ -239,7 +251,7 @@
         var sb = new System.Text.StringBuilder();
         foreach (var message in Agent.Messages)
         {
-            var role = message.Role == "user" ? "👤 User" : "🤖 Assistant";
+            var role = message.Role == "user" ? "User" : "Assistant";
             sb.AppendLine($"{role}:");
             sb.AppendLine(message.Content);
             sb.AppendLine();

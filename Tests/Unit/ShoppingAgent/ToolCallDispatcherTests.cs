@@ -459,17 +459,17 @@ public class ToolCallDispatcherTests
         groups.Should().HaveCount(2);
         groups[0].Key.Should().Be("clarify");
         groups[0].Label.Should().Be("Clarification Needed");
-        groups[0].Icon.Should().Be("❓");
+        groups[0].Icon.Should().Be("question-mark");
         groups[1].Key.Should().Be("workflow");
         groups[1].Label.Should().Be("Shopping Plan");
-        groups[1].Icon.Should().Be("📋");
+        groups[1].Icon.Should().Be("clipboard");
         groups[1].Tools.Should().HaveCount(2);
     }
 
     [Test]
     public void GroupConsecutiveToolCalls_MapsProceedToCartToWorkflowGroup()
     {
-        // Arrange — isolated from confirm_cart so its own "workflow"/"Shopping Plan"/"📋" literals are
+        // Arrange — isolated from confirm_cart so its own "workflow"/"Shopping Plan"/"clipboard" literals are
         // the only source for this group's values (a shared group with confirm_cart wouldn't
         // distinguish which of the two identical case bodies actually produced them).
         var toolCalls = new List<FunctionCallContent> { CreateToolCall("proceed_to_cart", []) };
@@ -481,7 +481,7 @@ public class ToolCallDispatcherTests
         groups.Should().ContainSingle();
         groups[0].Key.Should().Be("workflow");
         groups[0].Label.Should().Be("Shopping Plan");
-        groups[0].Icon.Should().Be("📋");
+        groups[0].Icon.Should().Be("clipboard");
     }
 
     [Test]
@@ -522,17 +522,17 @@ public class ToolCallDispatcherTests
         result.Should().Contain(", ");
     }
 
-    [TestCase("search_products", "search", "Product Search", "🔍")]
-    [TestCase("get_product_details", "search", "Product Search", "🔍")]
-    [TestCase("add_to_cart", "cart", "Shopping Cart", "🛒")]
-    [TestCase("remove_from_cart", "cart", "Shopping Cart", "🛒")]
-    [TestCase("get_cart_contents", "cart", "Shopping Cart", "🛒")]
-    [TestCase("navigate_to_cart", "cart", "Shopping Cart", "🛒")]
-    [TestCase("save_preference", "prefs", "Preferences", "💾")]
-    [TestCase("delete_preference", "prefs", "Preferences", "💾")]
-    [TestCase("get_preferences", "prefs", "Preferences", "💾")]
-    [TestCase("verify_shopping_list", "verify", "Cart Verification", "✅")]
-    [TestCase("completely_unknown", "other", "Processing", "🔧")]
+    [TestCase("search_products", "search", "Product Search", "magnifying-glass")]
+    [TestCase("get_product_details", "search", "Product Search", "magnifying-glass")]
+    [TestCase("add_to_cart", "cart", "Shopping Cart", "cart")]
+    [TestCase("remove_from_cart", "cart", "Shopping Cart", "cart")]
+    [TestCase("get_cart_contents", "cart", "Shopping Cart", "cart")]
+    [TestCase("navigate_to_cart", "cart", "Shopping Cart", "cart")]
+    [TestCase("save_preference", "prefs", "Preferences", "hard-drive")]
+    [TestCase("delete_preference", "prefs", "Preferences", "hard-drive")]
+    [TestCase("get_preferences", "prefs", "Preferences", "hard-drive")]
+    [TestCase("verify_shopping_list", "verify", "Cart Verification", "circle-check")]
+    [TestCase("completely_unknown", "other", "Processing", "wrench")]
     public void GetToolGroup_ReturnsCorrectGroup(string toolName, string expectedKey, string expectedLabel, string expectedIcon)
     {
         // Arrange & Act

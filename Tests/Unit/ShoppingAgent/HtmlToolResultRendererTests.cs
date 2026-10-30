@@ -35,7 +35,7 @@ public class HtmlToolResultRendererTests
     public void RenderToolGroupStart_ProducesCorrectHtml()
     {
         // Arrange
-        var icon = "🔍";
+        var icon = "magnifying-glass";
         var label = "Product Search";
 
         // Act
@@ -43,7 +43,7 @@ public class HtmlToolResultRendererTests
 
         // Assert
         result.Should().Contain("<details class=\"tool-group\">");
-        result.Should().Contain("<summary>🔍 Product Search</summary>");
+        result.Should().Contain("<summary><span class=\"oi oi-magnifying-glass\" aria-hidden=\"true\"></span> Product Search</summary>");
     }
 
     [Test]
@@ -58,7 +58,7 @@ public class HtmlToolResultRendererTests
 
         // Assert
         result.Should().Contain("<details class=\"tool-call\">");
-        result.Should().Contain("<summary>🔧 search_products(search_term=milk)</summary>");
+        result.Should().Contain("<summary><span class=\"oi oi-wrench\" aria-hidden=\"true\"></span> search_products(search_term=milk)</summary>");
     }
 
     [Test]
@@ -250,17 +250,18 @@ public class HtmlToolResultRendererTests
     }
 
     [Test]
-    public void RenderToolGroupStart_DoesNotAlterIconOrLabel_BecauseTheyAreDeveloperControlled()
+    public void RenderToolGroupStart_RendersIconAndEncodesLabel()
     {
         // Arrange — groupIcon/groupLabel come from IToolCallDispatcher.GetToolGroup's fixed switch
-        // expression, never from the LLM or scraped content, so no encoding should be applied to them.
-        var groupIcon = "🔍";
-        var groupLabel = "Product Search";
+        // expression, never from the LLM or scraped content.
+        var groupIcon = "magnifying-glass";
+        var groupLabel = "<script>alert(1)</script>";
 
         // Act
         var result = _sut.RenderToolGroupStart(groupIcon, groupLabel);
 
-        // Assert
-        result.Should().Contain("<summary>🔍 Product Search</summary>");
+        // Assert — icon names come from a developer-authored mapping and labels are encoded.
+        result.Should().Contain("<summary><span class=\"oi oi-magnifying-glass\" aria-hidden=\"true\"></span> &lt;script&gt;alert(1)&lt;/script&gt;</summary>");
+        result.Should().NotContain("<script>");
     }
 }

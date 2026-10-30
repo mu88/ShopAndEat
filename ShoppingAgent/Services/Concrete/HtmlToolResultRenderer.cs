@@ -16,9 +16,9 @@ public class HtmlToolResultRenderer(IStringLocalizer<Messages> localizer) : IToo
     };
 
     // groupIcon/groupLabel originate from IToolCallDispatcher.GetToolGroup's fixed, developer-authored
-    // switch expression (never from the LLM or scraped content), so they are trusted and left unencoded.
+    // switch expression (never from the LLM or scraped content).
     public string RenderToolGroupStart(string groupIcon, string groupLabel)
-        => $"{Environment.NewLine}<details class=\"tool-group\"><summary>{groupIcon} {groupLabel}</summary>{Environment.NewLine}";
+        => $"{Environment.NewLine}<details class=\"tool-group\"><summary><span class=\"oi oi-{groupIcon}\" aria-hidden=\"true\"></span> {WebUtility.HtmlEncode(groupLabel)}</summary>{Environment.NewLine}";
 
     public string RenderToolCallStart(string toolName, string formattedArgs)
     {
@@ -27,7 +27,7 @@ public class HtmlToolResultRenderer(IStringLocalizer<Messages> localizer) : IToo
             return string.Empty;
         }
 
-        return $"<details class=\"tool-call\"><summary>🔧 {WebUtility.HtmlEncode(toolName)}({WebUtility.HtmlEncode(formattedArgs)})</summary>{Environment.NewLine}";
+        return $"<details class=\"tool-call\"><summary><span class=\"oi oi-wrench\" aria-hidden=\"true\"></span> {WebUtility.HtmlEncode(toolName)}({WebUtility.HtmlEncode(formattedArgs)})</summary>{Environment.NewLine}";
     }
 
     public string RenderToolResult(string toolName, string toolResult)
@@ -44,7 +44,7 @@ public class HtmlToolResultRenderer(IStringLocalizer<Messages> localizer) : IToo
         }
 
         var encodedResult = WebUtility.HtmlEncode(Truncate(toolResult, MaxResultLength));
-        return $"<div class=\"tool-result\">{localizer["ToolResult", encodedResult]}</div></details>{Environment.NewLine}";
+        return $"<div class=\"tool-result\"><span class=\"oi oi-check\" aria-hidden=\"true\"></span> {localizer["ToolResult", encodedResult]}</div></details>{Environment.NewLine}";
     }
 
     public string RenderToolGroupEnd()

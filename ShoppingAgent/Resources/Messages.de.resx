@@ -31,24 +31,24 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
 
   <!-- Header -->
-  <data name="AppTitle" xml:space="preserve"><value>🛒 Einkaufsassistent</value></data>
-  <data name="ExtensionConnected" xml:space="preserve"><value>🔗 Extension verbunden</value></data>
-  <data name="ExtensionNotConnected" xml:space="preserve"><value>⚠️ Extension nicht verbunden</value></data>
-  <data name="LlmReady" xml:space="preserve"><value>🤖 LLM bereit</value></data>
-  <data name="LlmNotReachable" xml:space="preserve"><value>⚠️ LLM nicht erreichbar</value></data>
+  <data name="AppTitle" xml:space="preserve"><value>Einkaufsassistent</value></data>
+  <data name="ExtensionConnected" xml:space="preserve"><value>Extension verbunden</value></data>
+  <data name="ExtensionNotConnected" xml:space="preserve"><value>Extension nicht verbunden</value></data>
+  <data name="LlmReady" xml:space="preserve"><value>LLM bereit</value></data>
+  <data name="LlmNotReachable" xml:space="preserve"><value>LLM nicht erreichbar</value></data>
 
   <!-- Welcome -->
-  <data name="WelcomeMessage" xml:space="preserve"><value>👋 Willkommen! Gib mir deine Zutatenliste und ich fülle deinen Warenkorb.</value></data>
+  <data name="WelcomeMessage" xml:space="preserve"><value>Willkommen! Gib mir deine Zutatenliste und ich fülle deinen Warenkorb.</value></data>
   <data name="WelcomeHint" xml:space="preserve"><value>Beispiel: "3 Packungen Toast, 1 kleine Butter, 500g Karotten"</value></data>
 
   <!-- Input -->
   <data name="InputPlaceholder" xml:space="preserve"><value>Zutatenliste eingeben oder Nachricht schreiben...</value></data>
 
   <!-- Agent messages -->
-  <data name="LlmError" xml:space="preserve"><value>⚠️ LLM-Fehler: {0}</value></data>
-  <data name="LlmTimeout" xml:space="preserve"><value>⏱️ LLM-Anfrage nach 60 Sekunden abgebrochen. Bitte erneut versuchen.</value></data>
-  <data name="ToolCall" xml:space="preserve"><value>🔧 Tool: {0}({1})...</value></data>
-  <data name="ToolResult" xml:space="preserve"><value>✅ Ergebnis: {0}</value></data>
+  <data name="LlmError" xml:space="preserve"><value>LLM-Fehler: {0}</value></data>
+  <data name="LlmTimeout" xml:space="preserve"><value>LLM-Anfrage nach 60 Sekunden abgebrochen. Bitte erneut versuchen.</value></data>
+  <data name="ToolCall" xml:space="preserve"><value>Tool: {0}({1})...</value></data>
+  <data name="ToolResult" xml:space="preserve"><value>Ergebnis: {0}</value></data>
   <data name="ProductAddedToCart" xml:space="preserve"><value>Produkt erfolgreich in den Warenkorb gelegt.</value></data>
   <data name="ErrorAddingToCart" xml:space="preserve"><value>Fehler beim Hinzufügen zum Warenkorb.</value></data>
   <data name="UnknownTool" xml:space="preserve"><value>Unbekanntes Tool: {0}</value></data>
@@ -57,7 +57,7 @@
   <data name="PreferenceSaved" xml:space="preserve"><value>Präferenz für zukünftige Einkäufe gespeichert.</value></data>
   <data name="PreferenceDeleted" xml:space="preserve"><value>Präferenz gelöscht.</value></data>
   <data name="PreferenceNotFound" xml:space="preserve"><value>Präferenz nicht gefunden.</value></data>
-  <data name="ToolCallingFallback" xml:space="preserve"><value>⚠️ Dieses Modell unterstützt kein Tool-Calling. Wechsle in den Textmodus — ich gebe Anweisungen, kann den Browser aber nicht direkt steuern.</value></data>
+  <data name="ToolCallingFallback" xml:space="preserve"><value>Dieses Modell unterstützt kein Tool-Calling. Wechsle in den Textmodus — ich gebe Anweisungen, kann den Browser aber nicht direkt steuern.</value></data>
 
   <!-- Extension bridge -->
   <data name="ExtensionNotConnectedError" xml:space="preserve"><value>Chrome Extension ist nicht verbunden. Bitte Extension installieren und Seite neu laden.</value></data>
@@ -71,6 +71,7 @@
   <!-- Chat UI -->
   <data name="ClearChat" xml:space="preserve"><value>Löschen</value></data>
   <data name="CopyChat" xml:space="preserve"><value>Chat kopieren</value></data>
+  <data name="SendMessage" xml:space="preserve"><value>Nachricht senden</value></data>
   <data name="StopProcessing" xml:space="preserve"><value>Stopp</value></data>
   <data name="ProcessingStopped" xml:space="preserve"><value>Verarbeitung abgebrochen.</value></data>
   <data name="LoadFromMealPlan" xml:space="preserve"><value>Aus Speiseplan laden</value></data>
@@ -84,7 +85,7 @@
   <data name="ApiKeyInvalid" xml:space="preserve"><value>Ungültiger API-Key. Bitte prüfen und erneut versuchen.</value></data>
 
   <!-- Reminder gate -->
-  <data name="ReminderGate" xml:space="preserve"><value>⚠️ Reminder-Prüfung: Der Nutzer hat aktive Reminders für: {0}. Frage den Nutzer, ob er diese Artikel noch bestellen möchte, bevor du fertig bist.</value></data>
+  <data name="ReminderGate" xml:space="preserve"><value>Reminder-Prüfung: Der Nutzer hat aktive Reminders für: {0}. Frage den Nutzer, ob er diese Artikel noch bestellen möchte, bevor du fertig bist.</value></data>
 
   <!-- Navigation -->
   <data name="TabTitle" xml:space="preserve"><value>Einkaufsassistent</value></data>

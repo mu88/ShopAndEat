@@ -65,10 +65,14 @@ else
                     <td data-testid="meal-has-been-shopped-@meal.MealId.Value">@meal.HasBeenShopped</td>
                     <td>@meal.NumberOfPersons</td>
                     <td>
-                        <button class="btn btn-danger btn-sm" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))" data-testid="delete-meal-button-@meal.MealId.Value">❌</button>
+                        <button class="btn btn-danger btn-sm" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))" data-testid="delete-meal-button-@meal.MealId.Value" title="Delete meal" aria-label="Delete meal">
+                            <span class="oi oi-trash" aria-hidden="true"></span>
+                        </button>
                     </td>
                     <td>
-                        <button class="btn btn-warning btn-sm" @onclick="@(_ => ToggleAsync(meal.MealId.Value))" data-testid="toggle-meal-button-@meal.MealId.Value">🔃</button>
+                        <button class="btn btn-warning btn-sm" @onclick="@(_ => ToggleAsync(meal.MealId.Value))" data-testid="toggle-meal-button-@meal.MealId.Value" title="Toggle shopped status" aria-label="Toggle shopped status">
+                            <span class="oi oi-loop-circular" aria-hidden="true"></span>
+                        </button>
                     </td>
                 </tr>
             }
@@ -81,10 +85,14 @@ else
                     <td data-testid="meal-has-been-shopped-@meal.MealId.Value">@meal.HasBeenShopped</td>
                     <td>@meal.NumberOfPersons</td>
                     <td>
-                        <button class="btn btn-danger btn-sm" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))" data-testid="delete-meal-button-@meal.MealId.Value">❌</button>
+                        <button class="btn btn-danger btn-sm" @onclick="@(_ => DeleteMealAsync(meal.MealId.Value))" data-testid="delete-meal-button-@meal.MealId.Value" title="Delete meal" aria-label="Delete meal">
+                            <span class="oi oi-trash" aria-hidden="true"></span>
+                        </button>
                     </td>
                     <td>
-                        <button class="btn btn-warning btn-sm" @onclick="@(_ => ToggleAsync(meal.MealId.Value))" data-testid="toggle-meal-button-@meal.MealId.Value">🔃</button>
+                        <button class="btn btn-warning btn-sm" @onclick="@(_ => ToggleAsync(meal.MealId.Value))" data-testid="toggle-meal-button-@meal.MealId.Value" title="Toggle shopped status" aria-label="Toggle shopped status">
+                            <span class="oi oi-loop-circular" aria-hidden="true"></span>
+                        </button>
                     </td>
                 </tr>
             }

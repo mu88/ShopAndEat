@@ -51,7 +51,7 @@ public class ToolExecutionOrchestrator(
 
         if (state.RepeatedFailureTool is not null)
         {
-            yield return $"{Environment.NewLine}⚠️ {localizer["RepeatedToolFailure", state.RepeatedFailureTool]}{Environment.NewLine}";
+            yield return $"{Environment.NewLine}<span class=\"oi oi-warning\" aria-hidden=\"true\"></span> {localizer["RepeatedToolFailure", state.RepeatedFailureTool]}{Environment.NewLine}";
             state.ShouldBreak = true;
             yield break;
         }

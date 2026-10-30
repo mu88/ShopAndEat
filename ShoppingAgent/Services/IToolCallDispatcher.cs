@@ -20,19 +20,19 @@ public interface IToolCallDispatcher
 
     static (string Key, string Label, string Icon) GetToolGroup(string toolName) => toolName switch
     {
-        "search_products" => ("search", "Product Search", "🔍"),
-        "get_product_details" => ("search", "Product Search", "🔍"),
-        "add_to_cart" => ("cart", "Shopping Cart", "🛒"),
-        "remove_from_cart" => ("cart", "Shopping Cart", "🛒"),
-        "get_cart_contents" => ("cart", "Shopping Cart", "🛒"),
-        "navigate_to_cart" => ("cart", "Shopping Cart", "🛒"),
-        "save_preference" => ("prefs", "Preferences", "💾"),
-        "delete_preference" => ("prefs", "Preferences", "💾"),
-        "get_preferences" => ("prefs", "Preferences", "💾"),
-        "verify_shopping_list" => ("verify", "Cart Verification", "✅"),
-        "request_clarification" => ("clarify", "Clarification Needed", "❓"),
-        SignalToolNames.ConfirmCart => ("workflow", "Shopping Plan", "📋"),
-        SignalToolNames.ProceedToCart => ("workflow", "Shopping Plan", "📋"),
-        _ => ("other", "Processing", "🔧")
+        "search_products" => ("search", "Product Search", "magnifying-glass"),
+        "get_product_details" => ("search", "Product Search", "magnifying-glass"),
+        "add_to_cart" => ("cart", "Shopping Cart", "cart"),
+        "remove_from_cart" => ("cart", "Shopping Cart", "cart"),
+        "get_cart_contents" => ("cart", "Shopping Cart", "cart"),
+        "navigate_to_cart" => ("cart", "Shopping Cart", "cart"),
+        "save_preference" => ("prefs", "Preferences", "hard-drive"),
+        "delete_preference" => ("prefs", "Preferences", "hard-drive"),
+        "get_preferences" => ("prefs", "Preferences", "hard-drive"),
+        "verify_shopping_list" => ("verify", "Cart Verification", "circle-check"),
+        "request_clarification" => ("clarify", "Clarification Needed", "question-mark"),
+        SignalToolNames.ConfirmCart => ("workflow", "Shopping Plan", "clipboard"),
+        SignalToolNames.ProceedToCart => ("workflow", "Shopping Plan", "clipboard"),
+        _ => ("other", "Processing", "wrench")
     };
 }

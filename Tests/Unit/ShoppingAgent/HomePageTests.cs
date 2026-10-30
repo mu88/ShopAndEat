@@ -125,6 +125,19 @@ public class HomePageTests
     }
 
     [Test]
+    public async Task WelcomeMessage_DisplaysWavingHandIcon()
+    {
+        // Arrange
+        await using var ctx = CreateBunitContext();
+
+        // Act
+        var cut = ctx.Render<global::ShoppingAgent.Pages.Home>();
+
+        // Assert
+        cut.Find(".welcome-icon").TextContent.Should().Be("👋");
+    }
+
+    [Test]
     public async Task SendMessage_DisplaysUserMessage()
     {
         // Arrange

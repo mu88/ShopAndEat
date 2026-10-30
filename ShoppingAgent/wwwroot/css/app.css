@@ -127,6 +127,18 @@
     font-weight: 600;
 }
 
+.chat-header h1 .oi {
+    margin-right: 0.25rem;
+}
+
+.shop-selector > .oi {
+    margin-right: 0.25rem;
+}
+
+.status-badge > .oi {
+    margin-right: 0.2rem;
+}
+
 .header-actions {
     display: flex;
     justify-content: space-between;
@@ -219,6 +231,10 @@
     text-align: center;
     padding: 2rem;
     color: var(--app-muted);
+}
+
+.welcome-icon {
+    margin-right: 0.25rem;
 }
 
 .welcome-message .hint {
