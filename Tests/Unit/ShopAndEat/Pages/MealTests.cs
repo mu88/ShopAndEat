@@ -528,7 +528,8 @@ public class MealTests : BunitContext
         // Assert
         var markup = cut.Markup;
         markup.Should().Contain("<form");
-        markup.Should().Contain("<button type=\"submit\" data-testid=\"meal-save-button\">");
+        markup.Should().Contain("<button type=\"submit\"");
+        markup.Should().Contain("data-testid=\"meal-save-button\"");
     }
 
     [Test]
@@ -546,7 +547,7 @@ public class MealTests : BunitContext
 
         // Assert
         var markup = cut.Markup;
-        markup.Should().Contain("<button type=\"submit\" data-testid=\"meal-save-button\">Save</button>");
+        markup.Should().Contain("data-testid=\"meal-save-button\">Save</button>");
     }
 
     [Test]
@@ -866,7 +867,7 @@ public class MealTests : BunitContext
 
         // Assert
         var row = cut.Find("tbody tr");
-        row.GetAttribute("style").Should().Contain("#00FF00");
+        row.GetAttribute("class").Should().Contain("table-success");
     }
 
     private sealed class FixedTimeProvider(DateTime today) : TimeProvider

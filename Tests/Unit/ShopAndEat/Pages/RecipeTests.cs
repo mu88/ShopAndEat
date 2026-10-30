@@ -355,7 +355,8 @@ public class RecipeTests : BunitContext
         // Assert
         var markup = cut.Markup;
         markup.Should().Contain("<form");
-        markup.Should().Contain("<button type=\"submit\" data-testid=\"recipe-save-button\">");
+        markup.Should().Contain("<button type=\"submit\"");
+        markup.Should().Contain("data-testid=\"recipe-save-button\"");
     }
 
     [Test]
@@ -371,7 +372,7 @@ public class RecipeTests : BunitContext
 
         // Assert
         var markup = cut.Markup;
-        markup.Should().Contain("<button type=\"submit\" data-testid=\"recipe-save-button\">Save</button>");
+        markup.Should().Contain("data-testid=\"recipe-save-button\">Save</button>");
     }
 
     [Test]
@@ -547,7 +548,7 @@ public class RecipeTests : BunitContext
 
         var cut = Render<Recipe>();
         await cut.Find("input").ChangeAsync("Salad");
-        var deleteIngredientLink = cut.FindAll("label").First(l => l.TextContent.Contains("Delete last ingredient", StringComparison.Ordinal));
+        var deleteIngredientLink = cut.Find("[data-testid='delete-last-ingredient-link']");
         await deleteIngredientLink.ClickAsync();
         cut.Render();
 
@@ -658,7 +659,7 @@ public class RecipeTests : BunitContext
         var initialRows = cut.FindAll("table")[0].QuerySelectorAll("tr").Length;
 
         // Act
-        var addLabel = cut.FindAll("label").FirstOrDefault(l => l.TextContent.Contains("Add another ingredient", StringComparison.Ordinal));
+        var addLabel = cut.FindAll("[data-testid='add-ingredient-link']").FirstOrDefault();
         if (addLabel is not null)
         {
             addLabel.Click();
@@ -682,7 +683,7 @@ public class RecipeTests : BunitContext
         var cut = Render<Recipe>();
 
         // Add an ingredient first
-        var addLabel = cut.FindAll("label").FirstOrDefault(l => l.TextContent.Contains("Add another ingredient", StringComparison.Ordinal));
+        var addLabel = cut.FindAll("[data-testid='add-ingredient-link']").FirstOrDefault();
         if (addLabel is not null)
         {
             addLabel.Click();
@@ -692,7 +693,7 @@ public class RecipeTests : BunitContext
         var rowsAfterAdd = cut.FindAll("table")[0].QuerySelectorAll("tr").Length;
 
         // Act
-        var deleteLabel = cut.FindAll("label").FirstOrDefault(l => l.TextContent.Contains("Delete last ingredient", StringComparison.Ordinal));
+        var deleteLabel = cut.FindAll("[data-testid='delete-last-ingredient-link']").FirstOrDefault();
         if (deleteLabel is not null)
         {
             deleteLabel.Click();
