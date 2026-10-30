@@ -193,7 +193,7 @@ a, .btn-link {
     justify-content: flex-start;
     padding-left: 1rem;
   }
-  
+
   .sidebar .oi {
     margin-right: 0.5rem;
     font-size: 1.1rem;
@@ -215,7 +215,7 @@ a, .btn-link {
     padding: 0;
     overflow: hidden;
       }
-   
+
   .sidebar .nav {
     flex-direction: column;
   }
@@ -249,7 +249,7 @@ a, .btn-link {
   .page {
     flex-direction: column;
   }
-  
+
   .sidebar {
     display: flex !important;
     flex-direction: row;
