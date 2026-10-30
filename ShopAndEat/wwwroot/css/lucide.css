@@ -29,3 +29,7 @@
 .icon-stop { --icon: url('lucide/square.svg'); }
 .icon-search { --icon: url('lucide/search.svg'); }
 .icon-wrench { --icon: url('lucide/wrench.svg'); }
+.icon-plus { --icon: url('lucide/plus.svg'); }
+.icon-x { --icon: url('lucide/x.svg'); }
+.icon-shelving-unit { --icon: url('lucide/shelving-unit.svg'); }
+.icon-arrow-up-down { --icon: url('lucide/arrow-up-down.svg'); }

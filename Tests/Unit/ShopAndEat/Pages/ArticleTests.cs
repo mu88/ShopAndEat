@@ -69,7 +69,7 @@ public class ArticleTests : BunitContext
     }
 
     [Test]
-    public void Render_ShouldDisplayTableForArticles()
+    public void Render_ShouldDisplayListForArticles()
     {
         // Arrange
         _articleService.GetAllArticlesAsync().Returns(GetResult(Array.Empty<ExistingArticleDto>()));
@@ -79,28 +79,25 @@ public class ArticleTests : BunitContext
         var cut = Render<Article>();
 
         // Assert
-        var table = cut.Find("table");
-        table.Should().NotBeNull();
-        table.GetAttribute("class")?.Should().Contain("table");
+        cut.Find("[data-testid='article-list']").Should().NotBeNull();
     }
 
     [Test]
-    public void Render_ShouldDisplayTableHeadings()
+    public void Render_WithArticle_ShouldDisplayNameGroupAndInventoryIcon()
     {
         // Arrange
-        _articleService.GetAllArticlesAsync().Returns(GetResult(Array.Empty<ExistingArticleDto>()));
-        _articleGroupService.GetAllArticleGroupsAsync().Returns(GetResult(Array.Empty<ExistingArticleGroupDto>()));
+        var articleGroup = new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(1), "Vegetables");
+        var articles = new[] { new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(2), "Lettuce", articleGroup, true) };
+        _articleService.GetAllArticlesAsync().Returns(GetResult(articles));
+        _articleGroupService.GetAllArticleGroupsAsync().Returns(GetResult(new[] { articleGroup }));
 
         // Act
         var cut = Render<Article>();
 
         // Assert
-        var headers = cut.FindAll("th");
-        headers.Should().NotBeEmpty();
-        var headerText = string.Join(' ', headers.Select(h => h.TextContent));
-        headerText.Should().Contain("Name");
-        headerText.Should().Contain("Article Group");
-        headerText.Should().Contain("Is Inventory");
+        var row = cut.Find("[data-testid='article-row-2']");
+        row.TextContent.Should().Contain("Lettuce").And.Contain("Vegetables");
+        row.QuerySelector(".icon-shelving-unit").Should().NotBeNull();
     }
 
     [Test]
@@ -115,7 +112,7 @@ public class ArticleTests : BunitContext
 
         // Assert
         var buttons = cut.FindAll("button");
-        var submitButton = buttons.FirstOrDefault(b => b.TextContent.Contains("Save", StringComparison.Ordinal));
+        var submitButton = buttons.FirstOrDefault(b => string.Equals(b.GetAttribute("aria-label"), "Save", StringComparison.Ordinal));
         submitButton.Should().NotBeNull();
     }
 
@@ -137,7 +134,7 @@ public class ArticleTests : BunitContext
         var cut = Render<Article>();
 
         // Assert
-        var tableRows = cut.FindAll("tbody tr");
+        var tableRows = cut.FindAll("[data-testid^='article-row-']");
         tableRows.Should().HaveCount(2);
     }
 
@@ -152,7 +149,7 @@ public class ArticleTests : BunitContext
         var cut = Render<Article>();
 
         // Assert
-        var tableRows = cut.FindAll("tbody tr");
+        var tableRows = cut.FindAll("[data-testid^='article-row-']");
         tableRows.Should().BeEmpty();
     }
 
@@ -233,7 +230,8 @@ public class ArticleTests : BunitContext
         // Assert
         var markup = cut.Markup;
         markup.Should().Contain("<form");
-        markup.Should().Contain("<button type=\"submit\" data-testid=\"article-save-button\">");
+        markup.Should().Contain("<button type=\"submit\"");
+        markup.Should().Contain("data-testid=\"article-save-button\"");
     }
 
     [Test]
@@ -247,8 +245,9 @@ public class ArticleTests : BunitContext
         var cut = Render<Article>();
 
         // Assert
-        var markup = cut.Markup;
-        markup.Should().Contain("<button type=\"submit\" data-testid=\"article-save-button\">Save</button>");
+        var saveButton = cut.Find("button[type='submit'][data-testid='article-save-button']");
+        saveButton.GetAttribute("aria-label").Should().Be("Save");
+        saveButton.QuerySelector(".icon-check").Should().NotBeNull();
     }
 
     [Test]
