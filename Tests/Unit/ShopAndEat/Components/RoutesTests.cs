@@ -1,6 +1,12 @@
+using Bunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using ShopAndEat.Components;
+using ShopAndEat.Pages;
+using ShopAndEat.Shared;
 
 namespace Tests.Unit.ShopAndEat.Components;
 
@@ -8,54 +14,43 @@ namespace Tests.Unit.ShopAndEat.Components;
 [Category("Unit")]
 public class RoutesTests
 {
-    [Test]
-    public void Routes_ShouldExistAsComponent()
+    [TestCase("/not-found", typeof(NotFound))]
+    [TestCase("/shopping", typeof(global::ShoppingAgent.Pages.Home))]
+    public async Task Routes_ResolvesPagesFromBothAssemblies(string path, Type expectedPage)
     {
         // Arrange
-        var componentType = typeof(Routes);
+        await using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        context.ComponentFactories.AddStub<MainLayout>(parameters => parameters.Get(layout => layout.Body)!);
+        context.ComponentFactories.AddStub<NotFound>();
+        context.ComponentFactories.AddStub<global::ShoppingAgent.Pages.Home>();
+        var navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo(path);
 
         // Act
-        var name = componentType.Name;
+        var component = context.Render<Routes>();
 
         // Assert
-        name.Should().Be("Routes");
+        component.FindComponent<RouteView>().Instance.RouteData.PageType.Should().Be(expectedPage);
+        component.FindComponent<RouteView>().Instance.DefaultLayout.Should().Be(typeof(MainLayout));
+        component.FindComponent<FocusOnNavigate>().Instance.Selector.Should().Be("h1");
     }
 
     [Test]
-    public void Routes_ShouldHaveCorrectNamespace()
+    public async Task Routes_RendersNotFoundPage_WhenRouteDoesNotExist()
     {
         // Arrange
-        var componentType = typeof(Routes);
+        await using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        context.ComponentFactories.AddStub<MainLayout>(parameters => parameters.Get(layout => layout.Body)!);
+        var navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/does-not-exist");
 
         // Act
-        var ns = componentType.Namespace;
+        var component = context.Render<Routes>();
 
         // Assert
-        ns.Should().Be("ShopAndEat.Components");
-    }
-
-    [Test]
-    public void Routes_ComponentTypeShouldBeValid()
-    {
-        // Arrange & Act
-        var componentType = typeof(Routes);
-
-        // Assert
-        componentType.Should().NotBeNull("Routes component should exist");
-        componentType.IsClass.Should().BeTrue("Routes should be a class");
-        componentType.IsPublic.Should().BeTrue("Routes should be public");
-    }
-
-    [Test]
-    public void Routes_ShouldBeRoutingComponent()
-    {
-        // Arrange & Act
-        var componentType = typeof(Routes);
-
-        // Assert
-        // Routes is a routing infrastructure component that cannot be fully unit-tested
-        // in isolation because it has complex DI dependencies (MainLayout > NavMenu > IStringLocalizer)
-        // This test verifies the component type exists and is properly defined
-        componentType.Should().NotBeNull();
+        component.Find("h1").TextContent.Should().Be("Not Found");
+        component.Markup.Should().Contain("Sorry, there's nothing at this address.");
     }
 }

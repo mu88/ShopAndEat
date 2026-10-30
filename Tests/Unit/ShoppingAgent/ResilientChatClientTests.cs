@@ -2,6 +2,7 @@ using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Diagnostics.Metrics;
 using System.Net;
+using System.Runtime.CompilerServices;
 using FluentAssertions;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -221,6 +222,52 @@ public class ResilientChatClientTests
             Arg.Any<IEnumerable<AiChatMessage>>(),
             Arg.Any<ChatOptions>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task GetResponseAsync_PreservesOriginalExceptionAndStack_WhenFallbackIsUnavailable(bool fallbackEnabled)
+    {
+        // Arrange
+        var primary = Substitute.For<IChatClient>();
+        var originalException = CreateRateLimitException();
+        primary.GetResponseAsync(Arg.Any<IEnumerable<AiChatMessage>>(), Arg.Any<ChatOptions>(), Arg.Any<CancellationToken>())
+            .Returns(_ => ThrowFromPrimaryClient<Task<ChatResponse>>(originalException));
+        var testee = CreateTestee(primary, retryMaxAttempts: 2, retryBaseDelayMs: 1, fallbackEnabled: fallbackEnabled);
+
+        // Act
+        var action = () => testee.GetResponseAsync([new AiChatMessage(ChatRole.User, "test")]);
+
+        // Assert
+        var assertion = await action.Should().ThrowAsync<ClientResultException>();
+        assertion.Which.Should().BeSameAs(originalException);
+        assertion.Which.StackTrace.Should().Contain(nameof(ThrowFromPrimaryClient));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task GetStreamingResponseAsync_PreservesOriginalExceptionAndStack_WhenFallbackIsUnavailable(bool fallbackEnabled)
+    {
+        // Arrange
+        var primary = Substitute.For<IChatClient>();
+        var originalException = CreateRateLimitException();
+        primary.GetStreamingResponseAsync(Arg.Any<IEnumerable<AiChatMessage>>(), Arg.Any<ChatOptions>(), Arg.Any<CancellationToken>())
+            .Returns(_ => ThrowFromPrimaryClient<IAsyncEnumerable<ChatResponseUpdate>>(originalException));
+        var testee = CreateTestee(primary, retryMaxAttempts: 2, retryBaseDelayMs: 1, fallbackEnabled: fallbackEnabled);
+
+        // Act
+        var action = () => CollectAsync(testee.GetStreamingResponseAsync([new AiChatMessage(ChatRole.User, "test")]));
+
+        // Assert
+        var assertion = await action.Should().ThrowAsync<ClientResultException>();
+        assertion.Which.Should().BeSameAs(originalException);
+        assertion.Which.StackTrace.Should().Contain(nameof(ThrowFromPrimaryClient));
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static TResponse ThrowFromPrimaryClient<TResponse>(ClientResultException exception)
+    {
+        throw exception;
     }
 
     [Test]

@@ -108,6 +108,23 @@ public class HomePageTests
     }
 
     [Test]
+    public async Task PageTitle_RendersLocalizedTitle_WhenHeadOutletIsPresent()
+    {
+        // Arrange
+        await using var ctx = CreateBunitContext();
+        var localizer = ctx.Services.GetRequiredService<IStringLocalizer<Messages>>();
+        localizer["TabTitle"].Returns(new LocalizedString("TabTitle", "Shopping assistant"));
+        ctx.JSInterop.Setup<string>("Blazor._internal.PageTitle.getAndRemoveExistingTitle").SetResult(string.Empty);
+        var head = ctx.Render<HeadOutlet>();
+
+        // Act
+        ctx.Render<global::ShoppingAgent.Pages.Home>();
+
+        // Assert
+        head.Find("title").TextContent.Should().Be("ShopAndEat – Shopping assistant");
+    }
+
+    [Test]
     public async Task SendMessage_DisplaysUserMessage()
     {
         // Arrange

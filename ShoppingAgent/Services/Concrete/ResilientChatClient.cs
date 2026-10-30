@@ -1,6 +1,5 @@
 using System.ClientModel;
 using System.Net;
-using System.Runtime.ExceptionServices;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Polly;
@@ -69,8 +68,14 @@ public sealed class ResilientChatClient : IChatClient
         }
         catch (ClientResultException ex) when (IsRateLimited(ex))
         {
-            return await HandleRetriesExhaustedAsync(messageList, options, ex, cancellationToken);
+            AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
+            if (!_agentOptions.ModelFallbackEnabled || _fallbackClient is null)
+            {
+                throw;
+            }
         }
+
+        return await HandleFallbackAsync(messageList, options, cancellationToken);
     }
 
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
@@ -98,7 +103,15 @@ public sealed class ResilientChatClient : IChatClient
         }
         catch (ClientResultException ex) when (IsRateLimited(ex))
         {
-            response = await HandleRetriesExhaustedStreamAsync(messageList, options, ex, cancellationToken);
+            AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
+            if (!_agentOptions.ModelFallbackEnabled || _fallbackClient is null)
+            {
+                throw;
+            }
+
+            AgentLogMessages.FallbackStarted(_logger);
+            _metrics.ModelFallbacksTotal.Add(1);
+            response = HandleFallbackStreamAsync(messageList, options, cancellationToken);
         }
 
         await foreach (var chunk in response.WithCancellation(cancellationToken))
@@ -116,60 +129,25 @@ public sealed class ResilientChatClient : IChatClient
         return ex.Status == (int)HttpStatusCode.TooManyRequests;
     }
 
-    private async Task<ChatResponse> HandleRetriesExhaustedAsync(
+    private async Task<ChatResponse> HandleFallbackAsync(
         List<ChatMessage> messages,
         ChatOptions? options,
-        ClientResultException lastException,
         CancellationToken cancellationToken)
     {
-        if (_agentOptions.ModelFallbackEnabled && _fallbackClient is not null)
+        AgentLogMessages.FallbackStarted(_logger);
+        _metrics.ModelFallbacksTotal.Add(1);
+
+        try
         {
-            AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
-            AgentLogMessages.FallbackStarted(_logger);
-            _metrics.ModelFallbacksTotal.Add(1);
-
-            try
-            {
-                var response = await _fallbackClient.GetResponseAsync(messages, options, cancellationToken);
-                AgentLogMessages.FallbackSucceeded(_logger);
-                return response;
-            }
-            catch (Exception fallbackEx)
-            {
-                AgentLogMessages.FallbackFailed(_logger, fallbackEx.Message);
-                throw;
-            }
+            var response = await _fallbackClient!.GetResponseAsync(messages, options, cancellationToken);
+            AgentLogMessages.FallbackSucceeded(_logger);
+            return response;
         }
-
-        AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
-        ExceptionDispatchInfo.Capture(lastException).Throw();
-
-        // Stryker disable once all: ExceptionDispatchInfo.Throw() always throws, so this line is
-        // unreachable at runtime; it exists only to satisfy the compiler's return-on-all-paths check.
-        throw null!;
-    }
-
-    private async Task<IAsyncEnumerable<ChatResponseUpdate>> HandleRetriesExhaustedStreamAsync(
-        List<ChatMessage> messages,
-        ChatOptions? options,
-        ClientResultException lastException,
-        CancellationToken cancellationToken)
-    {
-        if (_agentOptions.ModelFallbackEnabled && _fallbackClient is not null)
+        catch (Exception fallbackEx)
         {
-            AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
-            AgentLogMessages.FallbackStarted(_logger);
-            _metrics.ModelFallbacksTotal.Add(1);
-
-            return HandleFallbackStreamAsync(messages, options, cancellationToken);
+            AgentLogMessages.FallbackFailed(_logger, fallbackEx.Message);
+            throw;
         }
-
-        AgentLogMessages.RetriesExhausted(_logger, _llmOptions.RetryMaxAttempts);
-        ExceptionDispatchInfo.Capture(lastException).Throw();
-
-        // Stryker disable once all: ExceptionDispatchInfo.Throw() always throws, so this line is
-        // unreachable at runtime; it exists only to satisfy the compiler's return-on-all-paths check.
-        throw null!;
     }
 
     private async IAsyncEnumerable<ChatResponseUpdate> HandleFallbackStreamAsync(

@@ -1,6 +1,14 @@
-<Router AppAssembly="@typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(ShoppingAgent.Pages.Home).Assembly }" NotFoundPage="@typeof(Pages.NotFound)">
+@using System.Reflection
+
+<Router AppAssembly="@AppAssembly" AdditionalAssemblies="AdditionalAssemblies" NotFoundPage="@typeof(Pages.NotFound)">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
         <FocusOnNavigate RouteData="@routeData" Selector="h1"/>
     </Found>
 </Router>
+
+@code {
+    private static readonly Assembly[] AdditionalAssemblies = [typeof(ShoppingAgent.Pages.Home).Assembly];
+
+    private static Assembly AppAssembly => typeof(Program).Assembly;
+}
