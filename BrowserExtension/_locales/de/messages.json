@@ -126,7 +126,7 @@
     "description": "Label für das Bridge-Hosts-Textfeld"
   },
   "optionsBridgeHostsHelp": {
-    "message": "URL-Muster, auf denen das Bridge-Content-Script der Erweiterung injiziert wird. Ein Muster pro Zeile. * als Wildcard verwenden.",
+    "message": "Erlaubte Shopping-Agent-URL-Muster, eines pro Zeile. * als Wildcard verwenden. Explizite Ports bleiben in beiden Browsern eingeschränkt; Firefox prüft die konfigurierte URL vor der Bridge-Aktivierung und jeder Anfrage. Nach Änderungen die Seite neu laden.",
     "description": "Hilfetext für Bridge-Hosts"
   },
   "optionsSave": {

@@ -126,7 +126,7 @@
     "description": "Label for the bridge hosts textarea"
   },
   "optionsBridgeHostsHelp": {
-    "message": "URL patterns where the extension bridge content script will be injected. One pattern per line. Use * as wildcard.",
+    "message": "Allowed Shopping Agent URL patterns, one per line. Use * as wildcard. Explicit ports remain restricted in both browsers; Firefox checks the configured URL before activating the bridge and processing requests. Reload the page after changing these settings.",
     "description": "Help text for bridge hosts"
   },
   "optionsSave": {

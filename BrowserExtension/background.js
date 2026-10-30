@@ -9,20 +9,67 @@ const DEFAULT_BRIDGE_HOSTS = [
   'http://localhost:5176/shopAndEat/shopping*',
 ];
 
-async function registerBridgeContentScript() {
+// Firefox match patterns cannot contain ports; authorization below retains the original restriction.
+const isFirefox = typeof browser !== 'undefined' && typeof browser.runtime?.getBrowserInfo === 'function';
+
+function toRegistrationPattern(pattern) {
+  if (!isFirefox) return pattern;
+  return pattern.replace(/^(\*|[a-z][a-z0-9+.-]*):\/\/([^/]+?):\d+(\/.*)$/i, '$1://$2$3');
+}
+
+let bridgeRegistration = Promise.resolve();
+
+function registerBridgeContentScript() {
+  const registration = bridgeRegistration.then(updateBridgeContentScript);
+  bridgeRegistration = registration.catch(error => console.error('[ShopAndEat:bg] Bridge registration failed:', error));
+  return registration;
+}
+
+async function updateBridgeContentScript() {
   const { bridgeHosts } = await chrome.storage.sync.get({ bridgeHosts: DEFAULT_BRIDGE_HOSTS });
   try {
     await chrome.scripting.unregisterContentScripts({ ids: ['bridge'] });
   } catch {
     // Not yet registered — that's fine
   }
+  const matches = [...new Set(bridgeHosts.map(toRegistrationPattern))];
+  if (matches.length === 0) return;
   await chrome.scripting.registerContentScripts([{
     id: 'bridge',
-    matches: bridgeHosts,
+    matches,
     js: ['content-bridge.js'],
     runAt: 'document_idle',
   }]);
-  console.log('[ShopAndEat:bg] Bridge content script registered for:', bridgeHosts);
+  console.log('[ShopAndEat:bg] Bridge content script registered for:', matches);
+}
+
+function matchesBridgePattern(pattern, url) {
+  if (pattern === '<all_urls>') return url.protocol === 'http:' || url.protocol === 'https:';
+  if (typeof pattern !== 'string') return false;
+  const match = pattern.match(/^(\*|https?):\/\/(\[[^\]]+\]|[^/:]+)(?::(\d+))?(\/.*)$/i);
+  if (!match) return false;
+  const [, scheme, rawHost, port, path] = match;
+  if (scheme === '*' ? !['http:', 'https:'].includes(url.protocol) : url.protocol !== `${scheme.toLowerCase()}:`) return false;
+  const host = rawHost.toLowerCase();
+  const hostMatches = host === '*' || url.hostname === host ||
+    (host.startsWith('*.') && (url.hostname === host.slice(2) || url.hostname.endsWith(`.${host.slice(2)}`)));
+  if (!hostMatches) return false;
+  const effectivePort = url.port || (url.protocol === 'https:' ? '443' : '80');
+  if (port && Number(port) !== Number(effectivePort)) return false;
+  const pathExpression = path.split('*').map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
+  return new RegExp(`^${pathExpression}$`).test(url.pathname + url.search);
+}
+
+async function isAllowedBridgeSender(sender) {
+  if (!sender.url) return false;
+  let url;
+  try {
+    url = new URL(sender.url);
+  } catch {
+    return false;
+  }
+  const { bridgeHosts } = await chrome.storage.sync.get({ bridgeHosts: DEFAULT_BRIDGE_HOSTS });
+  return bridgeHosts.some(pattern => matchesBridgePattern(pattern, url));
 }
 
 chrome.runtime.onInstalled.addListener(registerBridgeContentScript);
@@ -30,7 +77,7 @@ chrome.runtime.onStartup.addListener(registerBridgeContentScript);
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && changes.bridgeHosts) {
-    registerBridgeContentScript();
+    return registerBridgeContentScript();
   }
 });
 
@@ -53,10 +100,15 @@ function getShop(shopKey) {
 
 // Listen for tool requests from the bridge content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'TOOL_REQUEST') {
-    handleToolRequest(message.request)
+  if (message.type === 'BRIDGE_CHECK' || message.type === 'TOOL_REQUEST') {
+    isAllowedBridgeSender(sender)
+      .then(allowed => {
+        if (message.type === 'BRIDGE_CHECK') return { allowed };
+        if (!allowed) return { success: false, error: 'Bridge sender URL is not allowed', id: message.request?.id };
+        return handleToolRequest(message.request);
+      })
       .then(result => sendResponse(result))
-      .catch(err => sendResponse({ success: false, error: err.message }));
+      .catch(err => sendResponse({ success: false, error: err.message, id: message.request?.id }));
     return true; // async response
   }
 });

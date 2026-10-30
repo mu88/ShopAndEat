@@ -70,7 +70,25 @@ Live, opt-in integration tests against a real Mistral endpoint live under `Tests
 
 ### Browser Extension
 
-Load `BrowserExtension/` as an unpacked extension (`chrome://extensions` → Developer mode → Load unpacked). It connects back to the running `ShopAndEat` instance via SignalR to execute the Shopping Agent's tool calls on the shop's website.
+The extension uses one Manifest V3 codebase for Chrome 121+ (service worker) and Firefox 140+ (background scripts). Firefox 128 introduced the `MAIN` execution world used to read the shop's CSRF token; the minimum is 140 to support Firefox's built-in data transmission consent at installation.
+
+**Chrome / Chromium-based browsers**: load `BrowserExtension/` as an unpacked extension (`chrome://extensions` → Developer mode → Load unpacked).
+
+**Firefox (temporary, for development)**: go to `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** → select `BrowserExtension/manifest.json`. This installation is removed when Firefox restarts and is sufficient for local development against a `ShopAndEat` instance running on `localhost`.
+
+**Firefox (permanent)**: regular (non-Developer-Edition/Nightly/ESR) Firefox only loads a permanently installed extension if it is signed by Mozilla. The extension can be self-distributed (no public AMO listing required) — see [Self-distribution](https://extensionworkshop.com/documentation/publish/self-distribution/) and [Signing and distribution overview](https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/). Package and sign with [`web-ext sign`](https://extensionworkshop.com/documentation/develop/web-ext-command-reference/#web-ext-sign), then install the resulting `.xpi` file.
+
+The extension exchanges tool requests and results with the ShopAndEat page through a `window.postMessage` content-script bridge; the app handles server communication. Set **Allowed host URLs** in the extension's options to your instance's shopping page, for example `https://your-host/shopAndEat/shopping*`. Grant website access to that host and Coop, sign in to Coop in the same browser profile, then reload the shopping page.
+
+Existing saved URL patterns, including explicit ports, remain valid. Firefox cannot register content-script patterns containing ports ([Firefox bug 1362809](https://bugzil.la/1362809)), so registration uses a deduplicated pattern without the port. Before announcing a connection and before executing each tool request, the background script checks the sender's URL against the original saved patterns, including ports. A pattern without an explicit port allows all ports of that host. Changes apply to subsequent requests; reload the page to activate the bridge after adding a new URL.
+
+The Firefox manifest declares required transmission of search terms, website activity (cart operations), and website content (product details and cart contents) to the configured shop and ShopAndEat instance. ShopAndEat's Shopping Agent processes these results with its configured LLM provider. Firefox asks for consent during installation; the extension does not read passwords or payment details. See [Firefox built-in data consent](https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/).
+
+#### Extension verification
+
+Run the dependency-free authorization and registration regression tests with `node --test Tests/BrowserExtension/bridge.test.cjs`.
+
+Before using a signed release, verify the real flow in Firefox against your own ShopAndEat instance and Coop account: search, inspect product details, add an item, inspect the cart, and remove that item. Local simulated-shop tests do not establish compatibility with Coop's live login, page timing or bot protection. Mozilla signing, signed-XPI installation, browser restarts and background suspension also require release verification.
 
 ## Configuration
 
