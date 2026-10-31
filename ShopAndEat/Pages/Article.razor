@@ -10,32 +10,49 @@
 @inject IJSRuntime Js
 @* TODO mu88: Build translator *@
 
-<EditForm Model="@_articleModel" OnSubmit="HandleSubmitAsync" FormName="ArticleForm">
-    <DataAnnotationsValidator/>
-    <ValidationSummary/>
+@if (!IsEditing)
+{
+    <EditForm Model="@_articleModel" OnSubmit="HandleSubmitAsync" FormName="ArticleForm">
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
 
-    @ArticleEditor
-</EditForm>
+        @ArticleEditor
+    </EditForm>
+}
 
 <div class="article-grid mt-3" role="list" aria-label="Articles" data-testid="article-list">
     @foreach (var article in Articles)
     {
-        <div class="article-item" role="listitem" data-testid="article-row-@article.ArticleId.Value">
-            <div class="article-text">
-                <div class="fw-semibold text-truncate lh-sm">@article.Name</div>
-                <div class="small text-muted text-truncate lh-sm">@article.ArticleGroup.Name</div>
+        @if (_articleModel.ArticleId == article.ArticleId.Value)
+        {
+            <div class="article-item article-item-editing" role="listitem" data-testid="article-row-@article.ArticleId.Value">
+                <EditForm Model="@_articleModel" OnSubmit="HandleSubmitAsync" FormName="@($"ArticleForm-{article.ArticleId.Value}")" class="w-100">
+                    <DataAnnotationsValidator/>
+                    <ValidationSummary/>
+
+                    @ArticleEditor
+                </EditForm>
             </div>
-            @if (article.IsInventory)
-            {
-                <span class="icon icon-shelving-unit text-primary" role="img" title="Inventory" aria-label="Inventory"></span>
-            }
-            <button class="btn btn-sm btn-link text-secondary p-1" @onclick="@(_ => EditArticleAsync(article.ArticleId.Value))" data-testid="edit-article-button-@article.ArticleId.Value" title="Edit article" aria-label="Edit article">
-                <span class="icon icon-pencil" aria-hidden="true"></span>
-            </button>
-            <button class="btn btn-sm btn-link text-danger p-1" @onclick="@(_ => DeleteArticleAsync(article.ArticleId.Value))" data-testid="delete-article-button-@article.ArticleId.Value" title="Delete article" aria-label="Delete article">
-                <span class="icon icon-trash" aria-hidden="true"></span>
-            </button>
-        </div>
+        }
+        else
+        {
+            <div class="article-item" role="listitem" data-testid="article-row-@article.ArticleId.Value">
+                <div class="article-text">
+                    <div class="fw-semibold text-truncate lh-sm">@article.Name</div>
+                    <div class="small text-muted text-truncate lh-sm">@article.ArticleGroup.Name</div>
+                </div>
+                @if (article.IsInventory)
+                {
+                    <span class="icon icon-shelving-unit text-primary" role="img" title="Inventory" aria-label="Inventory"></span>
+                }
+                <button class="btn btn-sm btn-link text-secondary p-1" @onclick="@(_ => EditArticle(article.ArticleId.Value))" data-testid="edit-article-button-@article.ArticleId.Value" title="Edit article" aria-label="Edit article">
+                    <span class="icon icon-pencil" aria-hidden="true"></span>
+                </button>
+                <button class="btn btn-sm btn-link text-danger p-1" @onclick="@(_ => DeleteArticleAsync(article.ArticleId.Value))" data-testid="delete-article-button-@article.ArticleId.Value" title="Delete article" aria-label="Delete article">
+                    <span class="icon icon-trash" aria-hidden="true"></span>
+                </button>
+            </div>
+        }
     }
 </div>
 
@@ -55,6 +72,12 @@
             <label class="btn btn-outline-primary article-form-button" for="article-is-inventory" title="Inventory" aria-label="Inventory">
                 <span class="icon icon-shelving-unit" aria-hidden="true"></span>
             </label>
+            @if (IsEditing)
+            {
+                <button type="button" class="btn btn-outline-secondary article-form-button" @onclick="CancelEdit" data-testid="article-cancel-button" title="Cancel" aria-label="Cancel">
+                    <span class="icon icon-x" aria-hidden="true"></span>
+                </button>
+            }
             <button type="submit" class="btn btn-primary article-form-button" data-testid="article-save-button" title="Save" aria-label="Save">
                 <span class="icon icon-check" aria-hidden="true"></span>
             </button>
@@ -95,7 +118,7 @@
         {
             var updatedArticle = new ExistingArticleDto(new ArticleId(_articleModel.ArticleId), _articleModel.ArticleName, ArticleGroups.Single(x => x.Name == _articleModel.ArticleGroupName), _articleModel.IsInventory);
             await ArticleService.UpdateArticleAsync(updatedArticle);
-            _articleModel.ArticleId = default;
+            CancelEdit();
         }
 
         await ShowSaveConfirmationAsync();
@@ -105,22 +128,29 @@
 
     private async Task ShowSaveConfirmationAsync() => await Js.InvokeVoidAsync("window.alert", "Saved!");
 
+    private bool IsEditing => _articleModel.ArticleId != default;
+
+    private void CancelEdit()
+    {
+        _articleModel.ArticleId = default;
+        _articleModel.ArticleName = string.Empty;
+        _articleModel.IsInventory = false;
+        _articleModel.ArticleGroupName = Articles.FirstOrDefault()?.ArticleGroup.Name ?? string.Empty;
+    }
+
     private async Task DeleteArticleAsync(int articleId)
     {
         await ArticleService.DeleteArticleAsync(new DeleteArticleDto(new ArticleId(articleId)));
         await LoadArticlesAsync();
     }
 
-    private async Task EditArticleAsync(int articleId)
+    private void EditArticle(int articleId)
     {
         var article = Articles.Single(x => x.ArticleId.Value == articleId);
         _articleModel.ArticleId = article.ArticleId.Value;
         _articleModel.ArticleName = article.Name;
         _articleModel.ArticleGroupName = article.ArticleGroup.Name;
         _articleModel.IsInventory = article.IsInventory;
-        await ScrollToTopAsync();
     }
-
-    private async Task ScrollToTopAsync() => await Js.InvokeVoidAsync("window.scrollTo", 0, 0);
 
 }

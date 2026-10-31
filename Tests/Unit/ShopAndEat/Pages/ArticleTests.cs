@@ -380,7 +380,7 @@ public class ArticleTests : BunitContext
     }
 
     [Test]
-    public async Task EditArticleAsync_ShouldPopulateFormFields()
+    public async Task EditArticle_ShouldPopulateFormFieldsInsideTheArticleRow()
     {
         // Arrange
         var articleGroup = new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(1), "Vegetables");
@@ -392,18 +392,63 @@ public class ArticleTests : BunitContext
         var cut = Render<Article>();
 
         // Act
-        var editButton = cut.FindAll("button.btn").FirstOrDefault(b => b.QuerySelector(".icon-pencil") is not null);
-        if (editButton is not null)
-        {
-            await editButton.ClickAsync();
-        }
+        await cut.Find("[data-testid='edit-article-button-1']").ClickAsync();
 
-        // Re-render to see the updated form
-        cut.Render();
+        // Assert
+        var row = cut.Find("[data-testid='article-row-1']");
+        row.QuerySelector("[data-testid='article-name-input']")!.GetAttribute("value").Should().Be("Tomato");
+        row.QuerySelector("[data-testid='article-is-inventory-checkbox']")!.HasAttribute("checked").Should().BeTrue();
+        cut.FindAll("[data-testid='article-name-input']").Should().ContainSingle();
+    }
 
-        // Assert - verify form was populated with article data
-        var markup = cut.Markup;
-        markup.Should().Contain("Tomato");
+    [Test]
+    public async Task EditArticle_ShouldNotScrollToTop()
+    {
+        // Arrange
+        var articleGroup = new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(1), "Vegetables");
+        _articleService.GetAllArticlesAsync().Returns(GetResult(new[] { new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(1), "Tomato", articleGroup, false) }));
+        _articleGroupService.GetAllArticleGroupsAsync().Returns(GetResult(new[] { articleGroup }));
+        var cut = Render<Article>();
+
+        // Act
+        await cut.Find("[data-testid='edit-article-button-1']").ClickAsync();
+
+        // Assert
+        _jsRuntime.ReceivedCalls().SelectMany(call => call.GetArguments()).OfType<string>().Should().NotContain("window.scrollTo");
+    }
+
+    [Test]
+    public async Task CancelEdit_ShouldRestoreArticleRowAndNotUpdate()
+    {
+        // Arrange
+        var articleGroup = new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(1), "Vegetables");
+        _articleService.GetAllArticlesAsync().Returns(GetResult(new[] { new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(1), "Tomato", articleGroup, false) }));
+        _articleGroupService.GetAllArticleGroupsAsync().Returns(GetResult(new[] { articleGroup }));
+        var cut = Render<Article>();
+        await cut.Find("[data-testid='edit-article-button-1']").ClickAsync();
+
+        // Act
+        await cut.Find("[data-testid='article-cancel-button']").ClickAsync();
+
+        // Assert
+        cut.FindAll("[data-testid='article-cancel-button']").Should().BeEmpty();
+        cut.Find("[data-testid='edit-article-button-1']").Should().NotBeNull();
+        cut.Find("[data-testid='article-name-input']").GetAttribute("value").Should().BeNullOrEmpty();
+        await _articleService.DidNotReceive().UpdateArticleAsync(Arg.Any<ExistingArticleDto>());
+    }
+
+    [Test]
+    public void Render_WithoutEditing_ShouldNotShowCancelButton()
+    {
+        // Arrange
+        _articleService.GetAllArticlesAsync().Returns(GetResult(Array.Empty<ExistingArticleDto>()));
+        _articleGroupService.GetAllArticleGroupsAsync().Returns(GetResult(Array.Empty<ExistingArticleGroupDto>()));
+
+        // Act
+        var cut = Render<Article>();
+
+        // Assert
+        cut.FindAll("[data-testid='article-cancel-button']").Should().BeEmpty();
     }
 
     [Test]
@@ -445,5 +490,7 @@ public class ArticleTests : BunitContext
 
         // Assert
         await _articleService.Received(1).UpdateArticleAsync(Arg.Is<ExistingArticleDto>(dto => dto.ArticleId.Value == 1 && dto.Name == "Tomato"));
+        cut.FindAll(".article-item-editing").Should().BeEmpty();
+        cut.Find("[data-testid='article-name-input']").GetAttribute("value").Should().BeNullOrEmpty();
     }
 }

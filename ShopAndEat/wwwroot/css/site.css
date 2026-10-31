@@ -426,3 +426,26 @@ thead.table-light,
   min-width: 2.75rem;
   font-size: 1.1rem;
 }
+
+/* The card being edited doubles its width and spans the full row on narrow screens */
+.article-item-editing {
+  grid-column: span 2;
+  padding: 0.5rem;
+  border-color: var(--bs-primary);
+  background-color: var(--bs-tertiary-bg);
+}
+
+@media (max-width: 575.98px) {
+  .article-item-editing {
+    grid-column: 1 / -1;
+  }
+
+  .article-item-editing .article-form-name {
+    flex-basis: 100%;
+  }
+
+  .article-item-editing .article-form-group {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
