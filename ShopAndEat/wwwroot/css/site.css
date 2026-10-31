@@ -449,3 +449,22 @@ thead.table-light,
     min-width: 0;
   }
 }
+
+/* "New article" tile: first cell of the grid, wrapper stays out of the layout so the button is the grid item */
+.article-add-slot {
+  display: contents;
+}
+
+.article-add {
+  justify-content: center;
+  min-height: 3.1rem;
+  border-style: dashed;
+  background-color: transparent;
+  color: var(--bs-primary);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.article-add:hover {
+  background-color: var(--bs-primary-bg-subtle);
+}

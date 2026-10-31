@@ -10,17 +10,26 @@
 @inject IJSRuntime Js
 @* TODO mu88: Build translator *@
 
-@if (!IsEditing)
-{
-    <EditForm Model="@_articleModel" OnSubmit="HandleSubmitAsync" FormName="ArticleForm">
-        <DataAnnotationsValidator/>
-        <ValidationSummary/>
-
-        @ArticleEditor
-    </EditForm>
-}
-
 <div class="article-grid mt-3" role="list" aria-label="Articles" data-testid="article-list">
+    @if (_isCreating)
+    {
+        <div class="article-item article-item-editing" role="listitem" data-testid="article-row-new">
+            <EditForm Model="@_articleModel" OnSubmit="HandleSubmitAsync" FormName="ArticleForm-new" class="w-100">
+                <DataAnnotationsValidator/>
+                <ValidationSummary/>
+
+                @ArticleEditor
+            </EditForm>
+        </div>
+    }
+    else
+    {
+        <div role="listitem" class="article-add-slot">
+            <button type="button" class="article-item article-add" @onclick="StartCreate" data-testid="article-add-button" title="New article" aria-label="New article">
+                <span class="icon icon-plus" aria-hidden="true"></span>
+            </button>
+        </div>
+    }
     @foreach (var article in Articles)
     {
         @if (_articleModel.ArticleId == article.ArticleId.Value)
@@ -118,8 +127,9 @@
         {
             var updatedArticle = new ExistingArticleDto(new ArticleId(_articleModel.ArticleId), _articleModel.ArticleName, ArticleGroups.Single(x => x.Name == _articleModel.ArticleGroupName), _articleModel.IsInventory);
             await ArticleService.UpdateArticleAsync(updatedArticle);
-            CancelEdit();
         }
+
+        CancelEdit();
 
         await ShowSaveConfirmationAsync();
 
@@ -128,10 +138,19 @@
 
     private async Task ShowSaveConfirmationAsync() => await Js.InvokeVoidAsync("window.alert", "Saved!");
 
-    private bool IsEditing => _articleModel.ArticleId != default;
+    private bool _isCreating;
+
+    private bool IsEditing => _isCreating || _articleModel.ArticleId != default;
+
+    private void StartCreate()
+    {
+        CancelEdit();
+        _isCreating = true;
+    }
 
     private void CancelEdit()
     {
+        _isCreating = false;
         _articleModel.ArticleId = default;
         _articleModel.ArticleName = string.Empty;
         _articleModel.IsInventory = false;
@@ -147,6 +166,7 @@
     private void EditArticle(int articleId)
     {
         var article = Articles.Single(x => x.ArticleId.Value == articleId);
+        _isCreating = false;
         _articleModel.ArticleId = article.ArticleId.Value;
         _articleModel.ArticleName = article.Name;
         _articleModel.ArticleGroupName = article.ArticleGroup.Name;

@@ -65,7 +65,15 @@ public class ShoppingWorkflowUiSystemTests
             WaitUntil = WaitUntilState.NetworkIdle
         });
 
-        await _page.WaitForSelectorAsync("[data-testid='article-name-input']", new() { Timeout = 15000 });
+        // The click is lost if it happens before the Blazor circuit is connected, so retry until the editor opens
+        var nameInput = _page.Locator("[data-testid='article-name-input']");
+        for (var attempt = 0; attempt < 10 && !await nameInput.IsVisibleAsync(); attempt++)
+        {
+            await _page.ClickAsync("[data-testid='article-add-button']");
+            await Task.Delay(500, _cancellationToken);
+        }
+
+        await nameInput.WaitForAsync(new() { Timeout = 15000 });
 
         await _page.FillAsync("[data-testid='article-name-input']", articleName);
         await _page.SelectOptionAsync("[data-testid='article-group-select']", SystemTestsFixture.SeededArticleGroupName);
