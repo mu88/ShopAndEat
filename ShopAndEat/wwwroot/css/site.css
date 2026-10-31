@@ -501,3 +501,14 @@ thead.table-light,
     display: none;
   }
 }
+
+/* Briefly highlights the article that was just saved */
+@keyframes article-item-highlight {
+  from {
+    background-color: var(--bs-primary-bg-subtle);
+  }
+}
+
+.article-item-highlight {
+  animation: article-item-highlight 1.5s ease-out;
+}

@@ -18,6 +18,7 @@ public class ArticleTests : BunitContext
     private IArticleService _articleService = null!;
     private IArticleGroupService _articleGroupService = null!;
     private IJSRuntime _jsRuntime = null!;
+    private IJSObjectReference _articleModule = null!;
 
     [SetUp]
     public void SetUp()
@@ -25,6 +26,8 @@ public class ArticleTests : BunitContext
         _articleService = Substitute.For<IArticleService>();
         _articleGroupService = Substitute.For<IArticleGroupService>();
         _jsRuntime = Substitute.For<IJSRuntime>();
+        _articleModule = Substitute.For<IJSObjectReference>();
+        _jsRuntime.InvokeAsync<IJSObjectReference>("import", Arg.Any<object[]>()).Returns(new ValueTask<IJSObjectReference>(_articleModule));
 
         Services.AddScoped(_ => _articleService);
         Services.AddScoped(_ => _articleGroupService);
@@ -39,6 +42,136 @@ public class ArticleTests : BunitContext
     private static Task<IReadOnlyList<T>> GetResult<T>(IReadOnlyList<T> items) => Task.FromResult(items);
 
     private static void OpenNewArticleEditor(IRenderedComponent<Article> cut) => cut.Find("[data-testid='article-add-button']").Click();
+
+    private IEnumerable<object?[]> ModuleCalls(string identifier) => _articleModule.ReceivedCalls()
+        .Where(call => string.Equals(call.GetMethodInfo().Name, nameof(IJSObjectReference.InvokeAsync), StringComparison.Ordinal) && string.Equals((string?)call.GetArguments()[0], identifier, StringComparison.Ordinal))
+        .Select(call => (object?[])(call.GetArguments()[1] ?? Array.Empty<object?>())!);
+
+    private void ArrangeSingleArticle()
+    {
+        var articleGroup = new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(1), "Vegetables");
+        _articleService.GetAllArticlesAsync().Returns(GetResult(new[] { new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(1), "Tomato", articleGroup, false) }));
+        _articleGroupService.GetAllArticleGroupsAsync().Returns(GetResult(new[] { articleGroup }));
+    }
+
+    [Test]
+    public void Render_WithoutInteraction_ShouldNotLoadTheScriptModule()
+    {
+        // Arrange
+        ArrangeSingleArticle();
+
+        // Act
+        Render<Article>();
+
+        // Assert
+        _jsRuntime.DidNotReceive().InvokeAsync<IJSObjectReference>("import", Arg.Any<object[]>());
+    }
+
+    [Test]
+    public void AddButton_ShouldFocusTheEditor()
+    {
+        // Arrange
+        ArrangeSingleArticle();
+        var cut = Render<Article>();
+
+        // Act
+        OpenNewArticleEditor(cut);
+
+        // Assert
+        ModuleCalls("focusEditor").Should().ContainSingle();
+    }
+
+    [Test]
+    public async Task EditButton_ShouldFocusTheEditor()
+    {
+        // Arrange
+        ArrangeSingleArticle();
+        var cut = Render<Article>();
+
+        // Act
+        await cut.Find("[data-testid='edit-article-button-1']").ClickAsync();
+
+        // Assert
+        ModuleCalls("focusEditor").Should().ContainSingle();
+    }
+
+    [Test]
+    public async Task Escape_ShouldCloseTheEditorWithoutSaving()
+    {
+        // Arrange
+        ArrangeSingleArticle();
+        var cut = Render<Article>();
+        await cut.Find("[data-testid='edit-article-button-1']").ClickAsync();
+
+        // Act
+        await cut.Find(".article-form").KeyDownAsync(Key.Escape);
+
+        // Assert
+        cut.FindAll("form").Should().BeEmpty();
+        await _articleService.DidNotReceive().UpdateArticleAsync(Arg.Any<ExistingArticleDto>());
+    }
+
+    [Test]
+    public async Task OtherKeys_ShouldKeepTheEditorOpen()
+    {
+        // Arrange
+        ArrangeSingleArticle();
+        var cut = Render<Article>();
+        await cut.Find("[data-testid='edit-article-button-1']").ClickAsync();
+
+        // Act
+        await cut.Find(".article-form").KeyDownAsync(Key.Tab);
+
+        // Assert
+        cut.FindAll("form").Should().ContainSingle();
+    }
+
+    [Test]
+    public async Task SavingNewArticle_ShouldRevealTheCreatedArticle()
+    {
+        // Arrange
+        ArrangeSingleArticle();
+        var cut = Render<Article>();
+        OpenNewArticleEditor(cut);
+        await cut.Find("[data-testid='article-name-input']").ChangeAsync("Cucumber");
+        await cut.Find("[data-testid='article-group-select']").ChangeAsync("Vegetables");
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        ModuleCalls("revealArticle").Should().ContainSingle().Which.Should().Equal(1);
+    }
+
+    [Test]
+    public async Task SavingEditedArticle_ShouldRevealTheUpdatedArticle()
+    {
+        // Arrange
+        ArrangeSingleArticle();
+        var cut = Render<Article>();
+        await cut.Find("[data-testid='edit-article-button-1']").ClickAsync();
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        ModuleCalls("revealArticle").Should().ContainSingle().Which.Should().Equal(1);
+    }
+
+    [Test]
+    public async Task CancelEdit_ShouldNotRevealAnyArticle()
+    {
+        // Arrange
+        ArrangeSingleArticle();
+        var cut = Render<Article>();
+        await cut.Find("[data-testid='edit-article-button-1']").ClickAsync();
+
+        // Act
+        await cut.Find("[data-testid='article-cancel-button']").ClickAsync();
+
+        // Assert
+        ModuleCalls("revealArticle").Should().BeEmpty();
+    }
 
     [Test]
     public async Task List_ShouldBeMarkedBusyOnlyWhileAnEditorIsOpen()

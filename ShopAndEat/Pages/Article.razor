@@ -1,5 +1,6 @@
 @page "/article"
 @rendermode InteractiveServer
+@implements IAsyncDisposable
 @using DataLayer.EfClasses
 @using DTO.Article
 @using DTO.ArticleGroup
@@ -68,7 +69,7 @@
 @code {
 
     private RenderFragment ArticleEditor =>
-        @<div class="article-form">
+        @<div class="article-form" @onkeydown="OnEditorKeyDown">
             <InputText id="article-name" class="form-control article-form-name" placeholder="Name" aria-label="Name" @bind-Value="_articleModel.ArticleName" data-testid="article-name-input"/>
             <InputSelect id="article-group" class="form-select article-form-group" aria-label="Article Group" @bind-Value="_articleModel.ArticleGroupName" data-testid="article-group-select">
                 <option>—</option>
@@ -118,15 +119,18 @@
 
     private async Task HandleSubmitAsync()
     {
+        int savedArticleId;
         if (_articleModel.ArticleId == default)
         {
             var newArticle = new NewArticleDto(_articleModel.ArticleName, ArticleGroups.Single(x => x.Name == _articleModel.ArticleGroupName), _articleModel.IsInventory);
-            await ArticleService.CreateArticleAsync(newArticle);
+            var createdArticle = await ArticleService.CreateArticleAsync(newArticle);
+            savedArticleId = createdArticle.ArticleId.Value;
         }
         else
         {
             var updatedArticle = new ExistingArticleDto(new ArticleId(_articleModel.ArticleId), _articleModel.ArticleName, ArticleGroups.Single(x => x.Name == _articleModel.ArticleGroupName), _articleModel.IsInventory);
             await ArticleService.UpdateArticleAsync(updatedArticle);
+            savedArticleId = updatedArticle.ArticleId.Value;
         }
 
         CancelEdit();
@@ -134,6 +138,7 @@
         await ShowSaveConfirmationAsync();
 
         await LoadArticlesAsync();
+        _articleToReveal = savedArticleId;
     }
 
     private async Task ShowSaveConfirmationAsync() => await Js.InvokeVoidAsync("window.alert", "Saved!");
@@ -146,6 +151,7 @@
     {
         CancelEdit();
         _isCreating = true;
+        _focusEditor = true;
     }
 
     private void CancelEdit()
@@ -155,6 +161,14 @@
         _articleModel.ArticleName = string.Empty;
         _articleModel.IsInventory = false;
         _articleModel.ArticleGroupName = Articles.FirstOrDefault()?.ArticleGroup.Name ?? string.Empty;
+    }
+
+    private void OnEditorKeyDown(KeyboardEventArgs args)
+    {
+        if (string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+        {
+            CancelEdit();
+        }
     }
 
     private async Task DeleteArticleAsync(int articleId)
@@ -167,10 +181,60 @@
     {
         var article = Articles.Single(x => x.ArticleId.Value == articleId);
         _isCreating = false;
+        _focusEditor = true;
         _articleModel.ArticleId = article.ArticleId.Value;
         _articleModel.ArticleName = article.Name;
         _articleModel.ArticleGroupName = article.ArticleGroup.Name;
         _articleModel.IsInventory = article.IsInventory;
+    }
+
+    private IJSObjectReference? _module;
+
+    private bool _focusEditor;
+
+    private int? _articleToReveal;
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (!_focusEditor && _articleToReveal is null)
+        {
+            return;
+        }
+
+        _module ??= await Js.InvokeAsync<IJSObjectReference>("import", "./Pages/Article.razor.js");
+
+        if (_focusEditor)
+        {
+            _focusEditor = false;
+            await _module.InvokeVoidAsync("focusEditor");
+        }
+
+        if (_articleToReveal is { } articleId)
+        {
+            _articleToReveal = null;
+            await _module.InvokeVoidAsync("revealArticle", articleId);
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is already gone, so there is nothing left to dispose
+        }
     }
 
 }
