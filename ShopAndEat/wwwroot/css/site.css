@@ -468,3 +468,36 @@ thead.table-light,
 .article-add:hover {
   background-color: var(--bs-primary-bg-subtle);
 }
+
+/* Below the full-sidebar width the "new article" tile becomes a floating button above the bottom tab bar.
+   It hides while an editor is open so it never covers the on-screen keyboard area. */
+@media (max-width: 991.98px) {
+  .article-add {
+    position: fixed;
+    right: calc(var(--safe-right) + 1.25rem);
+    bottom: calc(var(--nav-offset-bottom) + 1.25rem);
+    z-index: 100;
+    width: 3.5rem;
+    height: 3.5rem;
+    min-height: 0;
+    padding: 0;
+    border-style: solid;
+    border-radius: 50%;
+    border-color: var(--app-primary-hover);
+    background-color: var(--app-primary);
+    color: #fff;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.4);
+  }
+
+  .article-add:hover {
+    background-color: var(--app-primary-hover);
+  }
+
+  .article-grid {
+    padding-bottom: 5rem;
+  }
+
+  .article-grid-busy .article-add {
+    display: none;
+  }
+}

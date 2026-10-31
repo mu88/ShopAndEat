@@ -10,7 +10,7 @@
 @inject IJSRuntime Js
 @* TODO mu88: Build translator *@
 
-<div class="article-grid mt-3" role="list" aria-label="Articles" data-testid="article-list">
+<div class="article-grid mt-3 @(IsEditing ? "article-grid-busy" : null)" role="list" aria-label="Articles" data-testid="article-list">
     @if (_isCreating)
     {
         <div class="article-item article-item-editing" role="listitem" data-testid="article-row-new">

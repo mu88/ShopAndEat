@@ -41,6 +41,25 @@ public class ArticleTests : BunitContext
     private static void OpenNewArticleEditor(IRenderedComponent<Article> cut) => cut.Find("[data-testid='article-add-button']").Click();
 
     [Test]
+    public async Task List_ShouldBeMarkedBusyOnlyWhileAnEditorIsOpen()
+    {
+        // Arrange
+        var articleGroup = new ExistingArticleGroupDto(new global::DataLayer.EfClasses.ArticleGroupId(1), "Vegetables");
+        _articleService.GetAllArticlesAsync().Returns(GetResult(new[] { new ExistingArticleDto(new global::DataLayer.EfClasses.ArticleId(1), "Tomato", articleGroup, false) }));
+        _articleGroupService.GetAllArticleGroupsAsync().Returns(GetResult(new[] { articleGroup }));
+
+        // Act & Assert
+        var cut = Render<Article>();
+        cut.Find("[data-testid='article-list']").ClassList.Should().NotContain("article-grid-busy");
+
+        await cut.Find("[data-testid='edit-article-button-1']").ClickAsync();
+        cut.Find("[data-testid='article-list']").ClassList.Should().Contain("article-grid-busy");
+
+        await cut.Find("[data-testid='article-cancel-button']").ClickAsync();
+        cut.Find("[data-testid='article-list']").ClassList.Should().NotContain("article-grid-busy");
+    }
+
+    [Test]
     public void Render_ShouldDisplayAddButtonAndNoFormInitially()
     {
         // Arrange
