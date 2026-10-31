@@ -526,10 +526,7 @@ public class MealTests : BunitContext
         var cut = Render<Meal>();
 
         // Assert
-        var markup = cut.Markup;
-        markup.Should().Contain("<form");
-        markup.Should().Contain("<button type=\"submit\"");
-        markup.Should().Contain("data-testid=\"meal-save-button\"");
+        cut.Find("form button[type='submit'][data-testid='meal-save-button']").Should().NotBeNull();
     }
 
     [Test]
@@ -546,8 +543,7 @@ public class MealTests : BunitContext
         var cut = Render<Meal>();
 
         // Assert
-        var markup = cut.Markup;
-        markup.Should().Contain("data-testid=\"meal-save-button\">Save</button>");
+        cut.Find("[data-testid='meal-save-button']").TextContent.Trim().Should().Be("Save");
     }
 
     [Test]

@@ -111,8 +111,7 @@ public class ArticleTests : BunitContext
         var cut = Render<Article>();
 
         // Assert
-        var buttons = cut.FindAll("button");
-        var submitButton = buttons.FirstOrDefault(b => string.Equals(b.GetAttribute("aria-label"), "Save", StringComparison.Ordinal));
+        var submitButton = cut.Find("button[type='submit']");
         submitButton.Should().NotBeNull();
     }
 
@@ -228,10 +227,7 @@ public class ArticleTests : BunitContext
         var cut = Render<Article>();
 
         // Assert
-        var markup = cut.Markup;
-        markup.Should().Contain("<form");
-        markup.Should().Contain("<button type=\"submit\"");
-        markup.Should().Contain("data-testid=\"article-save-button\"");
+        cut.Find("form button[type='submit'][data-testid='article-save-button']").Should().NotBeNull();
     }
 
     [Test]
