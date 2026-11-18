@@ -7,21 +7,6 @@ on:
       - '**'
 
 jobs:
-  temporary_security_pin_guard:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Enforce temporary package pins
-        uses: mu88/common/.github/actions/check-temporary-package-pins@4e3d5313798009ef14a20532bb590147101941e8 # main
-        with:
-          solution-path: ShopAndEat.slnx
-
   shared_ci_cd:
     permissions:
       attestations: write
@@ -29,9 +14,7 @@ jobs:
       id-token: write
       packages: write
 
-    needs: temporary_security_pin_guard
-
-    uses: mu88/common/.github/workflows/ci-cd.yml@47aaea369e0849f9c7c91fa365e570c7ec5a14fb # main
+    uses: mu88/common/.github/workflows/ci-cd.yml@4b0f537de7133b6d169a85d780e108d3cd5493bc # main
     with:
       docker-attest-provenance-and-sbom: true
       docker-publish-project: ShopAndEat/ShopAndEat.csproj
