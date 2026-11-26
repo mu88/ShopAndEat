@@ -160,7 +160,6 @@
         {
             await Agent.SwitchShopAsync(shopKey, CancellationToken.None);
             await JS.InvokeVoidAsync("clearDetailsStates");
-            StateHasChanged();
         }
     }
 
@@ -200,7 +199,6 @@
         }
 
         assistantMessage.IsStreaming = false;
-        StateHasChanged();
     }
 
     private async Task<ChatMessage> AppendUserAndAssistantMessagesAsync(string input)
@@ -248,14 +246,12 @@
         StateHasChanged();
         await Task.Delay(2000);
         _copyFeedback = false;
-        StateHasChanged();
     }
 
     private async Task ClearChat()
     {
         await Agent.SwitchShopAsync(Agent.SelectedShopKey!);
         await JS.InvokeVoidAsync("clearDetailsStates");
-        StateHasChanged();
     }
 
     private async Task LoadFromMealPlan()
@@ -264,12 +260,10 @@
         if (ingredients.Count == 0)
         {
             Agent.AddMessage(new ChatMessage { Role = "assistant", Content = L["NoIngredientsFound"].Value, Timestamp = TimeProvider.GetUtcNow() });
-            StateHasChanged();
             return;
         }
 
         _userInput = string.Join("\n", ingredients.Select(i => i.Text));
-        StateHasChanged();
     }
 
     private async Task ScrollToBottomAsync()

@@ -229,7 +229,6 @@ else
             _mealModel.NumberOfDays = Recipes.Single(recipe => recipe.Name == recipeName).NumberOfDays;
             _mealModel.NumberOfPersons = Recipes.Single(recipe => recipe.Name == recipeName).NumberOfPersons;
             _mealModel.RecipeName = recipeName;
-            StateHasChanged();
         }
     }
 
