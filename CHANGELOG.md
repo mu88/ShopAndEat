@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="7.0.0"></a>
+## [7.0.0](https://www.github.com/mu88/ShopAndEat/releases/tag/7.0.0) (2026-11-26)
+
+### ✨ Features
+
+* migrate application to .NET 11 ([8ed04da](https://www.github.com/mu88/ShopAndEat/commit/8ed04da6dc8a2224c97488eb25b8b1de6eabedca))
+* **browser-extension:** support Firefox alongside Chrome ([ba87d02](https://www.github.com/mu88/ShopAndEat/commit/ba87d02734016bf7b798aa12ce70b786ab2d9eac))
+
+### 🐛 Bug Fixes
+
+* resolve Sonar smells and restore complete coverage ([8e11d4a](https://www.github.com/mu88/ShopAndEat/commit/8e11d4a5b81e0969069d70b7af7ddd329d6200f4))
+* resolve SonarCloud code smell backlog across repository ([613b1d7](https://www.github.com/mu88/ShopAndEat/commit/613b1d74b3995f4dd9133abdac91cd8a5d2b191a))
+* **ci:** track temporary webutilities pin ([3585601](https://www.github.com/mu88/ShopAndEat/commit/3585601d2e410cef772a37daaf008d7462fde431))
+* **container:** bump base image to 10.0.13 to patch runtime CVEs ([7da9c94](https://www.github.com/mu88/ShopAndEat/commit/7da9c948401672d67e11138beda42710baad8af5))
+* **deps:** adopt shared testing publish worker fix ([351c3c9](https://www.github.com/mu88/ShopAndEat/commit/351c3c97ff0a9f5c28637f4dacba5668c66244c5))
+* **security:** patch runtime and test dependency advisories ([66dba27](https://www.github.com/mu88/ShopAndEat/commit/66dba27b8a25c41f205c1f01e6d32c470dce295e))
+* **security:** update container runtime to 10.0.11 ([6e22b80](https://www.github.com/mu88/ShopAndEat/commit/6e22b808c32a7ba55f33897a0cf2a928bf272a0d))
+* **test:** await exception assertions when upgrading to NUnit 5 ([24c5603](https://www.github.com/mu88/ShopAndEat/commit/24c5603e670974dc951a8095074f504191540efb))
+* **test:** rename Docker network alias to avoid .app gTLD HSTS preload ([5c77496](https://www.github.com/mu88/ShopAndEat/commit/5c774963218eb68bd95410fd1dafbffc4bf750e5))
+* **test:** resolve Sonar code smell issues in new System tests ([34a2e14](https://www.github.com/mu88/ShopAndEat/commit/34a2e142e69acaa10b4bcdd930628f89a6032e24))
+* **testing:** derive Playwright server image tag from resolved NuGet version ([b294a0e](https://www.github.com/mu88/ShopAndEat/commit/b294a0e7d5f416e706389d83eca04e0c32add792))
+
+### ♻️ Refactors
+
+* **ci:** use centralized pin guard ([dd10af6](https://www.github.com/mu88/ShopAndEat/commit/dd10af6a764befbff376d13945293e33e53679a2))
+* **shopping-agent:** use Microsoft resilience pipelines ([888b128](https://www.github.com/mu88/ShopAndEat/commit/888b1285e5dde15bfcf2d5402a41743b16e3c388))
+* **tests:** adopt mu88.Shared.Testing for System test infrastructure ([e6473af](https://www.github.com/mu88/ShopAndEat/commit/e6473af2b1aa8b544e3f87ad4891747cc74f0ae6))
+* **tests:** source testcontainers images from structured JSON for Renovate tracking ([e7fa2dd](https://www.github.com/mu88/ShopAndEat/commit/e7fa2dd8574909e8ac5b6226fe8c1ca4713a2231))
+
+### ✅ Tests
+
+* add Playwright UI system test for shopping workflow ([5846d6a](https://www.github.com/mu88/ShopAndEat/commit/5846d6ac9fd99b00dfe359b3d1823dcc9edc4ae0))
+
+### 🔧 Chores
+
+* **renovate:** remove redundant mcr.microsoft.com timestamp exception ([af787f5](https://www.github.com/mu88/ShopAndEat/commit/af787f50fbff22e7e75d0d522f1daeebdae921f0))
+
+### Breaking Changes
+
+* migrate application to .NET 11 ([8ed04da](https://www.github.com/mu88/ShopAndEat/commit/8ed04da6dc8a2224c97488eb25b8b1de6eabedca))
+
 <a name="6.1.0"></a>
 ## [6.1.0](https://www.github.com/mu88/ShopAndEat/releases/tag/6.1.0) (2026-10-01)
 
