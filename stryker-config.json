@@ -25,6 +25,9 @@
       "!**/Program.cs",
       "!**/Migrations/**/*.cs",
       "!**/EfCoreContext.cs"
-    ]
+    ],
+    "thresholds": {
+      "break": 1
+    }
   }
 }
