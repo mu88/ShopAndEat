@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using System.Globalization;
 using Microsoft.Extensions.Configuration;
@@ -137,7 +138,17 @@ public sealed class LlmIntegrationFixture : IDisposable
 public sealed class ScriptedShopToolExecutor : IShopToolExecutor
 {
     private readonly List<ToolCall> _recordedCalls = [];
+
+    [SuppressMessage(
+        "Style",
+        "IDE0028:Use collection initializers",
+        Justification = "Avoid C# 15 collection arguments until Stryker's Roslyn 5.12 release is validated: https://github.com/stryker-mutator/stryker-net/pull/4012")]
     private readonly Dictionary<string, List<ShopProduct>> _searchScripts = new(StringComparer.OrdinalIgnoreCase);
+
+    [SuppressMessage(
+        "Style",
+        "IDE0028:Use collection initializers",
+        Justification = "Avoid C# 15 collection arguments until Stryker's Roslyn 5.12 release is validated: https://github.com/stryker-mutator/stryker-net/pull/4012")]
     private readonly Dictionary<string, ProductDetails> _detailsScripts = new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<ToolCall> RecordedCalls => _recordedCalls.AsReadOnly();

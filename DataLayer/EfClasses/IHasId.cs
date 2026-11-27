@@ -11,7 +11,9 @@ namespace DataLayer.EfClasses;
 // generic constraints can bind a type parameter to its matching key type; the interface itself has
 // no members by design.
 #pragma warning disable S2326
-public interface IHasId<TId>
+
+// StyleCop misidentifies the empty-type declaration supported by the project's language version as an empty statement.
+#pragma warning disable SA1106
+public interface IHasId<TId>;
+#pragma warning restore SA1106
 #pragma warning restore S2326
-{
-}

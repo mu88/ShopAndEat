@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using Microsoft.Extensions.Localization;
 using ShoppingAgent.Resources;
@@ -9,6 +10,10 @@ public class HtmlToolResultRenderer(IStringLocalizer<Messages> localizer) : IToo
 {
     private const int MaxResultLength = 200;
 
+    [SuppressMessage(
+        "Style",
+        "IDE0028:Use collection initializers",
+        Justification = "Avoid C# 15 collection arguments until Stryker's Roslyn 5.12 release is validated: https://github.com/stryker-mutator/stryker-net/pull/4012")]
     private static readonly HashSet<string> _signalToolNames = new(StringComparer.Ordinal)
     {
         SignalToolNames.ConfirmCart,

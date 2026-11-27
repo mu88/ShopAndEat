@@ -83,9 +83,9 @@ public class ToolResultCompressor : IToolResultCompressor
     {
         try
         {
-            if (rawResult.StartsWith('['))
+            if (rawResult.Length > 0 && rawResult[0] == '[')
             {
-                // The StartsWith check above guarantees non-empty, array-shaped JSON, so Deserialize never returns null here.
+                // The prefix check above guarantees non-empty, array-shaped JSON, so Deserialize never returns null here.
                 var items = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(rawResult, ReadOptions)!;
 
                 var slim = items
@@ -120,9 +120,9 @@ public class ToolResultCompressor : IToolResultCompressor
     {
         try
         {
-            if (rawResult.StartsWith('{'))
+            if (rawResult.Length > 0 && rawResult[0] == '{')
             {
-                // The StartsWith check above guarantees non-empty, object-shaped JSON, so Deserialize never returns null here.
+                // The prefix check above guarantees non-empty, object-shaped JSON, so Deserialize never returns null here.
                 var result = JsonSerializer.Deserialize<Dictionary<string, object>>(rawResult, ReadOptions)!;
 
                 var slim = new

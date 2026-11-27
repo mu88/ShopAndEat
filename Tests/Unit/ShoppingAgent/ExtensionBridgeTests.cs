@@ -551,7 +551,7 @@ public class ExtensionBridgeTests
     }
 
     private static string ExtractCallId(string sendToolCallJson) =>
-        JsonDocument.Parse(sendToolCallJson).RootElement.GetProperty("id").GetString()!;
+        JsonElement.Parse(sendToolCallJson).GetProperty("id").GetString()!;
 
     private static ConcurrentDictionary<string, TaskCompletionSource<ToolResult>> GetPendingCalls(ExtensionBridge testee) =>
         (ConcurrentDictionary<string, TaskCompletionSource<ToolResult>>)typeof(ExtensionBridge)
